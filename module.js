@@ -1,4 +1,4 @@
-// core/module.js
+// Core/Module.js
 // MSGAI: Core層モジュール連携中枢（普遍的なモジュール登録インターフェース）
 // このファイルは、Core層の全モジュールがFoundationを通して論理的に連携するための構造を提供する。
 
