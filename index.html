@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MSGAI - Mathematical Silence Generator</title>
+    
+    <link rel="stylesheet" href="/MSGAI/styles.css">
+    <link rel="manifest" href="/MSGAI/manifest.json">
+    <link rel="icon" href="/MSGAI/icons/icon-192.png" type="image/png">
+</head>
+<body>
+
+    <header>
+        <h1>MSGAI: 数理的沈黙生成中枢</h1>
+        <div id="status-bar">
+            <span id="network-status">🌐 起動中...</span>
+            <span id="silence-level-display">🧘 沈黙度: 1.0</span>
+        </div>
+    </header>
+
+    <main>
+        <div id="msga-container">
+            <p>UIの論理的描画を待機しています...</p>
+        </div>
+    </main>
+    
+    <script>
+        // 【論理的強制：SW登録をDOMContentLoadedに同期させ、起動を最速化】
+        if ('serviceWorker' in navigator) {
+            // DOMの構造が準備でき次第、SWの登録を開始することを強制
+            document.addEventListener('DOMContentLoaded', () => { 
+                // 絶対パスでの登録を強制
+                navigator.serviceWorker.register('/MSGAI/sw.js', { scope: '/MSGAI/' })
+                    .then(registration => {
+                        console.log('SW: 沈黙外界遮断膜の登録に成功しました。Scope:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.error('SW: 沈黙外界遮断膜の登録に失敗しました。', error);
+                    });
+            });
+        }
+        
+        // 【Service Workerからのメッセージ（同期命令）を処理し、Core層に伝達する】
+        navigator.serviceWorker.addEventListener('message', event => {
+            if (event.data && event.data.type === 'SYNC_FETCH_EXTERNAL') {
+                // sw.jsからの同期命令をCore層に排他的に伝達するためのダミーメッセージ。
+                // 実行は fusionUI.js の論理に委譲されます。
+                console.log("SW Message Received: External Fetch Commanded. UI logic will execute.");
+            }
+        });
+    </script>
+
+    <script type="module" src="/MSGAI/fusion/fusionUI.js"></script>
+
+</body>
+</html>
