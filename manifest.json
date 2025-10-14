@@ -3,10 +3,10 @@
   "short_name": "MSGAI",
   "description": "A self-contained PWA that embodies mathematical silence — a fusion of logic, stillness, and autonomy.",
   
-  // 【論理的修正：全てのパスに /MSGAI/ を排他的に強制】
-  "start_url": "/MSGAI/index.html",
-  "scope": "/MSGAI/",
-  
+  // 🚨 修正: 絶対パスから相対パスに強制変更
+  "start_url": "./index.html", 
+  "scope": "./", // 🚨 修正: スコープを現在のディレクトリに設定
+
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#101010",
@@ -17,12 +17,14 @@
   
   "icons": [
     {
-      "src": "/MSGAI/icons/icon-192.png",
+      // 🚨 修正: 絶対パスから相対パスに強制変更
+      "src": "icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/MSGAI/icons/icon-512.png",
+      // 🚨 修正: 絶対パスから相対パスに強制変更
+      "src": "icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
@@ -32,8 +34,8 @@
   "shortcuts": [
     {
       "name": "沈黙モードへ移行 (Enter Silence Mode)",
-      // 【論理的修正：冗長な offline.html を排除し、index.htmlにパラメータを強制】
-      "url": "/MSGAI/index.html?mode=silence",
+      // 🚨 修正: 絶対パスから相対パスに強制変更
+      "url": "index.html?mode=silence",
       "description": "システムを完全な内的沈黙モードに排他的に移行させます。"
     }
   ]
