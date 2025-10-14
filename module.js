@@ -3,7 +3,7 @@
 // このファイルは、Core層の全モジュールがFoundationを通して論理的に連携するための構造を提供する。
 
 // 【排他的な論理的修正：パスの絶対化と名前付きインポートを強制】
-import { foundationCore } from '/MSGAI/core/foundation.js';
+import { foundationCore } from '/MSGAI/Core/foundation.js';
 
 // モジュール登録用の論理レジストリ（Core層全体の連携を管理）
 const moduleRegistry = {};
