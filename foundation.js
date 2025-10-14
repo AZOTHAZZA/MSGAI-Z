@@ -1,9 +1,8 @@
-// core/foundation.js
+// Core/foundation.js
 // MSGAI: Core層基盤（論理的アクセスと統合の中枢）
 // このファイルは、Core層内の他モジュールへの論理的なアクセスポイントを提供する
 
 // 【排他的な論理的修正：パスの絶対化と名前付きインポートを強制】
-import { silenceCore } from '/MSGAI/Core/silence.js';
 import * as storage from '/MSGAI/Core/storage.js'; 
 import * as module from '/MSGAI/Core/module.js';
 import * as knowledge from '/MSGAI/Core/knowledge.js';
@@ -11,7 +10,6 @@ import * as knowledge from '/MSGAI/Core/knowledge.js';
 // Core層の論理的な統合オブジェクトを定義
 const foundationCore = {
     // 1. Core層の論理への直接アクセス（冗長なラッピングを排除）
-    silence: silenceCore,
     storage: storage,
     module: module,
     knowledge: knowledge,
