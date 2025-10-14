@@ -23,10 +23,7 @@ const offlineCore = {
      * @description オフライン中枢の初期化とネットワーク監視の開始を強制する。
      */
     init: () => {
-        if (offlineState.initialized) return;
-
-        // Core層の初期化を強制
-        foundationCore.initialize(); 
+        if (offlineState.initialized) return; 
 
         offlineCore.registerEvents();
         
