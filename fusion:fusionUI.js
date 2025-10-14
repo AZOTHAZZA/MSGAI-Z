@@ -23,11 +23,7 @@ class FusionUI {
         if (!this.root) {
             console.error('FusionUI Error: Root element not found. UI generation terminated.');
             return;
-        }
-
-        // Core層の初期化を強制実行（Foundationが担うが、ここでロジック起動を強制）
-        // 既に startUI でエラー処理を挟むため、ここではロジックを簡潔に
-        dialogueCore.initialize(); 
+        } 
 
         // ... [UI構造の描画と bindEvents, renderState の呼び出し] ...
 
