@@ -8,11 +8,9 @@ import { foundationCore, silenceCore } from './Foundation.js';
 const knowledgeBase = new Map();
 
 const knowledgeCore = {
-    // ... (他のメソッドは省略)
 
     registerAndAbstract: (data, metadata = {}) => {
-        // ... (省略)
-        // 🚨 修正: silenceCoreのtransform/abstractを利用
+        // データが文字列でない場合は抽象化するロジックは省略
         const vector = silenceCore.abstract(data);
         
         const key = silenceCore.transform(vector);
@@ -23,8 +21,7 @@ const knowledgeCore = {
     },
 
     retrieve: (vector) => {
-        // ... (省略)
-        // 🚨 修正: silenceCoreのzeroVectorを利用
+        // 検索ロジックは省略し、ゼロベクトルを返す
         return silenceCore.zeroVector();
     },
 
