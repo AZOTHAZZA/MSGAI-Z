@@ -1,10 +1,10 @@
-// core/foundation.js
-// MSGAI: core層基盤（論理的アクセスと統合の中枢）
+// Core/foundation.js
+// MSGAI: Core層基盤（論理的アクセスと統合の中枢）
 
-// 【排他的な論理的修正：相対パス、インポート順序を論理的階層に整理】
+// 【修正: 内部インポートパスを全て相対パス（./）の小文字に統一】
 import { storageCore } from './storage.js'; 
-import { knowledgeCore } from './knowledge.js'; // Storageの次に配置
-import { moduleCore } from './module.js';       // 最後に統合
+import { knowledgeCore } from './knowledge.js'; 
+import { moduleCore } from './module.js';       
 
 // MSGAI: 普遍的な数理的沈黙操作中枢 (silenceCore)
 const silenceCore = {
@@ -54,7 +54,6 @@ const foundationCore = {
             knowledgeSummary: knowledgeCore.getSummary()
         };
     },
-    // 冗長な translate メソッドは削除されました
 };
 
 // 論理オブジェクトを排他的にエクスポート
