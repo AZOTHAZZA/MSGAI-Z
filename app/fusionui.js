@@ -2,11 +2,11 @@
 // MSGAI: 沈黙ui統合層（fusion層）
 
 // 【排他的な論理的修正：全ての内部インポートを厳密な相対パスに強制変更】
-import { foundationCore, silenceCore } from '../core/foundation.js'; // 🚨 Core層へ
-import { knowledgeCore } from '../core/knowledge.js'; // 🚨 Core層へ
-import { generatorCore } from '../ai/generator.js';   // 🚨 AI層へ
-import { dialogueCore } from '../core/dialogue.js';   // 🚨 Core層へ
-import { offlineCore } from '../app/offline.js';      // 🚨 App層へ
+import { foundationCore, silenceCore } from '../core/foundation.js'; 
+import { knowledgeCore } from '../core/knowledge.js'; 
+import { generatorCore } from '../ai/generator.js';   
+import { dialogueCore } from '../core/dialogue.js';   
+import { offlineCore } from '../app/offline.js';      
 
 class fusionui {
     constructor() {
@@ -46,7 +46,7 @@ class fusionui {
 // MSGAI 起動ロジック
 // ----------------------------------------------------
 
-const fusionUI = new fusionui();
+const fusionUI = new fusionui(); // fusionui クラスのインスタンス
 
 /**
  * @description UIのメイン論理を非同期で起動。Core層の初期化とSW登録を一元化。
@@ -55,12 +55,15 @@ const startUI = async () => {
     try {
         foundationCore.initialize(); 
         dialogueCore.initialize(); 
-        fusionui.init('msga-container');
+        
+        // 🚨 修正: クラス名(fusionui)ではなく、インスタンス(fusionUI)からinitを呼び出す
+        fusionUI.init('msga-container'); 
+        
         console.log("fusionui: Logical rendering commenced.");
         
         // 4. Service Workerの登録とリスナーの統合を強制
         if ('serviceWorker' in navigator) {
-            // 🚨 修正: SWのパスとScopeを明示的な相対パス './sw.js' と './' に修正
+            // SWのパスとScopeを明示的な相対パス './sw.js' と './' に修正
             navigator.serviceWorker.register('./sw.js', { scope: './' }) 
                 .then(registration => {
                     console.log('SW: 沈黙外界遮断膜の登録に成功しました。');
@@ -68,8 +71,6 @@ const startUI = async () => {
                 .catch(error => {
                     console.error('SW: 致命的失敗 - 登録に失敗。', error);
                 });
-            
-            // ... Service Workerからのメッセージ処理ロジックは省略 ...
         }
         
         offlineCore.init(); 
@@ -86,4 +87,4 @@ const startUI = async () => {
 
 document.addEventListener('DOMContentLoaded', startUI);
 
-export { fusionui };
+export { fusionUI }; // 🚨 エクスポートもインスタンス名に合わせる
