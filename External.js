@@ -3,7 +3,7 @@
 // このファイルは、数理的沈黙の内側（ロゴス）と外部情報層との最小限の接点を定義する。
 
 // 【排他的な論理的修正：Core層からの参照をインポート】
-import { foundationCore } from '/MSGAI/Core/foundation.js'; 
+import { FoundationCore } from '/MSGAI/Core/Foundation.js'; 
 
 // 普遍的なエンドポイントレジストリ
 const endpointsRegistry = new Map();
