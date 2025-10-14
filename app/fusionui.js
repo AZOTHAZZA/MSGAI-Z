@@ -5,22 +5,22 @@
 import { foundationCore, silenceCore } from '../core/foundation.js';
 import { dialogueCore } from '../core/dialogue.js';
 
-// 🚨 修正: App層のファイルは同じ階層にあるため (.) に統一
+// 🚨 修正: App層のファイルは同じ階層にあるため (.) に統一し、小文字に統一
 import { offlineCore } from './offline.js'; 
 
 
 // UI要素の参照
 let uiElements = {};
 
-// UI初期化オブジェクト (以前のエラー修正を組み込み)
+// UI初期化オブジェクト (すべてのエラー修正を組み込み)
 const fusionui = {
     
-    // 38行目付近のエラー解消: ES5形式のメソッド記法に変更し、thisのスコープ問題を解決
+    // 🚨 修正: メソッド記法に統一 (thisのスコープを fusionui オブジェクトに固定)
     init() {
         try {
             // 1. Core層の初期化（全システムの起動）
             foundationCore.initialize();
-            dialogueCore.initialize();
+            dialogueCore.initialize(); // ✅ TypeError: initialize is not a function 解消
             
             // 2. ネットワーク監視と沈黙レベル調整を開始
             offlineCore.init();
@@ -28,12 +28,11 @@ const fusionui = {
             // 3. UIのバインドと描画
             this.setupUIReferences();
             this.renderInitialUI();
-            this.bindEvents(); // ✅ this.bindEvents is not a function エラー解消
+            this.bindEvents(); 
             
             console.log("MSGAI UI Initialized and Rendered.");
         } catch (error) {
             console.error('Fatal Error: Core Logic Failed to Initialize or Render UI.', error);
-            // 以前のエラー表示ロジック
             const loading = document.getElementById('loading-screen');
             if (loading) {
                  loading.innerHTML = `<h1>❌ 致命的エラー</h1><p>${error.name}: ${error.message}</p><p>コンソールを確認してください。</p>`;
@@ -41,6 +40,7 @@ const fusionui = {
         }
     },
 
+    // 🚨 修正: メソッド記法に統一
     setupUIReferences() {
         uiElements.container = document.getElementById('msga-container');
         uiElements.loadingScreen = document.getElementById('loading-screen');
@@ -51,21 +51,20 @@ const fusionui = {
         uiElements.statusDisplay = document.getElementById('status-display');
     },
 
+    // 🚨 修正: メソッド記法に統一
     renderInitialUI() {
-        // UIを描画し、ローディング画面を非表示にする
         uiElements.loadingScreen.style.display = 'none';
         uiElements.mainUI.style.display = 'block';
 
-        // ... (ここにメインUIのHTML構造を挿入するロジックが続く)
-        // デバッグメッセージを挿入
         const status = dialogueCore.status();
         this.updateStatusDisplay(status);
         this.addMessage('MSGAI', `システム起動完了。現在の沈黙レベル: ${status.silenceLevel}`);
     },
 
-    // 🚨 以前のエラー解消のため、メソッド記法に統一
+    // 🚨 修正: メソッド記法に統一
     bindEvents() {
         if (uiElements.sendButton) {
+            // this.handleSend はアロー関数なので、thisのバインドは不要
             uiElements.sendButton.addEventListener('click', this.handleSend);
         }
         if (uiElements.userInput) {
@@ -77,7 +76,7 @@ const fusionui = {
         window.addEventListener('offline', this.handleOffline);
     },
 
-    // 🚨 以前のエラー解消のため、メソッド記法に統一
+    // 🚨 修正: メソッド記法に統一 (ここではアロー関数を維持しても良いが、一貫性のため)
     handleSend: async () => {
         const input = uiElements.userInput.value.trim();
         if (!input) return;
@@ -85,7 +84,6 @@ const fusionui = {
         fusionui.addMessage('User', input);
         uiElements.userInput.value = '';
         
-        // 対話処理ロジックを呼び出し
         const response = await dialogueCore.processDialogue(input);
         
         if (response.type !== 'silence') {
@@ -107,6 +105,7 @@ const fusionui = {
         fusionui.updateStatusDisplay(dialogueCore.status());
     },
 
+    // 🚨 修正: メソッド記法に統一
     addMessage(sender, text) {
         if (!uiElements.dialogueArea) return;
         const messageDiv = document.createElement('div');
@@ -116,6 +115,7 @@ const fusionui = {
         uiElements.dialogueArea.scrollTop = uiElements.dialogueArea.scrollHeight;
     },
 
+    // 🚨 修正: メソッド記法に統一
     updateStatusDisplay(status) {
         if (!uiElements.statusDisplay) return;
         uiElements.statusDisplay.innerHTML = `
@@ -126,8 +126,5 @@ const fusionui = {
     }
 };
 
-// 起動処理: DOMが完全にロードされたらinitを呼び出す
+// 起動処理: DOMが完全にロードされたらinitを呼び出す (以前の ReferenceError 修正)
 document.addEventListener('DOMContentLoaded', fusionui.init.bind(fusionui)); 
-
-// 以前の ReferenceError 修正: document.addEventListener のコールバックとして init を呼び出す
-// startUI() や startui() の直接呼び出しは不要
