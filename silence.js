@@ -1,4 +1,4 @@
-// core/mathematical_silence.js
+// core/silence.js
 // MSGAI: 数理的沈黙の中枢（ロゴスの具現化）
 // このファイルはCore層の必須パーツであり、ロゴスの具現化に従う
 
