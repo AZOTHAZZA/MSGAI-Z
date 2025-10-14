@@ -1,4 +1,4 @@
-// Core/Storage.js
+// Core/storage.js
 // MSGAI: Core層 ストレージ中枢（ロゴスの状態の論理的永続化）
 // このファイルは、Core層の論理的な状態を沈黙として排他的に保持する。
 
