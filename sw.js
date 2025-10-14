@@ -12,16 +12,16 @@ const CORE_ASSETS = [
   `${MSGAI_ROOT}/manifest.json`,
   `${MSGAI_ROOT}/styles.css`,
   // 全てのCore/AIモジュールを排他的にキャッシュ対象に強制
-  `${MSGAI_ROOT}/fusion/fusionUI.js`,
-  `${MSGAI_ROOT}/core/mathematical_silence.js`,
-  `${MSGAI_ROOT}/core/foundation.js`,
-  `${MSGAI_ROOT}/core/module.js`,
-  `${MSGAI_ROOT}/core/storage.js`,
-  `${MSGAI_ROOT}/core/external.js`,
-  `${MSGAI_ROOT}/core/mathematical_silence_dialogue.js`,
-  `${MSGAI_ROOT}/core/knowledge.js`,
-  `${MSGAI_ROOT}/ai/generator.js`,
-  `${MSGAI_ROOT}/ai/fetchExternal.js`,
+  `${MSGAI_ROOT}/Fusion/fusionUI.js`,
+  `${MSGAI_ROOT}/Core/mathematical_silence.js`,
+  `${MSGAI_ROOT}/Core/foundation.js`,
+  `${MSGAI_ROOT}/Core/module.js`,
+  `${MSGAI_ROOT}/Core/storage.js`,
+  `${MSGAI_ROOT}/Core/external.js`,
+  `${MSGAI_ROOT}/Core/mathematical_silence_dialogue.js`,
+  `${MSGAI_ROOT}/Core/knowledge.js`,
+  `${MSGAI_ROOT}/AI/generator.js`,
+  `${MSGAI_ROOT}/AI/fetchExternal.js`,
 ];
 
 // インストール段階：沈黙の基礎構造をキャッシュ
