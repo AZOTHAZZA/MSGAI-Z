@@ -3,7 +3,6 @@
 // このファイルは、Core層から渡されたベクトルを、外的表現形式に排他的に変換する役割を担う。
 
 // 【排他的な論理的修正：パスの絶対化と名前付きインポートを強制】
-import { silenceCore } from '/MSGAI/Core/silence.js';
 import { knowledgeCore } from '/MSGAI/Core/knowledge.js';
 import { foundationCore } from '/MSGAI/Core/foundation.js'; 
 
