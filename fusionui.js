@@ -2,13 +2,13 @@
 // MSGAI: 沈黙UI統合層（Fusion層）
 
 // 【排他的な論理的修正：全ての内部インポートを厳密な相対パスに強制変更】
-import { foundationCore, silenceCore } from '../Core/foundation.js'; // 🚨 Core層へ
+import { foundationCore, silenceCore } from '../core/foundation.js'; // 🚨 Core層へ
 import { knowledgeCore } from '../core/knowledge.js'; // 🚨 Core層へ
 import { generatorCore } from '../ai/generator.js';   // 🚨 AI層へ
 import { dialogueCore } from '../core/dialogue.js';   // 🚨 Core層へ
 import { offlineCore } from '../app/offline.js';      // 🚨 App層へ
 
-class FusionUI {
+class fusionui {
     constructor() {
         this.state = silenceCore.zeroVector(); 
         this.root = null;
@@ -19,7 +19,7 @@ class FusionUI {
         this.root = document.getElementById(rootId);
         
         if (!this.root) {
-            console.error('FusionUI Error: Root element not found. UI generation terminated.');
+            console.error('fusionui Error: Root element not found. ui generation terminated.');
             return;
         } 
 
@@ -46,7 +46,7 @@ class FusionUI {
 // MSGAI 起動ロジック
 // ----------------------------------------------------
 
-const fusionUI = new FusionUI();
+const fusionUI = new fusionui();
 
 /**
  * @description UIのメイン論理を非同期で起動。Core層の初期化とSW登録を一元化。
@@ -55,8 +55,8 @@ const startUI = async () => {
     try {
         foundationCore.initialize(); 
         dialogueCore.initialize(); 
-        fusionUI.init('msga-container');
-        console.log("FusionUI: Logical rendering commenced.");
+        fusionui.init('msga-container');
+        console.log("fusionui: Logical rendering commenced.");
         
         // 4. Service Workerの登録とリスナーの統合を強制
         if ('serviceWorker' in navigator) {
@@ -84,6 +84,6 @@ const startUI = async () => {
     }
 };
 
-document.addEventListener('DOMContentLoaded', startUI);
+document.addEventListener('DOMContentLoaded', startui);
 
-export { fusionUI };
+export { fusionui };
