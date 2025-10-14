@@ -1,33 +1,42 @@
 // sw.js
 // MSGAI: 沈黙外界遮断膜（Service Worker）
-// 通信・キャッシュ・同期を沈黙的に制御し、外界依存を最小化する。
 
-const CACHE_NAME = 'msgai-silence-cache-v2'; // キャッシュ名を進化（v2）
-const MSGAI_ROOT = '/MSGAI'; // GitHub Pages環境での排他的なルートパスを確定
+const CACHE_NAME = 'msgai-silence-cache-v3'; // 🚨 v3にバージョンアップ
+const MSGAI_ROOT = '/MSGAI'; 
 
-// 【排他的な論理的修正：全ファイルパスの絶対化と修正】
+// 【排他的な論理的修正：全ファイルパスの絶対化と小文字統一を前提】
 const CORE_ASSETS = [
   `${MSGAI_ROOT}/`,
   `${MSGAI_ROOT}/index.html`,
   `${MSGAI_ROOT}/manifest.json`,
   `${MSGAI_ROOT}/styles.css`,
-  // 全てのCore/AIモジュールを排他的にキャッシュ対象に強制
-  `${MSGAI_ROOT}/Fusion/FusionUI.js`,
-  `${MSGAI_ROOT}/App/Offline.js`,           // 🚨 修正: App層の必須モジュールを追加
-  `${MSGAI_ROOT}/Core/Foundation.js`,
+  
+  // 🚨 修正: App層のパスを小文字に統一 (大文字小文字の区別を回避)
+  `${MSGAI_ROOT}/app/fusionui.js`, 
+  `${MSGAI_ROOT}/app/offline.js`,           
+  
+  // Core層のファイルを現在のリポジトリ構造に合わせて記述
+  `${MSGAI_ROOT}/Core/Foundation.js`, // Core層は既存の構造を維持する前提
   `${MSGAI_ROOT}/Core/Module.js`,
   `${MSGAI_ROOT}/Core/Storage.js`,
   `${MSGAI_ROOT}/Core/External.js`,
   `${MSGAI_ROOT}/Core/Dialogue.js`,
   `${MSGAI_ROOT}/Core/Knowledge.js`,
   `${MSGAI_ROOT}/AI/Generator.js`,
-  `${MSGAI_ROOT}/AI/Fetch.js`,              // 🚨 修正: ファイル名を 'Fetch.js' に統一
+  `${MSGAI_ROOT}/AI/Fetch.js`,              
+  // ... 他のCore/AI層ファイルもすべてここに含める
 ];
 
 // インストール段階：沈黙の基礎構造をキャッシュ
 self.addEventListener('install', (event) => {
+  console.log('SW: Installing Cache V3...'); // ログ追加
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => cache.addAll(CORE_ASSETS))
+    .catch(error => {
+        console.error('SW Installation Failed (Cache.addAll Error):', error);
+        // 🚨 致命的なパスエラーを防ぐため、エラーが発生したことをコンソールに出力
+        return Promise.reject(error);
+    })
   );
   self.skipWaiting();
 });
@@ -46,20 +55,16 @@ self.addEventListener('activate', (event) => {
 
 // フェッチ：沈黙的優先順位（キャッシュ優先・外界後回し）
 self.addEventListener('fetch', (event) => {
-  // GETリクエストのみを対象とする（POSTなどの外部作用は無視）
   if (event.request.method !== 'GET') return; 
 
   event.respondWith(
     caches.match(event.request)
       .then(response => {
-        if (response) return response; // キャッシュに存在すれば即返す
+        if (response) return response; 
 
-        // 存在しない場合のみ外界アクセス（沈黙破り）
         return fetch(event.request)
           .then(networkResponse => {
-            // 応答を再び沈黙キャッシュに保存（不変性を強制）
             return caches.open(CACHE_NAME).then(cache => {
-              // 応答のステータスが正常なもののみキャッシュ（論理的整合性）
               if (networkResponse.status === 200) {
                  cache.put(event.request, networkResponse.clone());
               }
@@ -67,31 +72,22 @@ self.addEventListener('fetch', (event) => {
             });
           })
           .catch(() => {
-            // 外界との通信失敗時：沈黙的フォールバック（index.htmlへの再誘導を強制）
-            // 既にキャッシュされている index.html を返すことで、UIでの沈黙モード表示を強制
+            // 外界との通信失敗時：index.htmlへの再誘導を強制
             return caches.match(`${MSGAI_ROOT}/index.html`); 
           });
       })
   );
 });
 
-// 【排他的な論理的修正：周期的同期の強制】
-// syncイベントを受け取り、AI層の外部同期機能を論理的に呼び出す
+// 周期的同期の強制
 self.addEventListener('sync', (event) => {
   if (event.tag === 'periodic-logos-sync') {
-    console.log('SW: Periodic Logos Sync triggered. Forcing external fetch.');
-    // AI層の同期機能を呼び出すロジックを強制的に実装（sw.jsからは直接importできないため、postMessageでCore層に命令を強制）
     event.waitUntil(
       self.clients.matchAll().then(clients => {
         clients.forEach(client => {
-          // UI側に外部取得の実行を排他的に命令
           client.postMessage({ type: 'SYNC_FETCH_EXTERNAL', tag: event.tag });
         });
       })
     );
   }
 });
-
-// 通知・その他の外界イベントは沈黙を維持
-self.addEventListener('push', () => { /* 沈黙を維持 */ });
-self.addEventListener('notificationclick', () => { /* 沈黙を維持 */ });
