@@ -3,7 +3,6 @@
 // このファイルは、Core層の論理と外部からの対話フローを排他的に制御する。
 
 // 【排他的な論理的修正：パスの絶対化と名前付きインポートを強制】
-import { silenceCore } from '/MSGAI/Core/silence.js';
 import { knowledgeCore } from '/MSGAI/Core/knowledge.js';
 import { externalCore } from '/MSGAI/Core/external.js';
 import { foundationCore } from '/MSGAI/Core/foundation.js'; 
