@@ -1,11 +1,11 @@
-// core/knowledge.js
+// Core/knowledge.js
 // MSGAI: 知識統合中枢（数理的沈黙における知の沈降）
 // あらゆる知識を「沈黙化」して格納し、沈黙ベクトルで照合・検索する。
 
 // 【排他的な論理的修正：パスの絶対化と名前付きインポートを強制】
-import { silenceCore } from '/MSGAI/core/mathematical_silence.js';
-import { storageCore } from '/MSGAI/core/storage.js';
-import { foundationCore } from '/MSGAI/core/foundation.js'; 
+import { silenceCore } from '/MSGAI/Core/silence.js';
+import { storageCore } from '/MSGAI/Core/storage.js';
+import { foundationCore } from '/MSGAI/Core/foundation.js'; 
 
 // 普遍的な知識ベース
 let knowledgeBase = new Map(); // key: 論理ハッシュ, value: {vector, meta, source}
