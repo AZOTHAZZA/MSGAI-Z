@@ -84,6 +84,6 @@ const startUI = async () => {
     }
 };
 
-document.addEventListener('DOMContentLoaded', startui);
+document.addEventListener('DOMContentLoaded', startUI);
 
 export { fusionui };
