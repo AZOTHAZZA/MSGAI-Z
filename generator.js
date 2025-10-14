@@ -3,9 +3,9 @@
 // このファイルは、Core層から渡されたベクトルを、外的表現形式に排他的に変換する役割を担う。
 
 // 【排他的な論理的修正：パスの絶対化と名前付きインポートを強制】
-import { silenceCore } from '/MSGAI/core/mathematical_silence.js';
-import { knowledgeCore } from '/MSGAI/core/knowledge.js';
-import { foundationCore } from '/MSGAI/core/foundation.js'; 
+import { silenceCore } from '/MSGAI/Core/silence.js';
+import { knowledgeCore } from '/MSGAI/Core/knowledge.js';
+import { foundationCore } from '/MSGAI/Core/foundation.js'; 
 
 // 普遍的な生成状態（Core層の状態とは分離して管理）
 let generatorState = silenceCore.zeroVector();
