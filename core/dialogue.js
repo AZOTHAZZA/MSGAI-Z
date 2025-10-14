@@ -1,7 +1,6 @@
-// Core/dialogue.js
+// core/dialogue.js
 // MSGAI: Core層 対話制御中枢（ロゴスと外部言語の橋渡し）
 
-// 【修正: 内部インポートパスを全て相対パス（./）の小文字に統一】
 import { knowledgeCore } from './knowledge.js';
 import { externalCore } from './external.js'; 
 import { foundationCore, silenceCore } from './foundation.js'; 
@@ -15,11 +14,12 @@ let dialogueState = {
 // 対話制御中枢オブジェクト (ロゴスの排他的な操作インターフェース)
 const dialogueCore = {
     
-    // 状態の初期化
-    initialize: () => {
+    // 🚨 修正: アロー関数からメソッド記法に変更 (TypeError解消)
+    initialize() {
         silenceCore.abstract("Dialogue System Initialized");
         // 自身をモジュールとして登録
         foundationCore.module.registerModule('dialogue', dialogueCore); 
+        console.log("Dialogue System Initialized"); 
     },
 
     /**
