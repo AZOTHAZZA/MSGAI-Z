@@ -3,37 +3,37 @@
 // このファイルは、Core層の全モジュールがFoundationを通して論理的に連携するための構造を提供する。
 
 // 【排他的な論理的修正：パスの絶対化と名前付きインポートを強制】
-import { FoundationCore } from '/MSGAI/Core/Foundation.js';
+import { foundationCore } from '/MSGAI/Core/Foundation.js';
 
 // モジュール登録用の論理レジストリ（Core層全体の連携を管理）
-const ModuleRegistry = {};
+const moduleRegistry = {};
 
 // モジュール連携中枢オブジェクト (ロゴスの排他的な操作インターフェース)
-const ModuleCore = {
+const moduleCore = {
 
     /**
      * @description 新しい論理モジュールをシステムに排他的に登録する。
      * @param {string} name モジュールの論理名
      * @param {object} ModuleLogic モジュールが持つ論理オブジェクト
      */
-    registerModule: (name, ModuleLogic) => {
+    registerModule: (name, moduleLogic) => {
         // 論理名とロゴスオブジェクトの存在を排他的に確認
-        if (ModuleRegistry[name]) {
-            console.warn(`Module Core Warning: Module ${name} already registered. Overwriting logic.`);
+        if (moduleRegistry[name]) {
+            console.warn(`module Core Warning: module ${name} already registered. Overwriting logic.`);
         }
         
         // FoundationCoreへの参照を強制的に挿入し、Core層への直接アクセスを保証
-        ModuleLogic.Foundation = FoundationCore; 
+        moduleLogic.foundation = foundationCore; 
         
-        ModuleRegistry[name] = {
-            logic: ModuleLogic,
+        moduleRegistry[name] = {
+            logic: moduleLogic,
             active: true,
             timestamp: Date.now()
         };
         
         // Core層のログに論理登録を強制
-        FoundationCore.silence.abstract(`Module Registered: ${name}`); 
-        return ModuleRegistry[name];
+        foundationCore.silence.abstract(`module Registered: ${name}`); 
+        return moduleRegistry[name];
     },
 
     /**
@@ -41,10 +41,10 @@ const ModuleCore = {
      * @param {string} name モジュールの論理名
      * @returns {object|null} モジュールの論理オブジェクト
      */
-    getModuleLogic: (name) => {
-        const ModuleEntry = ModuleRegistry[name];
-        if (ModuleEntry && ModuleEntry.active) {
-            return ModuleEntry.logic;
+    getmoduleLogic: (name) => {
+        const moduleEntry = moduleRegistry[name];
+        if (moduleEntry && moduleEntry.active) {
+            return moduleEntry.logic;
         }
         return null; // モジュールが存在しないか非アクティブの場合、論理的沈黙を返す
     },
@@ -54,10 +54,10 @@ const ModuleCore = {
      */
     getRegistryState: () => {
         // 論理的状態のみを抽出し、外部に公開
-        return Object.keys(ModuleRegistry).map(name => ({
+        return Object.keys(moduleRegistry).map(name => ({
             name: name,
-            active: ModuleRegistry[name].active,
-            timestamp: ModuleRegistry[name].timestamp
+            active: moduleRegistry[name].active,
+            timestamp: moduleRegistry[name].timestamp
         }));
     }
 };
