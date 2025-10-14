@@ -8,7 +8,7 @@ import * as Module from '/MSGAI/Core/Module.js';
 import * as Knowledge from '/MSGAI/Core/Knowledge.js';
 
 // Core層の論理的な統合オブジェクトを定義
-const FoundationCore = {
+const foundationCore = {
     // 1. Core層の論理への直接アクセス（冗長なラッピングを排除）
     storage: Storage,
     module: Module,
