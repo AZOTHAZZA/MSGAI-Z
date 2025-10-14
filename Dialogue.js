@@ -3,7 +3,7 @@
 
 // 【排他的な論理的修正：相対パス、命名規則の最終確定】
 import { knowledgeCore } from './Knowledge.js';
-import { externalCore } from './External.js'; // 利用されていなくても構造上維持
+import { externalCore } from './External.js'; 
 import { foundationCore, silenceCore } from './Foundation.js'; 
 
 // 対話制御の普遍的な状態
