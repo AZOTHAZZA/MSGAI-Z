@@ -2,9 +2,9 @@
 // MSGAI: 外部沈黙接続中枢（外部リソース取得と知識統合）
 
 // 【排他的な論理的修正：相対パス、命名規則の統一】
-import { knowledgeCore } from '../Core/Knowledge.js';
-import { externalCore } from '../Core/External.js'; 
-import { silenceCore } from '../Core/Foundation.js'; // silenceCore は Foundation から取得
+import { knowledgeCore } from '../core/knowledge.js';
+import { externalCore } from '../core/external.js'; 
+import { silenceCore } from '../core/foundation.js'; // silenceCore は Foundation から取得
 
 // 外部同期ソースの定義（ダミー）
 const syncSources = [
