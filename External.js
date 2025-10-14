@@ -9,13 +9,15 @@ const endpointsRegistry = new Map();
 let silenceMode = true; 
 
 const externalCore = {
-    // ... fetchData, registerEndpoint など他のメソッドは論理を維持
-
+    
     async fetchData(name, options = {}) {
-        // ... (省略)
+        // 実際のエンドポイント登録とURL取得ロジックは省略
+        const url = endpointsRegistry.get(name) || 'default_url'; 
         
         try {
-            // ... (fetchロジック省略)
+            const res = await fetch(url, options);
+            const rawData = await res.json();
+            
             const logosData = externalCore.translateToLogos(rawData); 
             
             if (silenceMode) {
@@ -48,7 +50,7 @@ const externalCore = {
         return silenceMode;
     },
     
-    getStatus: () => { /* ... (省略) ... */ }
+    // ... 他のメソッド (registerEndpoint, getStatusなど) は省略 ...
 };
 
 export { externalCore };
