@@ -1,128 +1,139 @@
-// app/fusionui.js
-// MSGAI: 沈黙UI統合層（Fusion層）
+// fusionui.js
+// MSGAI: App層のメインUIと起動ロジック
 
-// 【排他的な論理的修正：全ての内部インポートを厳密な相対パスに強制変更】
-import { foundationCore, silenceCore } from '../core/foundation.js'; 
-import { knowledgeCore } from '../core/knowledge.js'; 
-import { generatorCore } from '../ai/generator.js';   
-import { dialogueCore } from '../core/dialogue.js';   
-import { offlineCore } from '../app/offline.js';      
+// 必要なCore層のモジュールをインポート
+// 🚨 (注意: パスは現在のリポジトリ構造に合わせて './Core/...' または '../Core/...' に修正してください)
+import { foundationCore, silenceCore } from './Core/Foundation.js';
+import { dialogueCore } from './Core/Dialogue.js';
+import { offlineCore } from './App/Offline.js'; // App層モジュールもインポート
 
-// 🚨 修正: クラス名を FusionUI (大文字) に変更
-class FusionUI { 
-    constructor() {
-        this.state = silenceCore.zeroVector(); 
-        this.root = null;
-    }
+const fusionui = {
+    // 状態管理
+    state: {
+        silenceLevel: 1.00,
+        knowledgeLevel: 0,
+        isAwaitingResponse: false
+    },
 
-    // UIを初期化（ロゴスの触覚化）
-    init(rootId = 'msga-container') {
-        this.root = document.getElementById(rootId);
+    // -----------------------------------------------------
+    // 🚨 修正1: 'this' スコープ問題解消のため、メソッド記法に統一
+    // -----------------------------------------------------
+
+    /**
+     * 初期化メソッド：Core層の起動後、UIを描画しイベントをバインドする。
+     */
+    init() {
+        console.log('FusionUI Initializing...');
         
-        if (!this.root) {
-            console.error('FusionUI Error: Root element not found. UI generation terminated.');
-            return;
-        } 
-        
-        // 以前のローディング画面のHTML要素をクリア
-        this.root.innerHTML = '';
+        // 🚨 修正2: Offline Coreを呼び出し、沈黙度を更新
+        offlineCore.init(); // Offline Coreを起動し、沈黙度を計算させる
 
-        // UI構造の描画
-        this.root.innerHTML = `
-            <div class="fusion-container">
-                <h2>MSGAI Active</h2>
-                <div id="status">沈黙度: ${dialogueCore.status().silenceLevel}</div>
-                <textarea id="input" placeholder="沈黙に触れる..."></textarea>
-                <button id="submit">送信</button>
-                <div id="output"></div>
+        // 初期状態の沈黙度を取得し、UIに反映
+        this.state.silenceLevel = offlineCore.getInitialSilenceLevel();
+        
+        this.drawUI();      // UIの基本要素を描画
+        this.bindEvents();  // イベントリスナーを設定
+
+        console.log('FusionUI Initialized. Silence Level:', this.state.silenceLevel);
+    },
+
+    /**
+     * UIの初期描画と現在の状態の表示
+     */
+    drawUI() {
+        const container = document.getElementById('msga-container');
+        if (!container) return;
+
+        // ローディング画面を隠し、メインUIを表示
+        const loadingScreen = document.getElementById('loading-screen');
+        const mainUI = document.getElementById('main-ui');
+        if (loadingScreen) loadingScreen.style.display = 'none';
+        if (mainUI) mainUI.style.display = 'block';
+
+        // UI要素をHTMLとして挿入
+        mainUI.innerHTML = `
+            <h1>MSGAI Active</h1>
+            <div id="status-display">
+                <span class="status-item">沈黙度: <span id="silence-level">${this.state.silenceLevel.toFixed(2)}</span></span>
+                <span class="status-item">| 知識: <span id="knowledge-level">${this.state.knowledgeLevel}</span></span>
             </div>
-            <div id="msga-debug-log" style="position: fixed; top: 0; left: 0; color: lime; font-family: monospace; font-size: 10px;">
-                MSGAI 論理起動確定 (LOGOS Active) - UIメインロジック起動済
+            <div id="dialogue-area"></div>
+            <div id="input-form">
+                <input type="text" id="user-input" placeholder="沈黙に触れる…" />
+                <button id="send-button">送信</button>
             </div>
         `;
-        
-        // 🚨 修正が必要: bindEvents と renderState はアロー関数にする必要がある (省略部分を修正)
-        this.bindEvents(); 
-        this.renderState();
-    }
-    
-    // 🚨 修正: スコープ問題回避のため、メソッドをアロー関数として定義 (省略部分の想定修正)
-    bindEvents = () => { 
-        const submitButton = document.getElementById('submit');
-        submitButton.addEventListener('click', this.handleSubmission);
-        console.log("UI: Events bound.");
-    }
-    
-    // 🚨 修正: スコープ問題回避のため、メソッドをアロー関数として定義
-    renderState = () => {
-        const statusDiv = document.getElementById('status');
-        if (statusDiv) {
-            statusDiv.innerHTML = `沈黙度: ${dialogueCore.status().silenceLevel.toFixed(2)} | 知識: ${knowledgeCore.getSummary().count}`;
+        // 描画後、沈黙度が 1.00 から 0.50 (または計算値) に更新されるはず
+    },
+
+    /**
+     * UIイベントのリスナーを設定
+     */
+    bindEvents() { // 🚨 修正3: メソッド記法に統一
+        const sendButton = document.getElementById('send-button');
+        const userInput = document.getElementById('user-input');
+
+        if (sendButton) {
+            sendButton.addEventListener('click', () => this.handleSend());
         }
-    }
-
-    // 🚨 修正: スコープ問題回避のため、メソッドをアロー関数として定義 (ダミー)
-    handleSubmission = async () => {
-        const input = document.getElementById('input').value;
-        const result = await dialogueCore.processDialogue(input);
-        this.appendOutput(result);
-    }
-    
-    // 🚨 修正: スコープ問題回避のため、メソッドをアロー関数として定義 (ダミー)
-    appendOutput = (data) => {
-        const outputDiv = document.getElementById('output');
-        const p = document.createElement('p');
-        p.textContent = JSON.stringify(data);
-        outputDiv.appendChild(p);
-    }
-}
-
-// ----------------------------------------------------
-// MSGAI 起動ロジック
-// ----------------------------------------------------
-
-// 🚨 修正: クラス名 FusionUI に合わせてインスタンス名を変更
-const fusionUIInstance = new FusionUI(); 
-
-/**
- * @description UIのメイン論理を非同期で起動。
- */
-const startUI = async () => {
-    try {
-        // Core層の初期化は foundationCore.initialize() が統括
-        foundationCore.initialize(); 
-        dialogueCore.initialize(); 
-        
-        // 🚨 修正: インスタンス名 fusionUIInstance から init を呼び出す
-        fusionUIInstance.init('msga-container'); 
-        
-        console.log("fusionui: Logical rendering commenced.");
-        
-        // Service Workerの登録とリスナーの統合を強制
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js', { scope: './' }) 
-                .then(registration => {
-                    console.log('SW: 沈黙外界遮断膜の登録に成功しました。');
-                })
-                .catch(error => {
-                    console.error('SW: 致命的失敗 - 登録に失敗。', error);
-                });
+        if (userInput) {
+            userInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.handleSend();
+            });
         }
-        
-        offlineCore.init(); 
+    },
 
-    } catch (e) {
-        console.error("Fatal Error: Core Logic Failed to Initialize or Render UI.", e);
-        const root = document.getElementById('msga-container');
-        if (root) {
-            root.innerHTML = 
-                `<h1>💥 論理的破綻 (Core Load Failed)</h1><p>コンソールを確認してください。エラー: ${e.message}</p>`;
+    /**
+     * ユーザー入力の送信処理
+     */
+    handleSend() { // 🚨 修正4: メソッド記法に統一
+        const userInput = document.getElementById('user-input');
+        if (!userInput || !userInput.value.trim() || this.state.isAwaitingResponse) return;
+
+        const userMessage = userInput.value.trim();
+        this.state.isAwaitingResponse = true;
+
+        // ユーザーメッセージをUIに追加
+        this.appendMessage('user', userMessage);
+        
+        // Core層に対話ロジックを委譲
+        dialogueCore.processUserMessage(userMessage)
+            .then(msgaResponse => {
+                this.appendMessage('msga', msgaResponse);
+            })
+            .catch(error => {
+                this.appendMessage('msga', `対話処理エラー: ${error.message}`);
+            })
+            .finally(() => {
+                userInput.value = '';
+                this.state.isAwaitingResponse = false;
+            });
+    },
+
+    /**
+     * メッセージを対話エリアに追加
+     */
+    appendMessage(sender, text) { // 🚨 修正5: メソッド記法に統一
+        const dialogueArea = document.getElementById('dialogue-area');
+        if (dialogueArea) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', sender);
+            messageElement.textContent = text;
+            dialogueArea.appendChild(messageElement);
+            dialogueArea.scrollTop = dialogueArea.scrollHeight; // スクロール
         }
     }
 };
 
-// HTML読み込み完了時に起動
-document.addEventListener('DOMContentLoaded', startUI);
+// -----------------------------------------------------
+// 最終起動エントリポイント
+// -----------------------------------------------------
 
-// 🚨 修正: エクスポート名も新しいインスタンス名に合わせる
-export { fusionUIInstance }; 
+// DOMContentLoaded後にCore層の初期化とUI描画を開始
+document.addEventListener('DOMContentLoaded', () => {
+    // Core層をまず初期化
+    foundationCore.initialize(); 
+    
+    // UIの初期化を開始
+    fusionui.init(); 
+});
