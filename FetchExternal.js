@@ -1,4 +1,4 @@
-// AI/fetchExternal.js
+// AI/FetchExternal.js
 // MSGAI: 外部沈黙接続中枢（外部情報の取得とロゴス形式への排他的変換）
 // このファイルは、Core層の externalCore に依存し、取得した情報をknowledgeCoreに渡す役割を担う。
 
@@ -10,13 +10,13 @@ import { ExternalCore } from '/MSGAI/Core/External.js'; // 外部通信のCore�
 const sourceRegistry = [];
 
 // 外部取得中枢オブジェクト (外部情報の取得と論理形式への変換を担う)
-const fetcherCore = {
+const FetcherCore = {
 
     /**
      * @description 外部情報源を論理的に登録する。
      */
     registerSource: (url, transformFn = null) => {
-        if (externalCore.registerEndpoint(url, url)) { // Core層のexternalCoreにも登録を強制
+        if (ExternalCore.registerEndpoint(url, url)) { // Core層のexternalCoreにも登録を強制
             sourceRegistry.push({ url, transformFn });
             return true;
         }
@@ -31,7 +31,7 @@ const fetcherCore = {
             try {
                 // 1. Core層の externalCore を通じた観測を強制
                 // externalCore.fetchData は、ロゴス形式または null を返す
-                const logosData = await externalCore.fetchData(source.url, { responseType: 'text' }); 
+                const logosData = await ExternalCore.fetchData(source.url, { responseType: 'text' }); 
 
                 if (logosData) {
                     // 2. 任意変換（外部情報取得層固有の論理的処理）
@@ -40,9 +40,9 @@ const fetcherCore = {
                         : logosData;
 
                     // 3. 知識としての登録を強制
-                    knowledgeCore.registerAndAbstract(processed, { source: source.url, type: 'external_fetch' });
+                    KnowledgeCore.registerAndAbstract(processed, { source: source.url, type: 'External_Fetch' });
                     
-                    console.log(`Integrated external source: ${source.url}`);
+                    console.log(`Integrated External source: ${source.url}`);
                 } else {
                     console.log(`External source ${source.url} returned logical silence (or is in silence mode).`);
                 }
@@ -59,7 +59,7 @@ const fetcherCore = {
      * このメソッドは統合実行のみを担う。
      */
     synchronizeOnce: () => {
-        return fetcherCore.fetchAndIntegrateAll();
+        return FetcherCore.FetchAndIntegrateAll();
     },
     
     /**
@@ -68,10 +68,10 @@ const fetcherCore = {
     getStatus: () => {
         return {
             sourceCount: sourceRegistry.length,
-            endpoints: externalCore.getStatus()
+            endpoints: ExternalCore.getStatus()
         };
     }
 };
 
 // 論理オブジェクトを排他的にエクスポート
-export { fetcherCore };
+export { FetcherCore };
