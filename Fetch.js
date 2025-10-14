@@ -1,10 +1,11 @@
-// AI/Fetch.js
-// MSGAI: 外部沈黙接続中枢（外部情報の取得とロゴス形式への排他的変換）
-// このファイルは、Core層の externalCore に依存し、取得した情報をknowledgeCoreに渡す役割を担う。
+ // AI/Fetch.js
+// MSGAI: 外部沈黙接続中枢
 
 // 【排他的な論理的修正：パスの絶対化と名前付きインポートを強制】
+// 🚨 修正: silenceCore を FoundationCore の論理からインポートすることを強制
 import { knowledgeCore } from '/MSGAI/Core/Knowledge.js';
-import { externalCore } from '/MSGAI/Core/External.js'; // 外部通信のCore層中枢
+import { externalCore } from '/MSGAI/Core/External.js'; 
+import { silenceCore } from '/MSGAI/Core/Foundation.js'; // 🚨 修正: silenceCore を追加
 
 // 普遍的な情報源レジストリ
 const sourceRegistry = [];
@@ -30,7 +31,6 @@ const fetcherCore = {
         for (const source of sourceRegistry) {
             try {
                 // 1. Core層の externalCore を通じた観測を強制
-                // externalCore.fetchData は、ロゴス形式または null を返す
                 const logosData = await externalCore.fetchData(source.url, { responseType: 'text' }); 
 
                 if (logosData) {
@@ -39,8 +39,8 @@ const fetcherCore = {
                         ? source.transformFn(logosData)
                         : logosData;
 
-                    // 3. 知識としての登録を強制
-                    KnowledgeCore.registerAndAbstract(processed, { source: source.url, type: 'external_fetch' });
+                    // 3. 知識としての登録を強制 (🚨 修正: knowledgeCore を利用)
+                    knowledgeCore.registerAndAbstract(processed, { source: source.url, type: 'external_fetch' });
                     
                     console.log(`Integrated external source: ${source.url}`);
                 } else {
@@ -48,7 +48,7 @@ const fetcherCore = {
                 }
             } catch (e) {
                 console.warn(`fetcher core Error for ${source.url}:`, e);
-                // Core層の沈黙論理にエラーを抽象化して通知
+                // Core層の沈黙論理にエラーを抽象化して通知 (🚨 修正: silenceCore を直接利用)
                 silenceCore.abstract(`fetcher Failure: ${source.url}`);
             }
         }
