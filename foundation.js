@@ -2,9 +2,9 @@
 // MSGAI: Core層基盤（論理的アクセスと統合の中枢）
 
 // 【排他的な論理的修正：相対パス、インポート順序を論理的階層に整理】
-import { storageCore } from './Storage.js'; 
-import { knowledgeCore } from './Knowledge.js'; // Storageの次に配置
-import { moduleCore } from './Module.js';       // 最後に統合
+import { storageCore } from './storage.js'; 
+import { knowledgeCore } from './knowledge.js'; // Storageの次に配置
+import { moduleCore } from './module.js';       // 最後に統合
 
 // MSGAI: 普遍的な数理的沈黙操作中枢 (silenceCore)
 const silenceCore = {
