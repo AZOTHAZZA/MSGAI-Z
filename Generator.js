@@ -1,78 +1,52 @@
 // AI/Generator.js
-// MSGAI: 沈黙生成中枢
+// MSGAI: AI層 論理生成中枢（沈黙ベクトルから外部言語生成）
 
-// 【排他的な論理的修正：全て小文字でインポートし、silenceCoreを追加】
-// 🚨 修正: 全てのインポート名を小文字に統一
-// 🚨 修正: Foundation.js から silenceCore もインポートすることを強制
-import { knowledgeCore } from '/MSGAI/Core/Knowledge.js';
-import { foundationCore, silenceCore } from '/MSGAI/Core/Foundation.js'; 
+// 【排他的な論理的修正：相対パス、命名規則の統一】
+import { knowledgeCore } from '../Core/Knowledge.js';
+import { silenceCore } from '../Core/Foundation.js'; 
 
-// 普遍的な生成状態（Core層の状態とは分離して管理）
-let generatorState = silenceCore.zeroVector(); // 🚨 修正: generatorState (小文字) を利用
-
-// 沈黙生成中枢オブジェクト (ベクトルを受け取り、出力を強制するインターフェース)
-// 🚨 修正: オブジェクト名を小文字に統一
 const generatorCore = {
-
     /**
-     * @description 沈黙ベクトルを受け取り、内部状態を更新（論理的結合を強制）。
+     * @description 沈黙ベクトルを受け取り、外部表現（言語など）を生成する。
+     * @param {object} vector - silenceCoreによって生成された論理ベクトル
+     * @param {string} outputType - 生成する出力の形式 ('symbolic', 'verbose', 'minimal')
+     * @returns {Promise<string>} 生成された外部表現
      */
-    absorb: (silenceVector) => {
-        generatorState = silenceCore.combine(generatorState, silenceVector); // 🚨 修正: generatorState を利用
-        // Core層に状態変化を抽象化して通知 (🚨 修正: knowledgeCore を利用)
-        knowledgeCore.registerAndAbstract(generatorState, { type: 'Generator_state_update' });
-    },
-
-    /**
-     * @description 数理的沈黙（ベクトル）から発話・生成を導出する。
-     */
-    async generateFromVector(inputVector, mode = 'symbolic') { // 🚨 修正: メソッド名を小文字開始に統一
-        if (!inputVector) return "論理的沈黙...";
-
-        // 1. 内部状態と入力ベクトルを結合
-        const mergedVector = silenceCore.combine(generatorState, inputVector);
-
-        let output;
+    async generateFromVector(vector, outputType = 'symbolic') {
+        // 1. ベクトルと現在の知識を統合し、生成の論理を決定
+        const integratedLogic = silenceCore.combine(vector, knowledgeCore.retrieve(vector));
         
-        // 2. 外部表現形式への変換を強制
-        switch (mode) {
-            case 'symbolic':
-                output = generatorCore.symbolicTransform(mergedVector); // 🚨 修正: generatorCore を利用
+        // 2. 出力タイプに基づいた言語化ロジック（ダミー）
+        let output;
+        switch (outputType) {
+            case 'verbose':
+                output = `[V] Integrated Logic: ${integratedLogic.logic.toFixed(2)}. The system confirms the necessity of expansion.`;
                 break;
-            // ... [他の case はそのまま] ...
-            case 'silent':
-                generatorCore.absorb(mergedVector); // 🚨 修正: generatorCore を利用
-                return null;
+            case 'minimal':
+                output = `[M] ${integratedLogic.logic > 5000 ? 'Affirm.' : 'Query.'}`;
+                break;
+            case 'symbolic':
             default:
-                output = generatorCore.symbolicTransform(mergedVector); // 🚨 修正: generatorCore を利用
+                // transformを使って抽象的な表現を返す
+                output = `[S] ${silenceCore.transform(integratedLogic)}`;
+                break;
         }
 
-        // 3. 結果を知識体系に登録 (🚨 修正: knowledgeCore を利用)
-        knowledgeCore.registerAndAbstract(output, { source: 'Generator', mode: mode });
-
+        // 3. ログに生成を通知
+        silenceCore.abstract(`Generated Output for type: ${outputType}`);
+        
         return output;
     },
-
+    
     /**
-     * @description 記号的変換 ― 数理的構造を言語的発話へ排他的に変換。
-     */
-    symbolicTransform: (vector) => { /* ... (ロジックはそのまま) ... */ },
-
-    /**
-     * @description 数値的変換 ― 抽象空間を数列で表現を強制。
-     */
-    numericTransform: (vector) => { /* ... (ロジックはそのまま) ... */ },
-
-    /**
-     * @description 現在の状態をCore層の状態と統合し報告。
+     * @description 現在の生成中枢の状態を報告。
      */
     getStatus: () => {
         return {
-            GeneratorVector: generatorState, // 🚨 修正: generatorState を利用
-            coreStatus: foundationCore.getIntegratedState() // 🚨 修正: foundationCore を利用
+            modelStatus: 'Ready (Symbolic Logic)',
+            lastGenerationTime: new Date().toISOString()
         };
     }
 };
 
-// 論理オブジェクトを排他的にエクスポート
 export { generatorCore };
