@@ -13,12 +13,11 @@ const CORE_ASSETS = [
   `${MSGAI_ROOT}/styles.css`,
   // 全てのCore/AIモジュールを排他的にキャッシュ対象に強制
   `${MSGAI_ROOT}/Fusion/fusionUI.js`,
-  `${MSGAI_ROOT}/Core/mathematical_silence.js`,
   `${MSGAI_ROOT}/Core/foundation.js`,
   `${MSGAI_ROOT}/Core/module.js`,
   `${MSGAI_ROOT}/Core/storage.js`,
   `${MSGAI_ROOT}/Core/external.js`,
-  `${MSGAI_ROOT}/Core/mathematical_silence_dialogue.js`,
+  `${MSGAI_ROOT}/Core/dialogue.js`,
   `${MSGAI_ROOT}/Core/knowledge.js`,
   `${MSGAI_ROOT}/AI/generator.js`,
   `${MSGAI_ROOT}/AI/fetchExternal.js`,
