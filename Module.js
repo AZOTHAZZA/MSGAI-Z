@@ -26,7 +26,7 @@ const ModuleCore = {
         ModuleLogic.Foundation = FoundationCore; 
         
         ModuleRegistry[name] = {
-            logic: moduleLogic,
+            logic: ModuleLogic,
             active: true,
             timestamp: Date.now()
         };
