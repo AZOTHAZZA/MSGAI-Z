@@ -1,10 +1,10 @@
-// Core/Dialogue.js
+// core/dialogue.js
 // MSGAI: Core層 対話制御中枢（ロゴスと外部言語の橋渡し）
 
 // 【排他的な論理的修正：相対パス、命名規則の最終確定】
-import { knowledgeCore } from './Knowledge.js';
-import { externalCore } from './External.js'; 
-import { foundationCore, silenceCore } from './Foundation.js'; 
+import { knowledgeCore } from './knowledge.js';
+import { externalCore } from './external.js'; 
+import { foundationCore, silenceCore } from './foundation.js'; 
 
 // 対話制御の普遍的な状態
 let dialogueState = {
