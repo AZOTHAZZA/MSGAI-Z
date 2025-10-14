@@ -1,77 +1,67 @@
- // AI/Fetch.js
-// MSGAI: 外部沈黙接続中枢
+// AI/Fetch.js
+// MSGAI: 外部沈黙接続中枢（外部リソース取得と知識統合）
 
-// 【排他的な論理的修正：パスの絶対化と名前付きインポートを強制】
-// 🚨 修正: silenceCore を FoundationCore の論理からインポートすることを強制
-import { knowledgeCore } from '/MSGAI/Core/Knowledge.js';
-import { externalCore } from '/MSGAI/Core/External.js'; 
-import { silenceCore } from '/MSGAI/Core/Foundation.js'; // 🚨 修正: silenceCore を追加
+// 【排他的な論理的修正：相対パス、命名規則の統一】
+import { knowledgeCore } from '../Core/Knowledge.js';
+import { externalCore } from '../Core/External.js'; 
+import { silenceCore } from '../Core/Foundation.js'; // silenceCore は Foundation から取得
 
-// 普遍的な情報源レジストリ
-const sourceRegistry = [];
+// 外部同期ソースの定義（ダミー）
+const syncSources = [
+    { name: 'zeitgeist_feed', url: '/api/zeitgeist', interval: 3600000 },
+    { name: 'local_settings', url: '/api/settings', interval: 86400000 }
+];
 
-// 外部取得中枢オブジェクト (外部情報の取得と論理形式への変換を担う)
 const fetcherCore = {
-
     /**
-     * @description 外部情報源を論理的に登録する。
+     * @description 外部リソースを周期的に取得し、知識ベースに統合する。
      */
-    registerSource: (url, transformFn = null) => {
-        if (externalCore.registerEndpoint(url, url)) { // Core層のexternalCoreにも登録を強制
-            sourceRegistry.push({ url, transformFn });
-            return true;
+    async synchronizeOnce() {
+        silenceCore.abstract("Fetcher Core Initiating Synchronize Once.");
+        
+        for (const source of syncSources) {
+            await fetcherCore.fetchAndIntegrate(source);
         }
-        return false;
+        
+        silenceCore.abstract("Fetcher Core Synchronization Complete.");
     },
 
     /**
-     * @description 全ての外部情報源からデータを沈黙的に取得し、Coreに統合する。
+     * @description 特定のソースからデータを取得し、知識として統合する。
      */
-    async fetchAndIntegrateAll() {
-        for (const source of sourceRegistry) {
-            try {
-                // 1. Core層の externalCore を通じた観測を強制
-                const logosData = await externalCore.fetchData(source.url, { responseType: 'text' }); 
-
-                if (logosData) {
-                    // 2. 任意変換（外部情報取得層固有の論理的処理）
-                    const processed = source.transformFn
-                        ? source.transformFn(logosData)
-                        : logosData;
-
-                    // 3. 知識としての登録を強制 (🚨 修正: knowledgeCore を利用)
-                    knowledgeCore.registerAndAbstract(processed, { source: source.url, type: 'external_fetch' });
-                    
-                    console.log(`Integrated external source: ${source.url}`);
-                } else {
-                    console.log(`external source ${source.url} returned logical silence (or is in silence mode).`);
-                }
-            } catch (e) {
-                console.warn(`fetcher core Error for ${source.url}:`, e);
-                // Core層の沈黙論理にエラーを抽象化して通知 (🚨 修正: silenceCore を直接利用)
-                silenceCore.abstract(`fetcher Failure: ${source.url}`);
+    async fetchAndIntegrate(source) {
+        try {
+            // 1. ExternalCoreを使用してデータを取得
+            const logosData = await externalCore.fetchData(source.name, { method: 'GET' });
+            
+            if (logosData) {
+                // 2. 取得したロゴスデータを知識として登録
+                knowledgeCore.registerAndAbstract(logosData, { 
+                    source: source.name, 
+                    type: 'external_fetch' 
+                });
+                silenceCore.abstract(`Fetcher Success: ${source.name} integrated.`);
+            } else {
+                 // 沈黙モードなどでデータが返されなかった場合
+                silenceCore.abstract(`Fetcher Skip: ${source.name} (Silent Mode/No Data).`);
             }
+        } catch (e) {
+            console.warn(`Fetcher Core Error for ${source.name}:`, e);
+            // 失敗時も論理を抽象化
+            silenceCore.abstract(`Fetcher Failure: ${source.name}`);
         }
-    },
-
-    /**
-     * @description 外界沈黙との周期的同期はPWA/App層に排他的に委譲されるため、
-     * このメソッドは統合実行のみを担う。
-     */
-    synchronizeOnce: () => {
-        return fetcherCore.fetchAndIntegrateAll();
     },
     
     /**
-     * @description 現在の外部取得中枢の状態を取得（デバッグ/論理確認用）。
+     * @description 現在の同期状態を報告。
      */
     getStatus: () => {
         return {
-            sourceCount: sourceRegistry.length,
-            endpoints: externalCore.getStatus()
+            lastSyncAttempt: new Date().toISOString(),
+            sourcesCount: syncSources.length,
+            knowledgeCount: knowledgeCore.getSummary().count // 知識ベースのサイズを参照
         };
     }
 };
 
-// 論理オブジェクトを排他的にエクスポート
 export { fetcherCore };
