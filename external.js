@@ -2,7 +2,7 @@
 // MSGAI: Core層 外部結合中枢
 
 // 【排他的な論理的修正：相対パス、silenceCoreを直接利用】
-import { foundationCore, silenceCore } from './Foundation.js'; 
+import { foundationCore, silenceCore } from './foundation.js'; 
 
 // 普遍的なエンドポイントレジストリ
 const endpointsRegistry = new Map();
