@@ -1,5 +1,5 @@
-// /MSGAI/Fusion/FusionUI.js
-// MSGAI: 沈黙UI統合層（Fusion層）
+// app/fusionUI.js
+// MSGAI: 沈黙ui統合層（fusion層）
 
 // 【排他的な論理的修正：全ての内部インポートを厳密な相対パスに強制変更】
 import { foundationCore, silenceCore } from '../core/foundation.js'; // 🚨 Core層へ
