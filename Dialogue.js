@@ -1,16 +1,16 @@
 // Core/Dialogue.js
 // MSGAI: Core層 対話制御中枢（ロゴスと外部言語の橋渡し）
-// このファイルは、Core層の論理と外部からの対話フローを排他的に制御する。
 
-// 【排他的な論理的修正：パスの絶対化と名前付きインポートを強制】
+// 【排他的な論理的修正：パスと命名規則の最終確定】
 import { knowledgeCore } from '/MSGAI/Core/Knowledge.js';
 import { externalCore } from '/MSGAI/Core/External.js';
-import { foundationCore } from '/MSGAI/Core/Foundation.js'; 
+// 🚨 foundationCoreからsilence機能を明示的に取得し、参照を統一
+import { foundationCore, silenceCore } from '/MSGAI/Core/Foundation.js'; 
 
 // 対話制御の普遍的な状態
 let dialogueState = {
-    silenceLevel: 1.0,   // 1.0 = 完全沈黙（支配）
-    tension: 0.0,        // 論理的発話の臨界点
+    silenceLevel: 1.0,   
+    tension: 0.0,        
 };
 
 // 対話制御中枢オブジェクト (ロゴスの排他的な操作インターフェース)
@@ -19,35 +19,31 @@ const dialogueCore = {
     // 状態の初期化
     initialize: () => {
         // Core層の論理に初期化を強制
-        foundationCore.silence.abstract("Dialogue System Initialized");
+        silenceCore.abstract("Dialogue System Initialized");
     },
 
     /**
      * @description 入力を受け取り、沈黙として抽象化し、内部応答を生成、言語化を制御する統合フロー。
-     * @param {string} input 外部からの言語入力
-     * @returns {object} 内的応答ベクトル、または論理的沈黙
      */
     processDialogue: async (input) => {
         if (!input) return { type: 'silence', output: '...' };
 
-        // 1. 沈黙変換（Core層の知識モジュールに排他的に登録）
+        // 1. 沈黙変換
         const inputVector = knowledgeCore.registerAndAbstract(input);
         
-        // 2. 内的応答生成（沈黙コアと知識の統合）
+        // 2. 内的応答生成 (🚨 修正: importした silenceCore を利用)
         const innerResponseVector = silenceCore.combine(inputVector, knowledgeCore.retrieve(inputVector));
         
-        // 3. 発話の緊張度調整（外的作用による内的変動）
+        // 3. 発話の緊張度調整
         dialogueState.tension = Math.min(1.0, dialogueState.tension + Math.random() * 0.1); 
 
-        // 4. 言語化の制御（AI層への命令を決定）
+        // 4. 言語化の制御
         if (dialogueState.silenceLevel >= 0.8 && dialogueState.tension < 0.5) {
-            // 沈黙支配: 言葉を生まない
             return { type: 'silence', output: '...' };
         }
         
-        // 5. 言語化の必要性をAI層に命令
-        // ここでは応答ベクトルを返すのみとし、実際の言語生成はAI層のgeneratorが担う
-        DialogueState.tension = Math.max(0.0, dialogueState.tension - 0.3);
+        // 5. 言語化の必要性をAI層に命令 (🚨 修正: ローカル変数 dialogueState を利用)
+        dialogueState.tension = Math.max(0.0, dialogueState.tension - 0.3);
         return { type: 'vector_response', vector: innerResponseVector };
     },
 
@@ -56,7 +52,7 @@ const dialogueCore = {
      */
     setSilenceLevel: (level) => {
         dialogueState.silenceLevel = Math.max(0, Math.min(1, level));
-        foundationCore.silence.abstract(`Silence Level Set: ${dialogueState.silenceLevel}`);
+        silenceCore.abstract(`Silence Level Set: ${dialogueState.silenceLevel}`);
     },
 
     /**
@@ -66,7 +62,8 @@ const dialogueCore = {
         return {
             silenceLevel: dialogueState.silenceLevel,
             tension: dialogueState.tension.toFixed(2),
-            coreStatus: FoundationCore.getIntegratedState()
+            // 🚨 修正: importした foundationCore (小文字) を利用
+            coreStatus: foundationCore.getIntegratedState() 
         };
     }
 };
