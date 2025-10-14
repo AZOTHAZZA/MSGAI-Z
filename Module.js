@@ -54,10 +54,10 @@ const ModuleCore = {
      */
     getRegistryState: () => {
         // 論理的状態のみを抽出し、外部に公開
-        return Object.keys(moduleRegistry).map(name => ({
+        return Object.keys(ModuleRegistry).map(name => ({
             name: name,
-            active: moduleRegistry[name].active,
-            timestamp: moduleRegistry[name].timestamp
+            active: ModuleRegistry[name].active,
+            timestamp: ModuleRegistry[name].timestamp
         }));
     }
 };
