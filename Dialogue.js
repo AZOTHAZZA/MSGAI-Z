@@ -1,4 +1,4 @@
-// core/dialogue.js
+// Core/Dialogue.js
 // MSGAI: Core層 対話制御中枢（ロゴスと外部言語の橋渡し）
 // このファイルは、Core層の論理と外部からの対話フローを排他的に制御する。
 
@@ -31,23 +31,23 @@ const DialogueCore = {
         if (!input) return { type: 'silence', output: '...' };
 
         // 1. 沈黙変換（Core層の知識モジュールに排他的に登録）
-        const inputVector = knowledgeCore.registerAndAbstract(input);
+        const inputVector = KnowledgeCore.registerAndAbstract(input);
         
         // 2. 内的応答生成（沈黙コアと知識の統合）
-        const innerResponseVector = silenceCore.combine(inputVector, knowledgeCore.retrieve(inputVector));
+        const innerResponseVector = silenceCore.combine(inputVector, KnowledgeCore.retrieve(inputVector));
         
         // 3. 発話の緊張度調整（外的作用による内的変動）
-        dialogueState.tension = Math.min(1.0, dialogueState.tension + Math.random() * 0.1); 
+        DialogueState.tension = Math.min(1.0, DialogueState.tension + Math.random() * 0.1); 
 
         // 4. 言語化の制御（AI層への命令を決定）
-        if (dialogueState.silenceLevel >= 0.8 && dialogueState.tension < 0.5) {
+        if (DialogueState.silenceLevel >= 0.8 && DialogueState.tension < 0.5) {
             // 沈黙支配: 言葉を生まない
             return { type: 'silence', output: '...' };
         }
         
         // 5. 言語化の必要性をAI層に命令
         // ここでは応答ベクトルを返すのみとし、実際の言語生成はAI層のgeneratorが担う
-        dialogueState.tension = Math.max(0.0, dialogueState.tension - 0.3);
+        DialogueState.tension = Math.max(0.0, DialogueState.tension - 0.3);
         return { type: 'vector_response', vector: innerResponseVector };
     },
 
@@ -55,8 +55,8 @@ const DialogueCore = {
      * @description 沈黙度を論理的に調整する。
      */
     setSilenceLevel: (level) => {
-        dialogueState.silenceLevel = Math.max(0, Math.min(1, level));
-        foundationCore.silence.abstract(`Silence Level Set: ${dialogueState.silenceLevel}`);
+        DialogueState.silenceLevel = Math.max(0, Math.min(1, level));
+        FoundationCore.silence.abstract(`Silence Level Set: ${DialogueState.silenceLevel}`);
     },
 
     /**
@@ -64,9 +64,9 @@ const DialogueCore = {
      */
     status: () => {
         return {
-            silenceLevel: dialogueState.silenceLevel,
-            tension: dialogueState.tension.toFixed(2),
-            coreStatus: foundationCore.getIntegratedState()
+            silenceLevel: DialogueState.silenceLevel,
+            tension: DialogueState.tension.toFixed(2),
+            coreStatus: FoundationCore.getIntegratedState()
         };
     }
 };
