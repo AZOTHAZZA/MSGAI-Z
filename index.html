@@ -3,29 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MSGAI - Mathematical Silence Generator</title>
-    
-    <link rel="stylesheet" href="/MSGAI/styles.css">
-    <link rel="manifest" href="/MSGAI/manifest.json">
-    <link rel="icon" href="/MSGAI/icons/icon-192.png" type="image/png">
+    <title>MSGAI: 数理的沈黙システム</title>
+
+    <link rel="stylesheet" href="styles.css">
+
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="./icons/icon-192.png">
+
 </head>
 <body>
 
-    <header>
-        <h1>MSGAI: 数理的沈黙生成中枢</h1>
-        <div id="status-bar">
-            <span id="network-status">🌐 起動中...</span>
-            <span id="silence-level-display">🧘 沈黙度: 1.0</span>
-        </div>
-    </header>
-
-    <main>
-        <div id="msga-container">
+    <div id="msga-container">
+        <div id="loading-screen">
+            <h1>MSGAI: 数理的沈黙システム</h1>
+            <p>🌐 起動中... 🧘 沈黙度: <span class="silence-level">1.0</span></p>
             <p>UIの論理的描画を待機しています...</p>
         </div>
-    </main>
-    
-    <script type="module" src="/MSGAI/Fusion/FusionUI.js"></script>
+
+        <div id="main-ui" style="display: none;">
+            </div>
+    </div>
+
+    <script type="module" src="App/FusionUI.js"></script>
 
 </body>
 </html>
