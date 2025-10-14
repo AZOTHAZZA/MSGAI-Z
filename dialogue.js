@@ -3,10 +3,10 @@
 // このファイルは、Core層の論理と外部からの対話フローを排他的に制御する。
 
 // 【排他的な論理的修正：パスの絶対化と名前付きインポートを強制】
-import { silenceCore } from '/MSGAI/core/mathematical_silence.js';
-import { knowledgeCore } from '/MSGAI/core/knowledge.js';
-import { externalCore } from '/MSGAI/core/external.js';
-import { foundationCore } from '/MSGAI/core/foundation.js'; 
+import { silenceCore } from '/MSGAI/Core/silence.js';
+import { knowledgeCore } from '/MSGAI/Core/knowledge.js';
+import { externalCore } from '/MSGAI/Core/external.js';
+import { foundationCore } from '/MSGAI/Core/foundation.js'; 
 
 // 対話制御の普遍的な状態
 let dialogueState = {
