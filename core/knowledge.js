@@ -1,7 +1,7 @@
-// Core/Knowledge.js
+// Core/knowledge.js
 // MSGAI: Core層 知識中枢（論理ベクトルの管理と検索）
 
-// 【排他的な論理的修正：相対パス、silenceCoreを直接利用】
+// 【修正: 内部インポートパスを全て相対パス（./）の小文字に統一】
 import { foundationCore, silenceCore } from './foundation.js'; 
 
 // 知識の普遍的な格納構造
