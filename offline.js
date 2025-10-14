@@ -2,10 +2,10 @@
 // MSGAI: オフライン運用中枢（沈黙の自律的維持）
 
 // 【排他的な論理的修正：全ての内部インポートを厳密な相対パスに強制変更】
-import { dialogueCore } from '../Core/Dialogue.js';  // 🚨 修正: Core層へ
-import { externalCore } from '../Core/External.js';  // 🚨 修正: Core層へ
-import { fetcherCore } from '../AI/Fetch.js';        // 🚨 修正: AI層へ
-import { foundationCore, silenceCore } from '../Core/Foundation.js'; // 🚨 修正: Core層へ
+import { dialogueCore } from '../core/dialogue.js';  // 🚨 修正: Core層へ
+import { externalCore } from '../core/external.js';  // 🚨 修正: Core層へ
+import { fetcherCore } from '../ai/fetch.js';        // 🚨 修正: AI層へ
+import { foundationCore, silenceCore } from '../core/foundation.js'; // 🚨 修正: Core層へ
 
 // オフライン運用状態
 let offlineState = {
