@@ -4,10 +4,10 @@
 // このファイルは、ネットワーク接続を監視し、Core層の論理に排他的に命令を下す。
 
 // 【排他的な論理的修正：パスの絶対化と名前付きインポートを強制】
-import { dialogueCore } from '/MSGAI/core/mathematical_silence_dialogue.js';
-import { externalCore } from '/MSGAI/core/external.js';
-import { fetcherCore } from '/MSGAI/ai/fetchExternal.js'; 
-import { foundationCore } from '/MSGAI/core/foundation.js'; 
+import { dialogueCore } from '/MSGAI/Core/dialogue.js';
+import { externalCore } from '/MSGAI/Core/external.js';
+import { fetcherCore } from '/MSGAI/AI/fetchExternal.js'; 
+import { foundationCore } from '/MSGAI/Core/foundation.js'; 
 
 // オフライン運用状態
 let offlineState = {
