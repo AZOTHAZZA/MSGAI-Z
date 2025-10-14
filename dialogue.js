@@ -1,4 +1,4 @@
-// core/mathematical_silence_dialogue.js
+// core/dialogue.js
 // MSGAI: Core層 対話制御中枢（ロゴスと外部言語の橋渡し）
 // このファイルは、Core層の論理と外部からの対話フローを排他的に制御する。
 
