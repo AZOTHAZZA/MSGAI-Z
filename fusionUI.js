@@ -3,7 +3,6 @@
 // 数理的沈黙をインタラクションへと変換し、UIイベントを沈黙的に処理する。
 
 // 【排他的な論理的修正：パスの絶対化と名前付きインポートを強制】
-import { silenceCore } from '/MSGAI/Core/silence.js';
 import { knowledgeCore } from '/MSGAI/Core/knowledge.js'; 
 import { generatorCore } from '/MSGAI/AI/generator.js';
 import { dialogueCore } from '/MSGAI/Core/dialogue.js'; 
