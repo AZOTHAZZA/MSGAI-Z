@@ -2,9 +2,9 @@
 // MSGAI: App層 外部命令仲介中枢（UIイベントとCore/AI論理の橋渡し）
 
 // 【排他的な論理的修正：厳密な相対パスを使用】
-import { dialogueCore } from '../Core/Dialogue.js'; 
-import { generatorCore } from '../AI/Generator.js';
-import { silenceCore } from '../Core/Foundation.js'; // 抽象化のためにFoundationからインポート
+import { dialogueCore } from '../core/dialogue.js'; 
+import { generatorCore } from '../ai/generator.js';
+import { silenceCore } from '../core/foundation.js'; // 抽象化のためにFoundationからインポート
 
 const handlerCore = {
     
