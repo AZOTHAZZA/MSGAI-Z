@@ -1,93 +1,103 @@
 // sw.js
-// MSGAI: 沈黙外界遮断膜（Service Worker）
+// MSGAI: Service Worker (PWAとオフライン論理の制御)
 
-const CACHE_NAME = 'msgai-silence-cache-v3'; // 🚨 v3にバージョンアップ
-const MSGAI_ROOT = '/MSGAI'; 
+// 🚨 修正: バージョンを強制的に引き上げ、古いキャッシュを排除
+const CACHE_NAME = 'msga-v4'; 
 
-// 【排他的な論理的修正：全ファイルパスの絶対化と小文字統一を前提】
-const CORE_ASSETS = [
-  `${MSGAI_ROOT}/`,
-  `${MSGAI_ROOT}/index.html`,
-  `${MSGAI_ROOT}/manifest.json`,
-  `${MSGAI_ROOT}/styles.css`,
-  
-  // 🚨 修正: App層のパスを小文字に統一 (大文字小文字の区別を回避)
-  `${MSGAI_ROOT}/app/fusionui.js`, 
-  `${MSGAI_ROOT}/app/offline.js`,           
-  
-  // Core層のファイルを現在のリポジトリ構造に合わせて記述
-  `${MSGAI_ROOT}/Core/Foundation.js`, // Core層は既存の構造を維持する前提
-  `${MSGAI_ROOT}/Core/Module.js`,
-  `${MSGAI_ROOT}/Core/Storage.js`,
-  `${MSGAI_ROOT}/Core/External.js`,
-  `${MSGAI_ROOT}/Core/Dialogue.js`,
-  `${MSGAI_ROOT}/Core/Knowledge.js`,
-  `${MSGAI_ROOT}/AI/Generator.js`,
-  `${MSGAI_ROOT}/AI/Fetch.js`,              
-  // ... 他のCore/AI層ファイルもすべてここに含める
+// 🚨 修正: キャッシュするファイルを最小限の相対パスに絞り込み、404を回避
+const CACHE_ASSETS = [
+    './',           // ルートURL (https://azothazza.github.io/MSGAI/)
+    './index.html',
+
+    // 🚨 修正: 動作確認済みの正しい相対パス（小文字統一を前提）
+    './app/fusionui.js', 
+    './styles.css', 
+
+    // Core層の主要なファイルは、最も基本的なものに絞る
+    './Core/Foundation.js',
+    './Core/Knowledge.js', 
+    
+    // 依存関係にある他の Core, AI, App 層のファイルも、
+    // ここに適切な相対パスで追加する必要があります。
+    // 例:
+    // './Core/Dialogue.js',
+    // './AI/Generator.js',
+    // './app/offline.js',
 ];
 
-// インストール段階：沈黙の基礎構造をキャッシュ
+// ----------------------------------------------------
+// 1. インストール (キャッシュのセットアップ)
+// ----------------------------------------------------
 self.addEventListener('install', (event) => {
-  console.log('SW: Installing Cache V3...'); // ログ追加
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(CORE_ASSETS))
-    .catch(error => {
-        console.error('SW Installation Failed (Cache.addAll Error):', error);
-        // 🚨 致命的なパスエラーを防ぐため、エラーが発生したことをコンソールに出力
-        return Promise.reject(error);
-    })
-  );
-  self.skipWaiting();
-});
-
-// アクティベート：古いキャッシュを削除
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
-      )
-    )
-  );
-  self.clients.claim();
-});
-
-// フェッチ：沈黙的優先順位（キャッシュ優先・外界後回し）
-self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return; 
-
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        if (response) return response; 
-
-        return fetch(event.request)
-          .then(networkResponse => {
-            return caches.open(CACHE_NAME).then(cache => {
-              if (networkResponse.status === 200) {
-                 cache.put(event.request, networkResponse.clone());
-              }
-              return networkResponse;
-            });
-          })
-          .catch(() => {
-            // 外界との通信失敗時：index.htmlへの再誘導を強制
-            return caches.match(`${MSGAI_ROOT}/index.html`); 
-          });
-      })
-  );
-});
-
-// 周期的同期の強制
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'periodic-logos-sync') {
+    console.log('SW: Installing and opening cache...');
     event.waitUntil(
-      self.clients.matchAll().then(clients => {
-        clients.forEach(client => {
-          client.postMessage({ type: 'SYNC_FETCH_EXTERNAL', tag: event.tag });
-        });
-      })
+        caches.open(CACHE_NAME)
+            .then((cache) => {
+                console.log('SW: Pre-caching assets...');
+                return cache.addAll(CACHE_ASSETS);
+            })
+            .then(() => {
+                console.log('SW: Installation successful.');
+                // 既存のService Workerが終了するのを待たず、すぐにアクティベート
+                return self.skipWaiting();
+            })
+            .catch((error) => {
+                // 🚨 このエラーが頻繁に出ていました。404の原因を特定するためにログを出力
+                console.error('SW Installation Failed (Cache.addAll Error):', error);
+            })
     );
-  }
+});
+
+// ----------------------------------------------------
+// 2. アクティベート (古いキャッシュのクリーンアップ)
+// ----------------------------------------------------
+self.addEventListener('activate', (event) => {
+    console.log('SW: Activating and clearing old cache...');
+    event.waitUntil(
+        // 現在のバージョン（CACHE_NAME）以外のキャッシュを全て削除
+        caches.keys().then((cacheNames) => {
+            return Promise.all(
+                cacheNames.map((cacheName) => {
+                    if (cacheName !== CACHE_NAME) {
+                        console.log('SW: Deleting old cache:', cacheName);
+                        return caches.delete(cacheName);
+                    }
+                })
+            );
+        }).then(() => {
+            console.log('SW: Activation complete.');
+            return self.clients.claim();
+        })
+    );
+});
+
+// ----------------------------------------------------
+// 3. フェッチ (ネットワーク戦略: Cache-First)
+// ----------------------------------------------------
+self.addEventListener('fetch', (event) => {
+    event.respondWith(
+        caches.match(event.request)
+            .then((response) => {
+                // キャッシュに見つかった場合はそれを返す
+                if (response) {
+                    return response;
+                }
+                
+                // キャッシュに見つからない場合はネットワークから取得
+                return fetch(event.request);
+            })
+            .catch((error) => {
+                // ネットワークとキャッシュの両方で失敗した場合のフォールバック処理
+                console.error('SW Fetch failed:', event.request.url, error);
+            })
+    );
+});
+
+// ----------------------------------------------------
+// 4. メッセージング（Foundation Coreとの連携を想定）
+// ----------------------------------------------------
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
 });
