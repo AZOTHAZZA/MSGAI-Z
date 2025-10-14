@@ -3,7 +3,6 @@
 // このファイルは、Core層の externalCore に依存し、取得した情報をknowledgeCoreに渡す役割を担う。
 
 // 【排他的な論理的修正：パスの絶対化と名前付きインポートを強制】
-import { silenceCore } from '/MSGAI/Core/silence.js';
 import { knowledgeCore } from '/MSGAI/Core/knowledge.js';
 import { externalCore } from '/MSGAI/Core/external.js'; // 外部通信のCore層中枢
 
