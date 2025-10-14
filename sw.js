@@ -12,15 +12,15 @@ const CORE_ASSETS = [
   `${MSGAI_ROOT}/manifest.json`,
   `${MSGAI_ROOT}/styles.css`,
   // 全てのCore/AIモジュールを排他的にキャッシュ対象に強制
-  `${MSGAI_ROOT}/Fusion/fusionUI.js`,
-  `${MSGAI_ROOT}/Core/foundation.js`,
-  `${MSGAI_ROOT}/Core/module.js`,
-  `${MSGAI_ROOT}/Core/storage.js`,
-  `${MSGAI_ROOT}/Core/external.js`,
-  `${MSGAI_ROOT}/Core/dialogue.js`,
-  `${MSGAI_ROOT}/Core/knowledge.js`,
-  `${MSGAI_ROOT}/AI/generator.js`,
-  `${MSGAI_ROOT}/AI/fetchExternal.js`,
+  `${MSGAI_ROOT}/Fusion/FusionUI.js`,
+  `${MSGAI_ROOT}/Core/Foundation.js`,
+  `${MSGAI_ROOT}/Core/Module.js`,
+  `${MSGAI_ROOT}/Core/Storage.js`,
+  `${MSGAI_ROOT}/Core/External.js`,
+  `${MSGAI_ROOT}/Core/Dialogue.js`,
+  `${MSGAI_ROOT}/Core/Knowledge.js`,
+  `${MSGAI_ROOT}/AI/Generator.js`,
+  `${MSGAI_ROOT}/AI/FetchExternal.js`,
 ];
 
 // インストール段階：沈黙の基礎構造をキャッシュ
