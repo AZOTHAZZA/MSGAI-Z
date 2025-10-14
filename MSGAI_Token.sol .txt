@@ -1,0 +1,29 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.21;
+
+/// @title MSGAI Token - Mathematical Silence Token
+/// @notice Represents the tokenization of "mathematical silence" as a core asset in MSGAI
+/// @dev Minimal ERC-20 template
+
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract MSGAI_Token is ERC20, Ownable {
+    // Constructor: initialize token name and symbol
+    constructor() ERC20("Mathematical Silence Token", "MSGAI") {
+        _mint(msg.sender, 1_000_000 * 10 ** decimals()); // Initial supply
+    }
+
+    /// @notice Mint new tokens (controlled by owner)
+    /// @param to Address to receive new tokens
+    /// @param amount Number of tokens to mint (with decimals)
+    function mint(address to, uint256 amount) external onlyOwner {
+        _mint(to, amount);
+    }
+
+    /// @notice Burn tokens from sender
+    /// @param amount Number of tokens to burn
+    function burn(uint256 amount) external {
+        _burn(msg.sender, amount);
+    }
+}
