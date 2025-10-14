@@ -2,7 +2,7 @@
 // MSGAI: Core層 知識中枢（論理ベクトルの管理と検索）
 
 // 【排他的な論理的修正：相対パス、silenceCoreを直接利用】
-import { foundationCore, silenceCore } from './Foundation.js'; 
+import { foundationCore, silenceCore } from './foundation.js'; 
 
 // 知識の普遍的な格納構造
 const knowledgeBase = new Map();
