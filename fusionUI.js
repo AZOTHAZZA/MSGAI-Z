@@ -3,10 +3,10 @@
 // 数理的沈黙をインタラクションへと変換し、UIイベントを沈黙的に処理する。
 
 // 【排他的な論理的修正：パスの絶対化と名前付きインポートを強制】
-import { silenceCore } from '/MSGAI/core/mathematical_silence.js';
-import { knowledgeCore } from '/MSGAI/core/knowledge.js'; 
-import { generatorCore } from '/MSGAI/ai/generator.js';
-import { dialogueCore } from '/MSGAI/core/mathematical_silence_dialogue.js'; 
+import { silenceCore } from '/MSGAI/Core/silence.js';
+import { knowledgeCore } from '/MSGAI/Core/knowledge.js'; 
+import { generatorCore } from '/MSGAI/AI/generator.js';
+import { dialogueCore } from '/MSGAI/Core/dialogue.js'; 
 import { offlineCore } from '/MSGAI/app/offline.js'; // オフラインコアをここで起動するためインポートを強制
 
 class FusionUI {
