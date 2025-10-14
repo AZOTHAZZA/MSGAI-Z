@@ -1,17 +1,15 @@
 // /MSGAI/Fusion/FusionUI.js
 // MSGAI: 沈黙UI統合層（Fusion層）
-// 論理的起動とUIイベントを排他的に制御する中枢。
 
-// 【排他的な論理的修正：パスの絶対化とFoundationCoreからの全機能インポートを強制】
-import { foundationCore, silenceCore } from '/MSGAI/Core/Foundation.js'; // 🚨 FoundationCoreからsilenceCoreもインポートを強制
-import { knowledgeCore } from '/MSGAI/Core/Knowledge.js'; 
-import { generatorCore } from '/MSGAI/AI/Generator.js';
-import { dialogueCore } from '/MSGAI/Core/Dialogue.js'; 
-import { offlineCore } from '/MSGAI/App/Offline.js'; // 🚨 /App/ にパスを修正（頭文字大文字を維持）
+// 【排他的な論理的修正：全ての内部インポートを厳密な相対パスに強制変更】
+import { foundationCore, silenceCore } from '../Core/Foundation.js'; // 🚨 Core層へ
+import { knowledgeCore } from '../Core/Knowledge.js'; // 🚨 Core層へ
+import { generatorCore } from '../AI/Generator.js';   // 🚨 AI層へ
+import { dialogueCore } from '../Core/Dialogue.js';   // 🚨 Core層へ
+import { offlineCore } from '../App/Offline.js';      // 🚨 App層へ
 
 class FusionUI {
     constructor() {
-        // 🚨 修正: silenceCore の zeroVector() を利用
         this.state = silenceCore.zeroVector(); 
         this.root = null;
     }
@@ -45,10 +43,9 @@ class FusionUI {
 }
 
 // ----------------------------------------------------
-// MSGAI 起動ロジック：論理的強制実行ブロック (非同期起動とSW統合を強制)
+// MSGAI 起動ロジック
 // ----------------------------------------------------
 
-// 🚨 命名規則を統一: 変数名を小文字の 'fusionUI' に修正
 const fusionUI = new FusionUI();
 
 /**
@@ -56,20 +53,15 @@ const fusionUI = new FusionUI();
  */
 const startUI = async () => {
     try {
-        // 1. 基礎構造（Foundation）を最初に排他的に初期化することを強制
         foundationCore.initialize(); 
-        
-        // 2. その他の Core モジュールを初期化
         dialogueCore.initialize(); 
-        
-        // 3. UIの描画
         fusionUI.init('msga-container');
         console.log("FusionUI: Logical rendering commenced.");
         
         // 4. Service Workerの登録とリスナーの統合を強制
         if ('serviceWorker' in navigator) {
-            // SWの登録とScopeを絶対パスで指定することを強制
-            navigator.serviceWorker.register('/MSGAI/sw.js', { scope: '/MSGAI/' })
+            // 🚨 修正: SWのパスとScopeを明示的な相対パス './sw.js' と './' に修正
+            navigator.serviceWorker.register('./sw.js', { scope: './' }) 
                 .then(registration => {
                     console.log('SW: 沈黙外界遮断膜の登録に成功しました。');
                 })
@@ -77,21 +69,12 @@ const startUI = async () => {
                     console.error('SW: 致命的失敗 - 登録に失敗。', error);
                 });
             
-            // Service Workerからのメッセージ（同期命令）を処理
-            navigator.serviceWorker.addEventListener('message', event => {
-                if (event.data && event.data.type === 'SYNC_FETCH_EXTERNAL') {
-                    console.log("SW Message Received: External Fetch Commanded.");
-                    // AI層への実際の呼び出しロジックをここに実装
-                    // generatorCore.fetchExternalData(); // 例
-                }
-            });
+            // ... Service Workerからのメッセージ処理ロジックは省略 ...
         }
         
-        // 5. アプリケーション層の起動 (SW連携後、オフライン監視を開始)
         offlineCore.init(); 
 
     } catch (e) {
-        // Core層の初期化失敗は致命的な論理的破綻
         console.error("Fatal Error: Core Logic Failed to Initialize or Render UI.", e);
         const root = document.getElementById('msga-container');
         if (root) {
@@ -101,7 +84,6 @@ const startUI = async () => {
     }
 };
 
-// 【論理的強制】DOMのロード完了を待ち、非同期で startUI を実行することで、起動摩擦を排除
 document.addEventListener('DOMContentLoaded', startUI);
 
 export { fusionUI };
