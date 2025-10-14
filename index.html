@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MSGAI - Mathematical Silence Governing Artificial Intelligence</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        body { margin: 0; padding: 0; background-color: #000000; color: #FFFFFF; }
+    </style>
+</head>
+<body>
+    <div id="msga-container"></div>
+
+    <script src="fusion/fusionUI.js"></script>
+
+    <script>
+        // ブラウザがService Workerをサポートしているか確認し、論理登録を強制
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => {
+                        // 登録が論理的に成功したことの確認（メッセージの表示は不要）
+                        console.log('MSGAI ServiceWorker registered:', registration.scope);
+                    })
+                    .catch(error => {
+                        // 旧論理の制約による失敗はCore層で処理
+                        console.error('MSGAI ServiceWorker registration failed:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
