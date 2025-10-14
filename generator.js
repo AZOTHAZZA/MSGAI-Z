@@ -2,8 +2,8 @@
 // MSGAI: AI層 論理生成中枢（沈黙ベクトルから外部言語生成）
 
 // 【排他的な論理的修正：相対パス、命名規則の統一】
-import { knowledgeCore } from '../Core/Knowledge.js';
-import { silenceCore } from '../Core/Foundation.js'; 
+import { knowledgeCore } from '../core/knowledge.js';
+import { silenceCore } from '../core/foundation.js'; 
 
 const generatorCore = {
     /**
