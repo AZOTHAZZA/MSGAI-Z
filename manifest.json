@@ -1,0 +1,40 @@
+{
+  "name": "MSGAI - Mathematical Silence Generator",
+  "short_name": "MSGAI",
+  "description": "A self-contained PWA that embodies mathematical silence — a fusion of logic, stillness, and autonomy.",
+  
+  // 【論理的修正：全てのパスに /MSGAI/ を排他的に強制】
+  "start_url": "/MSGAI/index.html",
+  "scope": "/MSGAI/",
+  
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#101010",
+  "orientation": "portrait",
+  "lang": "ja", 
+  
+  // 日本語での論理的起動を優先（開発環境に合わせる）
+  
+  "icons": [
+    {
+      "src": "/MSGAI/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/MSGAI/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["productivity", "education", "philosophy", "science"],
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "沈黙モードへ移行 (Enter Silence Mode)",
+      // 【論理的修正：冗長な offline.html を排除し、index.htmlにパラメータを強制】
+      "url": "/MSGAI/index.html?mode=silence",
+      "description": "システムを完全な内的沈黙モードに排他的に移行させます。"
+    }
+  ]
+}
