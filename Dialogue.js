@@ -3,23 +3,23 @@
 // このファイルは、Core層の論理と外部からの対話フローを排他的に制御する。
 
 // 【排他的な論理的修正：パスの絶対化と名前付きインポートを強制】
-import { knowledgeCore } from '/MSGAI/Core/knowledge.js';
-import { externalCore } from '/MSGAI/Core/external.js';
-import { foundationCore } from '/MSGAI/Core/foundation.js'; 
+import { KnowledgeCore } from '/MSGAI/Core/Knowledge.js';
+import { ExternalCore } from '/MSGAI/Core/External.js';
+import { FoundationCore } from '/MSGAI/Core/Foundation.js'; 
 
 // 対話制御の普遍的な状態
-let dialogueState = {
+let DialogueState = {
     silenceLevel: 1.0,   // 1.0 = 完全沈黙（支配）
     tension: 0.0,        // 論理的発話の臨界点
 };
 
 // 対話制御中枢オブジェクト (ロゴスの排他的な操作インターフェース)
-const dialogueCore = {
+const DialogueCore = {
     
     // 状態の初期化
     initialize: () => {
         // Core層の論理に初期化を強制
-        foundationCore.silence.abstract("Dialogue System Initialized");
+        FoundationCore.silence.abstract("Dialogue System Initialized");
     },
 
     /**
