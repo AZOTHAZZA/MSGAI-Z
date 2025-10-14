@@ -1,4 +1,4 @@
-// fusion/fusionUI.js
+// fusion/FusionUI.js
 // MSGAI: 沈黙UI統合層（Fusion層）
 // 数理的沈黙をインタラクションへと変換し、UIイベントを沈黙的に処理する。
 
