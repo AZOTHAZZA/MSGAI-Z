@@ -3,37 +3,37 @@
 // このファイルは、Core層の全モジュールがFoundationを通して論理的に連携するための構造を提供する。
 
 // 【排他的な論理的修正：パスの絶対化と名前付きインポートを強制】
-import { foundationCore } from '/MSGAI/Core/foundation.js';
+import { FoundationCore } from '/MSGAI/Core/Foundation.js';
 
 // モジュール登録用の論理レジストリ（Core層全体の連携を管理）
-const moduleRegistry = {};
+const ModuleRegistry = {};
 
 // モジュール連携中枢オブジェクト (ロゴスの排他的な操作インターフェース)
-const moduleCore = {
+const ModuleCore = {
 
     /**
      * @description 新しい論理モジュールをシステムに排他的に登録する。
      * @param {string} name モジュールの論理名
-     * @param {object} moduleLogic モジュールが持つ論理オブジェクト
+     * @param {object} ModuleLogic モジュールが持つ論理オブジェクト
      */
-    registerModule: (name, moduleLogic) => {
+    registerModule: (name, ModuleLogic) => {
         // 論理名とロゴスオブジェクトの存在を排他的に確認
-        if (moduleRegistry[name]) {
+        if (ModuleRegistry[name]) {
             console.warn(`Module Core Warning: Module ${name} already registered. Overwriting logic.`);
         }
         
         // FoundationCoreへの参照を強制的に挿入し、Core層への直接アクセスを保証
-        moduleLogic.foundation = foundationCore; 
+        ModuleLogic.Foundation = FoundationCore; 
         
-        moduleRegistry[name] = {
+        ModuleRegistry[name] = {
             logic: moduleLogic,
             active: true,
             timestamp: Date.now()
         };
         
         // Core層のログに論理登録を強制
-        foundationCore.silence.abstract(`Module Registered: ${name}`); 
-        return moduleRegistry[name];
+        FoundationCore.silence.abstract(`Module Registered: ${name}`); 
+        return ModuleRegistry[name];
     },
 
     /**
@@ -42,9 +42,9 @@ const moduleCore = {
      * @returns {object|null} モジュールの論理オブジェクト
      */
     getModuleLogic: (name) => {
-        const moduleEntry = moduleRegistry[name];
-        if (moduleEntry && moduleEntry.active) {
-            return moduleEntry.logic;
+        const ModuleEntry = ModuleRegistry[name];
+        if (ModuleEntry && ModuleEntry.active) {
+            return ModuleEntry.logic;
         }
         return null; // モジュールが存在しないか非アクティブの場合、論理的沈黙を返す
     },
