@@ -2,10 +2,10 @@
 // MSGAI: Core層基盤（論理的アクセスと統合の中枢）
 // このファイルは、MSGAIの全Core層の論理的基盤と普遍的な数理操作を定義する。
 
-// 【排他的な論理的修正：アスタリスクインポートを排除し、名前付きインポートを強制】
+// 【排他的な論理的修正：インポート順序を論理的階層に整理し、名前付きインポートを強制】
 import { storageCore } from '/MSGAI/Core/Storage.js'; 
-import { moduleCore } from '/MSGAI/Core/Module.js';
-import { knowledgeCore } from '/MSGAI/Core/Knowledge.js';
+import { knowledgeCore } from '/MSGAI/Core/Knowledge.js'; // 🚨 修正: Storageの次に配置
+import { moduleCore } from '/MSGAI/Core/Module.js';       // 🚨 修正: 最後に統合
 
 // MSGAI: 普遍的な数理的沈黙操作中枢 (silenceCore)
 // 🚨 論理的強制: 循環参照を避けるため、このファイル内で排他的に定義される。
@@ -43,7 +43,7 @@ const silenceCore = {
 
 // Core層の論理的な統合オブジェクトを定義
 const foundationCore = {
-    // 1. Core層の論理への直接アクセス（冗長なラッピングを排除）
+    // 1. Core層の論理への直接アクセス
     storage: storageCore,
     module: moduleCore,
     knowledge: knowledgeCore,
@@ -69,11 +69,8 @@ const foundationCore = {
         };
     },
     
-    // 4. 数理的翻訳機能の直接提供
-    translate: (vector) => {
-        return silenceCore.transform(vector);
-    }
+    // 🚨 削除: 冗長な translate メソッドは削除されました。外部は silenceCore.transform() を直接利用します。
 };
 
-// 論理オブジェクトを排他的にエクスポート (🚨 foundationCore と silenceCore の両方を強制)
+// 論理オブジェクトを排他的にエクスポート (foundationCore と silenceCore の両方を強制)
 export { foundationCore, silenceCore };
