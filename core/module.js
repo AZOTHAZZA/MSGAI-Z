@@ -1,7 +1,7 @@
-// Core/Module.js
+// Core/module.js
 // MSGAI: Core層 モジュール管理中枢（論理モジュールの結合と登録）
 
-// 【排他的な論理的修正：相対パス、silenceCoreを直接利用】
+// 【修正: 内部インポートパスを全て相対パス（./）の小文字に統一】
 import { foundationCore, silenceCore } from './foundation.js'; 
 
 // 普遍的なモジュールレジストリ
