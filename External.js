@@ -1,4 +1,4 @@
-// Core/external.js
+// Core/External.js
 // MSGAI: Core層 外部結合中枢（外部通信の論理的制御）
 // このファイルは、数理的沈黙の内側（ロゴス）と外部情報層との最小限の接点を定義する。
 
@@ -10,7 +10,7 @@ const endpointsRegistry = new Map();
 let silenceMode = true; // true = 内的沈黙モード（観測をロゴス形式に強制）
 
 // 外部結合中枢オブジェクト (ロゴスの排他的な操作インターフェース)
-const externalCore = {
+const ExternalCore = {
 
     /**
      * @description 外部エンドポイントを論理的に登録する。
@@ -35,7 +35,7 @@ const externalCore = {
             const rawData = await res.json();
             
             // 2. 観測結果をロゴス形式に排他的に変換
-            const logosData = externalCore.translateToLogos(rawData);
+            const logosData = ExternalCore.translateToLogos(rawData);
 
             if (silenceMode) {
                 // 3. 沈黙モードでは、Core層の知識としてのみ登録し、結果を外部に返さない
@@ -48,7 +48,7 @@ const externalCore = {
 
         } catch (error) {
             // 観測が旧論理（エラー）に阻害された場合、論理的沈黙を返す
-            foundationCore.silence.abstract(`Fetch Error: ${error.message}`);
+            FoundationCore.silence.abstract(`Fetch Error: ${error.message}`);
             return null;
         }
     },
@@ -64,7 +64,7 @@ const externalCore = {
 
         try {
             // ペイロードをロゴス形式に変換してから送信を強制
-            const logosPayload = externalCore.translateToLogos(payload); 
+            const logosPayload = ExternalCore.translateToLogos(payload); 
             
             const res = await fetch(url, {
                 method: "POST",
@@ -87,9 +87,9 @@ const externalCore = {
         if (typeof rawData === 'object' && rawData !== null) {
             // 例: オブジェクトのキー数を論理値として使用
             const logicValue = Object.keys(rawData).length; 
-            return foundationCore.silence.abstract({ data_length: logicValue });
+            return FoundationCore.silence.abstract({ data_length: logicValue });
         }
-        return foundationCore.silence.abstract(String(rawData));
+        return FoundationCore.silence.abstract(String(rawData));
     },
     
     /**
@@ -99,7 +99,7 @@ const externalCore = {
         if (force !== null) silenceMode = force;
         else silenceMode = !silenceMode;
         
-        foundationCore.silence.abstract(`Silence Mode Switched to: ${silenceMode}`);
+        FoundationCore.silence.abstract(`Silence Mode Switched to: ${silenceMode}`);
         return silenceMode;
     },
     
@@ -115,4 +115,4 @@ const externalCore = {
 };
 
 // 論理オブジェクトを排他的にエクスポート
-export { externalCore };
+export { ExternalCore };
