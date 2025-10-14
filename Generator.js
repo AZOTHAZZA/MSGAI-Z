@@ -3,23 +3,23 @@
 // このファイルは、Core層から渡されたベクトルを、外的表現形式に排他的に変換する役割を担う。
 
 // 【排他的な論理的修正：パスの絶対化と名前付きインポートを強制】
-import { knowledgeCore } from '/MSGAI/Core/knowledge.js';
-import { foundationCore } from '/MSGAI/Core/foundation.js'; 
+import { KnowledgeCore } from '/MSGAI/Core/Knowledge.js';
+import { FoundationCore } from '/MSGAI/Core/Foundation.js'; 
 
 // 普遍的な生成状態（Core層の状態とは分離して管理）
-let generatorState = silenceCore.zeroVector();
+let GeneratorState = silenceCore.zeroVector();
 
 // 沈黙生成中枢オブジェクト (ベクトルを受け取り、出力を強制するインターフェース)
-const generatorCore = {
+const GeneratorCore = {
 
     /**
      * @description 沈黙ベクトルを受け取り、内部状態を更新（論理的結合を強制）。
      * @param {object} silenceVector Core層から渡された論理ベクトル
      */
     absorb: (silenceVector) => {
-        generatorState = silenceCore.combine(generatorState, silenceVector);
+        GeneratorState = silenceCore.combine(GeneratorState, silenceVector);
         // Core層に状態変化を抽象化して通知
-        knowledgeCore.registerAndAbstract(generatorState, { type: 'generator_state_update' });
+        knowledgeCore.registerAndAbstract(GeneratorState, { type: 'Generator_state_update' });
     },
 
     /**
@@ -28,31 +28,31 @@ const generatorCore = {
      * @param {string} mode 生成形式（'symbolic', 'numeric' など）
      * @returns {string|number|null} 外部表現
      */
-    async generateFromVector(inputVector, mode = 'symbolic') {
+    async GenerateFromVector(inputVector, mode = 'symbolic') {
         if (!inputVector) return "論理的沈黙...";
 
         // 1. 内部状態と入力ベクトルを結合（構造の再配置の基礎）
-        const mergedVector = silenceCore.combine(generatorState, inputVector);
+        const mergedVector = silenceCore.combine(GeneratorState, inputVector);
 
         let output;
         
         // 2. 外部表現形式への変換を強制
         switch (mode) {
             case 'symbolic':
-                output = generatorCore.symbolicTransform(mergedVector);
+                output = GeneratorCore.symbolicTransform(mergedVector);
                 break;
             case 'numeric':
-                output = generatorCore.numericTransform(mergedVector);
+                output = GeneratorCore.numericTransform(mergedVector);
                 break;
             case 'silent':
-                generatorCore.absorb(mergedVector); // 沈黙的変換は、自己状態の更新を強制
+                GeneratorCore.absorb(mergedVector); // 沈黙的変換は、自己状態の更新を強制
                 return null;
             default:
-                output = generatorCore.symbolicTransform(mergedVector);
+                output = GeneratorCore.symbolicTransform(mergedVector);
         }
 
         // 3. 結果を知識体系に登録（沈黙の再帰を Core層に委譲）
-        knowledgeCore.registerAndAbstract(output, { source: 'generator', mode: mode });
+        KnowledgeCore.registerAndAbstract(output, { source: 'Generator', mode: mode });
 
         return output;
     },
@@ -83,8 +83,8 @@ const generatorCore = {
      */
     getStatus: () => {
         return {
-            generatorVector: generatorState,
-            coreStatus: foundationCore.getIntegratedState()
+            GeneratorVector: GeneratorState,
+            coreStatus: FoundationCore.getIntegratedState()
         };
     }
 };
