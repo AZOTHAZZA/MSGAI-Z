@@ -1,4 +1,4 @@
-// ai/fetchExternal.js
+// AI/fetchExternal.js
 // MSGAI: 外部沈黙接続中枢（外部情報の取得とロゴス形式への排他的変換）
 // このファイルは、Core層の externalCore に依存し、取得した情報をknowledgeCoreに渡す役割を担う。
 
