@@ -45,13 +45,13 @@
         navigator.serviceWorker.addEventListener('message', event => {
             if (event.data && event.data.type === 'SYNC_FETCH_EXTERNAL') {
                 // sw.jsからの同期命令をCore層に排他的に伝達するためのダミーメッセージ。
-                // 実行は fusionUI.js の論理に委譲されます。
+                // 実行は FusionUI.js の論理に委譲されます。
                 console.log("SW Message Received: External Fetch Commanded. UI logic will execute.");
             }
         });
     </script>
 
-    <script type="module" src="/MSGAI/Fusion/fusionUI.js"></script>
+    <script type="module" src="/MSGAI/Fusion/FusionUI.js"></script>
 
 </body>
 </html>
