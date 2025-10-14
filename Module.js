@@ -15,6 +15,7 @@ const moduleCore = {
             return moduleRegistry[name];
         }
 
+        // FoundationCoreへのアクセスをモジュールに注入
         moduleLogic.foundation = foundationCore; 
         
         moduleRegistry[name] = moduleLogic;
