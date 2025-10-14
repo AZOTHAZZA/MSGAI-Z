@@ -2,11 +2,11 @@
 // MSGAI: 沈黙UI統合層（Fusion層）
 
 // 【排他的な論理的修正：全ての内部インポートを厳密な相対パスに強制変更】
-import { foundationCore, silenceCore } from '../Core/Foundation.js'; // 🚨 Core層へ
-import { knowledgeCore } from '../Core/Knowledge.js'; // 🚨 Core層へ
-import { generatorCore } from '../AI/Generator.js';   // 🚨 AI層へ
-import { dialogueCore } from '../Core/Dialogue.js';   // 🚨 Core層へ
-import { offlineCore } from '../App/Offline.js';      // 🚨 App層へ
+import { foundationCore, silenceCore } from '../Core/foundation.js'; // 🚨 Core層へ
+import { knowledgeCore } from '../core/knowledge.js'; // 🚨 Core層へ
+import { generatorCore } from '../ai/generator.js';   // 🚨 AI層へ
+import { dialogueCore } from '../core/dialogue.js';   // 🚨 Core層へ
+import { offlineCore } from '../app/offline.js';      // 🚨 App層へ
 
 class FusionUI {
     constructor() {
