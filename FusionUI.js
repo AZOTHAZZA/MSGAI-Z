@@ -3,10 +3,10 @@
 // 数理的沈黙をインタラクションへと変換し、UIイベントを沈黙的に処理する。
 
 // 【排他的な論理的修正：パスの絶対化と名前付きインポートを強制】
-import { knowledgeCore } from '/MSGAI/Core/knowledge.js'; 
-import { generatorCore } from '/MSGAI/AI/generator.js';
-import { dialogueCore } from '/MSGAI/Core/dialogue.js'; 
-import { offlineCore } from '/MSGAI/app/offline.js'; // オフラインコアをここで起動するためインポートを強制
+import { KnowledgeCore } from '/MSGAI/Core/Knowledge.js'; 
+import { GeneratorCore } from '/MSGAI/AI/Generator.js';
+import { DialogueCore } from '/MSGAI/Core/Dialogue.js'; 
+import { OfflineCore } from '/MSGAI/app/Offline.js'; // オフラインコアをここで起動するためインポートを強制
 
 class FusionUI {
     // ... [constructor と init メソッドの本体は変更なし] ...
@@ -56,7 +56,7 @@ class FusionUI {
 // MSGAI 起動ロジック：論理的強制実行ブロック (非同期起動を強制)
 // ----------------------------------------------------
 
-const fusionUI = new FusionUI();
+const FusionUI = new FusionUI();
 
 /**
  * @description UIのメイン論理を非同期で起動。DOMとCore層のロード完了を排他的に待機。
