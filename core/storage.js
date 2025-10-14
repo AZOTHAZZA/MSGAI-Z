@@ -1,7 +1,7 @@
-// Core/Storage.js
+// Core/storage.js
 // MSGAI: Core層 ストレージ中枢（データ永続化の排他的な制御）
 
-// 【排他的な論理的修正：このファイルには他のCore層への依存がない】
+// このファイルには他のCore層への依存がないため、インポート修正なし
 
 const storageCore = {
     
