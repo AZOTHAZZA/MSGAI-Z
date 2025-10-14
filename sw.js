@@ -13,6 +13,7 @@ const CORE_ASSETS = [
   `${MSGAI_ROOT}/styles.css`,
   // 全てのCore/AIモジュールを排他的にキャッシュ対象に強制
   `${MSGAI_ROOT}/Fusion/FusionUI.js`,
+  `${MSGAI_ROOT}/App/Offline.js`,           // 🚨 修正: App層の必須モジュールを追加
   `${MSGAI_ROOT}/Core/Foundation.js`,
   `${MSGAI_ROOT}/Core/Module.js`,
   `${MSGAI_ROOT}/Core/Storage.js`,
@@ -20,7 +21,7 @@ const CORE_ASSETS = [
   `${MSGAI_ROOT}/Core/Dialogue.js`,
   `${MSGAI_ROOT}/Core/Knowledge.js`,
   `${MSGAI_ROOT}/AI/Generator.js`,
-  `${MSGAI_ROOT}/AI/FetchExternal.js`,
+  `${MSGAI_ROOT}/AI/Fetch.js`,              // 🚨 修正: ファイル名を 'Fetch.js' に統一
 ];
 
 // インストール段階：沈黙の基礎構造をキャッシュ
