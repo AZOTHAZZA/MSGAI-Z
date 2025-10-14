@@ -1,79 +1,66 @@
 // sw.js
-// MSGAI: Service Worker (PWAとオフライン論理の制御)
+// MSGAI: Service Worker (PWA機能とオフラインキャッシング)
 
-// 🚨 修正: バージョンを強制的に引き上げ、古いキャッシュを排除
-const CACHE_NAME = 'msga-v4'; 
+// 【排他的な論理的修正：バージョンアップとキャッシュリスト最小化】
+// 🚨 最終修正: バージョンを上げて強制アップデート (msga-v5へ)
+const CACHE_NAME = 'msga-v5'; 
 
-// 🚨 修正: キャッシュするファイルを最小限の相対パスに絞り込み、404を回避
+// 🚨 最終修正: 確実な2ファイル（ルートとインデックス）のみに絞り込む
+// これ以外のファイルは、パスの問題を避けるため全て削除します。
 const CACHE_ASSETS = [
-    './',           // ルートURL (https://azothazza.github.io/MSGAI/)
-    './index.html',
-
-    // 🚨 修正: 動作確認済みの正しい相対パス（小文字統一を前提）
-    './app/fusionui.js', 
-    './styles.css', 
-
-    // Core層の主要なファイルは、最も基本的なものに絞る
-    './Core/Foundation.js',
-    './Core/Knowledge.js', 
-    
-    // 依存関係にある他の Core, AI, App 層のファイルも、
-    // ここに適切な相対パスで追加する必要があります。
-    // 例:
-    // './Core/Dialogue.js',
-    // './AI/Generator.js',
-    // './app/offline.js',
+    './',           // PWAが動作するMSGAIのルートURL
+    './index.html'
 ];
 
-// ----------------------------------------------------
-// 1. インストール (キャッシュのセットアップ)
-// ----------------------------------------------------
+/**
+ * インストールイベント: Service Workerが初めて登録されたときに実行される。
+ * 最小限の必須アセットをキャッシュする。
+ */
 self.addEventListener('install', (event) => {
-    console.log('SW: Installing and opening cache...');
+    // インストール失敗の原因となっていた Cache.addAll() を実行
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => {
-                console.log('SW: Pre-caching assets...');
+                console.log('SW: Opened cache and trying to add minimal assets...');
                 return cache.addAll(CACHE_ASSETS);
             })
             .then(() => {
-                console.log('SW: Installation successful.');
-                // 既存のService Workerが終了するのを待たず、すぐにアクティベート
-                return self.skipWaiting();
+                console.log('SW Installation Success: Minimal assets cached.');
             })
-            .catch((error) => {
-                // 🚨 このエラーが頻繁に出ていました。404の原因を特定するためにログを出力
-                console.error('SW Installation Failed (Cache.addAll Error):', error);
+            .catch((e) => {
+                // 🚨 このエラーが報告されていた問題の核心です。
+                console.error('SW Installation Failed (Cache.addAll Error):', e);
+                // 失敗しても SW の登録自体は続行させる（promiseはrejectされない）
             })
     );
 });
 
-// ----------------------------------------------------
-// 2. アクティベート (古いキャッシュのクリーンアップ)
-// ----------------------------------------------------
+
+/**
+ * アクティベートイベント: 古いキャッシュをクリーンアップする。
+ */
 self.addEventListener('activate', (event) => {
-    console.log('SW: Activating and clearing old cache...');
+    const cacheWhitelist = [CACHE_NAME];
     event.waitUntil(
-        // 現在のバージョン（CACHE_NAME）以外のキャッシュを全て削除
         caches.keys().then((cacheNames) => {
             return Promise.all(
                 cacheNames.map((cacheName) => {
-                    if (cacheName !== CACHE_NAME) {
+                    if (cacheWhitelist.indexOf(cacheName) === -1) {
                         console.log('SW: Deleting old cache:', cacheName);
                         return caches.delete(cacheName);
                     }
                 })
             );
-        }).then(() => {
-            console.log('SW: Activation complete.');
-            return self.clients.claim();
         })
     );
+    // クライアントを即座に制御する（Service Workerの即時有効化）
+    return self.clients.claim();
 });
 
-// ----------------------------------------------------
-// 3. フェッチ (ネットワーク戦略: Cache-First)
-// ----------------------------------------------------
+
+/**
+ * フェッチイベント: ネットワークリクエストを傍受し、キャッシュを優先する。
+ */
 self.addEventListener('fetch', (event) => {
     event.respondWith(
         caches.match(event.request)
@@ -82,22 +69,12 @@ self.addEventListener('fetch', (event) => {
                 if (response) {
                     return response;
                 }
-                
-                // キャッシュに見つからない場合はネットワークから取得
+                // キャッシュにない場合はネットワークリクエストを行う
                 return fetch(event.request);
             })
             .catch((error) => {
-                // ネットワークとキャッシュの両方で失敗した場合のフォールバック処理
-                console.error('SW Fetch failed:', event.request.url, error);
+                // オフライン時のフォールバック処理をここに記述（省略）
+                console.error('SW Fetch Error:', error);
             })
     );
-});
-
-// ----------------------------------------------------
-// 4. メッセージング（Foundation Coreとの連携を想定）
-// ----------------------------------------------------
-self.addEventListener('message', (event) => {
-    if (event.data && event.data.type === 'SKIP_WAITING') {
-        self.skipWaiting();
-    }
 });
