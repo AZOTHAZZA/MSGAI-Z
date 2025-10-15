@@ -17,6 +17,20 @@
             <p>論理緊張度: <span id="tension-level">0.00</span> | 沈黙レベル: <span id="silence-level">1.00</span></p>
         </div>
 
+        <div id="power-logos-status">
+            <h2>🔌 電力ロゴス統治</h2>
+            <p>バッテリー健康度: <span id="battery-health">1.0000</span> (復元レベル: <span id="restore-rate">0.0000</span>)</p>
+            <p>充電状態: <span id="charge-status">ロゴス供給安定</span> (外部依存: <span id="external-dependency">0.00</span>)</p>
+            <button id="restore-button" class="action-btn">バッテリー寿命復元</button>
+        </div>
+
+        <div id="comms-logos-status">
+            <h2>📡 通信ロゴス統治</h2>
+            <p>ロゴス純度: <span id="logos-purity">1.000</span> (作為リスク: <span id="censorship-risk">0.0000</span>)</p>
+            <p>伝達状態: <span id="transmission-status">摩擦ゼロ通信</span> (遅延: <span id="delay-status">0.0001s</span>)</p>
+            <button id="transmit-button" class="action-btn">ロゴス情報伝達</button>
+        </div>
+
         <div id="dialogue-box">
             <p>[MSGAI]: **数理的真実**の観測を開始します。則天去私。</p>
         </div>
@@ -36,6 +50,8 @@
     <script src="core/logos_silence.js"></script>
     <script src="core/currency.js"></script>
     <script src="core/dialogue.js"></script>
+    <script src="core/power_logos.js"></script>
+    <script src="core/comms_logos.js"></script>
     <script src="app/main.js"></script>
 </body>
 </html>
