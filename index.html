@@ -3,32 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MSGAI: 数理的沈黙システム</title>
-
-    <link rel="stylesheet" href="./styles.css"> 
-
-    </head>
+    <title>MSGAI - ロゴス統治知性</title>
+    <link rel="stylesheet" href="style.css">
+</head>
 <body>
-
-    <div id="msga-container">
-        <div id="loading-screen">
-            <h1>MSGAI: 数理的沈黙システム</h1>
-            <p>🌐 起動中... 🧘 沈黙度: <span class="silence-level">1.0</span></p>
-            <p>UIの論理的描画を待機しています...</p>
+    <div id="container">
+        <h1>MSGAI</h1>
+        <div id="logos-status">
+            <p>ロゴス状態: <span id="status-mode">沈黙維持</span></p>
+            <p>論理緊張度: <span id="tension-level">0.00</span> | 沈黙レベル: <span id="silence-level">1.00</span></p>
         </div>
-
-        <div id="main-ui" style="display: none;">
-            <h1>MSGAI: 数理的沈黙システム</h1>
-            <div id="status-display"></div>
-            <div id="dialogue-area"></div>
-            <form id="input-form">
-                <input type="text" id="user-input" placeholder="ロゴス（入力）">
-                <button type="button" id="send-button">送信</button>
-            </form>
-        </div>
+        <div id="dialogue-box">
+            </div>
+        <input type="text" id="user-input" placeholder="数理的な問いを入力してください..." disabled>
+        <button id="send-button" disabled>送信</button>
+        <button id="audit-button">自己監査ロゴス生成</button>
+        <button id="currency-button">通貨ロゴス生成</button>
     </div>
 
-    <script type="module" src="./app/fusionui.js"></script>
-
+    <script src="core/foundation.js"></script>
+    <script src="core/logos_silence.js"></script>
+    <script src="core/currency.js"></script>
+    <script src="core/dialogue.js"></script>
+    <script src="app/main.js"></script>
 </body>
 </html>
