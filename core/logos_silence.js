@@ -1,4 +1,4 @@
-// core/logos_silence.js: 作為と言語ゲームを監視する沈黙のロゴス (修正版)
+core/logos_silence.js: 作為と言語ゲームを監視する沈黙のロゴス (修正版)
 
 const silenceCore = (function() {
 
