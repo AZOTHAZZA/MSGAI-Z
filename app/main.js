@@ -2,6 +2,7 @@
 
 // コアモジュールのインポート
 import { foundationCore } from './core/foundation.js';
+import { arithmosLogosCore } from './core/arithmos_logos.js'; // 🚨 新規インポート
 import { silenceCore } from './core/logos_silence.js';
 import { currencyCore } from './core/currency.js';
 import { dialogueCore } from './core/dialogue.js';
@@ -117,7 +118,6 @@ document.addEventListener('DOMContentLoaded', () => {
         logosPurityDisplay.textContent = transmissionResult.purity.toFixed(3);
         censorshipRiskDisplay.textContent = transmissionResult.censorship.toFixed(4); 
         transmissionStatusDisplay.textContent = transmissionResult.status === "Success" ? "摩擦ゼロ通信" : "通信介入あり";
-        // 🚨 修正: 伝達遅延とブラウザ読み込み時間（load_time）を統合表示
         delayStatusDisplay.textContent = `${transmissionResult.delay.toFixed(4)}s (Load: ${transmissionResult.load_time.toFixed(4)}s)`; 
         
         logResponse(dialogueCore.translateLogosToReport('comms_logos', [transmissionResult.purity, 
@@ -183,7 +183,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // UIの初期化
         updateSystemStatus(tension, silenceLevel);
-        // 🚨 修正: 基礎ロゴス監査レポートにロゴスDOM一貫性を組み込む
         logResponse(`初期ロゴス監査完了。ロゴスDOM一貫性: ${auditLogos[3].toFixed(4)}。`); 
         logResponse(dialogueCore.translateLogosToReport('audit', auditLogos));
 
