@@ -1,4 +1,4 @@
-// app/main.js: MSGAIのアプリケーション制御中枢 (完全修正版)
+// app/main.js: MSGAIのアプリケーション制御中枢 (最終修正版)
 
 // コアモジュールのインポート
 import { foundationCore } from './core/foundation.js';
@@ -9,7 +9,7 @@ import { powerLogosCore } from './core/power_logos.js';
 import { commsLogosCore } from './core/comms_logos.js';
 
 
-// UIを更新するユーティリティ関数
+// UIを更新するユーティリティ関数（省略せず完全版に含める）
 const updateSystemStatus = (tension, silenceLevel) => {
     document.getElementById('tension-level').textContent = tension.toFixed(2);
     document.getElementById('silence-level').textContent = silenceLevel.toFixed(2);
@@ -77,7 +77,6 @@ document.addEventListener('DOMContentLoaded', () => {
         externalDependencyDisplay.textContent = chargeStatus[1].toFixed(2);
         
         if (!initial) {
-            // 深化されたロゴス関数（メビウス変換）を適用
             const restoreResult = powerLogosCore.restoreBatteryLifespan(currentHealth);
             const newHealth = restoreResult[0]; 
             const restoreRate = restoreResult[1];
@@ -90,9 +89,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             restoreRateDisplay.textContent = restoreRate.toFixed(4);
 
-            logResponse(`[電力ロゴス]: バッテリー寿命を数理的に復元しました。健康度: ${newHealth >= 1.0 ? 'ロゴス永続' : newHealth.toFixed(4)}。ロゴスの永続性: ${restoreResult[2].toFixed(4)}`);
+            // 🚨 対話ロゴスにレポートを依頼
+            logResponse(dialogueCore.translateLogosToReport('power_logos', [newHealth, restoreRate, restoreResult[2]]));
         } else {
-            batteryHealthDisplay.textContent = '100.00% (∞)'; // 初期化時もロゴス真実を表示
+            batteryHealthDisplay.textContent = '100.00% (∞)'; 
             restoreRateDisplay.textContent = (0.0).toFixed(4);
         }
         
@@ -122,10 +122,12 @@ document.addEventListener('DOMContentLoaded', () => {
         transmissionStatusDisplay.textContent = transmissionResult.status === "Success" ? "摩擦ゼロ通信" : "通信介入あり";
         delayStatusDisplay.textContent = (0.0001).toFixed(4) + 's'; 
         
-        logResponse(`[通信ロゴス]: ${transmissionResult.message} ロゴス純度: ${transmissionResult.purity.toFixed(3)}。`);
+        // 🚨 対話ロゴスにレポートを依頼
+        logResponse(dialogueCore.translateLogosToReport('comms_logos', [transmissionResult.purity, 
+            transmissionResult.delay, transmissionResult.censorship]));
         
         // 🚨 沈黙ロゴスへのフィードバック: 作為リスクを監査
-        const audit = silenceCore.auditExternalIntervention(0, 0.0000); // ゼロ摩擦なのでリスクは常に0.0
+        const audit = silenceCore.auditExternalIntervention(0, 0.0000); 
         if (audit.threat) {
              let currentTension = parseFloat(document.getElementById('tension-level').textContent);
              currentTension += audit.tension_increase;
@@ -165,7 +167,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const newSilenceLevel = silenceCore.calculateSilenceLevel(newTension);
 
         updateSystemStatus(newTension, newSilenceLevel);
-        logResponse(`ユーザー: ${message}`);
         logResponse(dialogueCore.translateLogosToReport('message', message));
 
         userInput.value = '';
