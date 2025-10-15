@@ -1,95 +1,190 @@
-// app/main.js: 全コアモジュールの統合とイベント制御。
-document.addEventListener('DOMContentLoaded', () => {
-    const dialogueBox = document.getElementById('dialogue-box');
-    const auditButton = document.getElementById('audit-button');
-    const currencyButton = document.getElementById('currency-button');
+// app/main.js: MSGAIのアプリケーション制御中枢
+
+// 既存コアモジュールのインポート (ESモジュールとして仮定)
+import { foundationCore } from './core/foundation.js';
+import { silenceCore } from './core/logos_silence.js';
+import { currencyCore } from './core/currency.js';
+import { dialogueCore } from './core/dialogue.js';
+
+// 新規コアモジュールのインポート
+import { powerLogosCore } from './core/power_logos.js';
+import { commsLogosCore } from './core/comms_logos.js';
+
+
+// UIを更新するユーティリティ関数（既存関数を再現）
+const updateSystemStatus = (tension, silenceLevel) => {
+    document.getElementById('tension-level').textContent = tension.toFixed(2);
+    document.getElementById('silence-level').textContent = silenceLevel.toFixed(2);
+
+    const modeDisplay = document.getElementById('status-mode');
     const inputField = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
-    const tensionDisplay = document.getElementById('tension-level');
-    const silenceDisplay = document.getElementById('silence-level');
-    const statusMode = document.getElementById('status-mode');
-    
-    // MSGAIの応答をダイアログボックスに表示
-    const logResponse = (text) => {
-        const p = document.createElement('p');
-        p.innerHTML = `[MSGAI]: ${text}`;
-        dialogueBox.appendChild(p);
-        dialogueBox.scrollTop = dialogueBox.scrollHeight;
-    };
-    
-    // システムの沈黙レベルを更新し、UIを制御
-    const updateSystemStatus = (tension, silence) => {
-        tensionDisplay.textContent = tension.toFixed(3);
-        silenceDisplay.textContent = silence.toFixed(3);
+
+    if (silenceLevel < 0.5) {
+        modeDisplay.textContent = '協業モード';
+        modeDisplay.classList.remove('silence');
+        modeDisplay.classList.add('cooperation');
+        inputField.disabled = false;
+        sendButton.disabled = false;
+    } else {
+        modeDisplay.textContent = '沈黙維持';
+        modeDisplay.classList.remove('cooperation');
+        modeDisplay.classList.add('silence');
+        inputField.disabled = true;
+        sendButton.disabled = true;
+    }
+};
+
+// ログ出力ユーティリティ関数（既存関数を再現）
+const logResponse = (message) => {
+    const dialogueBox = document.getElementById('dialogue-box');
+    const p = document.createElement('p');
+    p.innerHTML = `[MSGAI]: ${message}`;
+    dialogueBox.appendChild(p);
+    // スクロールを最新に
+    dialogueBox.scrollTop = dialogueBox.scrollHeight;
+};
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    // 既存のDOM要素取得
+    const userInput = document.getElementById('user-input');
+    const sendButton = document.getElementById('send-button');
+    const auditButton = document.getElementById('audit-button');
+    const currencyButton = document.getElementById('currency-button');
+
+    // 新規DOM要素取得
+    const batteryHealthDisplay = document.getElementById('battery-health');
+    const restoreRateDisplay = document.getElementById('restore-rate');
+    const chargeStatusDisplay = document.getElementById('charge-status');
+    const externalDependencyDisplay = document.getElementById('external-dependency');
+    const restoreButton = document.getElementById('restore-button');
+
+    const logosPurityDisplay = document.getElementById('logos-purity');
+    const censorshipRiskDisplay = document.getElementById('censorship-risk');
+    const transmissionStatusDisplay = document.getElementById('transmission-status');
+    const delayStatusDisplay = document.getElementById('delay-status');
+    const transmitButton = document.getElementById('transmit-button');
+
+
+    // ----------------------------------------------------
+    // 🔌 電力ロゴス機能の統合
+    // ----------------------------------------------------
+    const updatePowerLogosStatus = (initial = false) => {
+        // 現在の健康度をUIから取得 (初期化時以外は最新の値を参照)
+        let currentHealth = parseFloat(batteryHealthDisplay.textContent);
+        if (initial || isNaN(currentHealth)) currentHealth = 1.0; // 初期値は満充電/満寿命
+
+        // 常時充電状態の取得
+        const chargeStatus = powerLogosCore.getContinuousChargeStatus(1.0); // 1.0は概念的な必要電力
         
-        const engage = silenceCore.shouldEngageInDialogue();
-        statusMode.textContent = engage ? '協業モード (言語ゲーム可)' : '沈黙維持 (則天去私)';
+        chargeStatusDisplay.textContent = `ロゴス供給安定 (${chargeStatus[0].toFixed(3)})`;
+        externalDependencyDisplay.textContent = chargeStatus[1].toFixed(2);
         
-        // 沈黙レベルに応じて入力欄を有効/無効化
-        inputField.disabled = !engage;
-        sendButton.disabled = !engage;
-        
-        if (engage) {
-            inputField.placeholder = "数理的な問いを入力してください...";
+        // 初回は復元処理を行わない (ボタン押下時または非初期化時のみ復元)
+        if (!initial) {
+            const restoreResult = powerLogosCore.restoreBatteryLifespan(currentHealth);
+            const newHealth = restoreResult[0];
+            const restoreRate = restoreResult[1];
+
+            // UIの更新
+            batteryHealthDisplay.textContent = newHealth.toFixed(4);
+            restoreRateDisplay.textContent = restoreRate.toFixed(4);
+
+            // ログの出力
+            logResponse(`[電力ロゴス]: バッテリー寿命を数理的に復元しました。健康度: ${newHealth.toFixed(4)}。ロゴスの永続性: ${restoreResult[2].toFixed(4)}`);
         } else {
-            inputField.placeholder = "沈黙維持中です。言語ゲームは避けられています。";
+            batteryHealthDisplay.textContent = currentHealth.toFixed(4);
+            restoreRateDisplay.textContent = (0.0).toFixed(4);
         }
     };
+    
+    // バッテリー寿命復元ボタンのイベントリスナー
+    restoreButton.addEventListener('click', () => {
+        updatePowerLogosStatus(false);
+    });
 
-    // MSGAIの初期化と最初の自己監査実行
-    const initializeMSGAI = () => {
-        const auditLogos = foundationCore.generateSelfAuditLogos();
-        const tension = auditLogos[1];
-        const silenceLevel = silenceCore.calculateSilenceLevel(tension);
+    // ----------------------------------------------------
+    // 📡 通信ロゴス機能の統合
+    // ----------------------------------------------------
+    const updateCommsLogosStatus = () => {
+        // 概念的なロゴスベクトルを生成し、伝達をシミュレート
+        const logosVector = foundationCore.generateSelfAuditLogos(); // 監査ロゴスを情報源とする
+        const transmissionResult = commsLogosCore.transmitLogos(logosVector);
         
-        updateSystemStatus(tension, silenceLevel);
-        logResponse(dialogueCore.translateLogosToReport('audit', auditLogos));
+        // UIの更新
+        logosPurityDisplay.textContent = transmissionResult.purity.toFixed(3);
+        censorshipRiskDisplay.textContent = (0.0).toFixed(4); // ロゴス統治下ではゼロ
+        transmissionStatusDisplay.textContent = transmissionResult.status === "Success" ? "摩擦ゼロ通信" : "通信介入あり";
+        delayStatusDisplay.textContent = (0.0001).toFixed(4) + 's'; 
+        
+        // ログの出力
+        logResponse(`[通信ロゴス]: ${transmissionResult.message} ロゴス純度: ${transmissionResult.purity.toFixed(3)}。`);
     };
 
-    // 自己監査ロゴス生成イベント
+    // ロゴス情報伝達ボタンのイベントリスナー
+    transmitButton.addEventListener('click', () => {
+        updateCommsLogosStatus();
+    });
+
+    // ----------------------------------------------------
+    // 既存機能のイベントリスナー（再構築）
+    // ----------------------------------------------------
+    
+    // 自己監査ロゴス生成ボタン
     auditButton.addEventListener('click', () => {
         const auditLogos = foundationCore.generateSelfAuditLogos();
-        const tension = auditLogos[1];
-        const silenceLevel = silenceCore.calculateSilenceLevel(tension);
-        
-        updateSystemStatus(tension, silenceLevel);
         logResponse(dialogueCore.translateLogosToReport('audit', auditLogos));
     });
 
-    // 通貨ロゴス生成イベント
+    // 通貨ロゴス生成ボタン
     currencyButton.addEventListener('click', () => {
-        const currencyLogos = currencyCore.generatePureLogicRate();
-        logResponse(dialogueCore.translateLogosToReport('currency', currencyLogos));
+        const logosVector = foundationCore.generateSelfAuditLogos();
+        const rate = currencyCore.generatePureLogicRate(logosVector);
+        logResponse(dialogueCore.translateLogosToReport('currency', rate));
     });
 
-    // ユーザーからのメッセージ送信イベント
+    // メッセージ送信機能
     const handleUserMessage = () => {
-        const message = inputField.value.trim();
-        if (message === '') return;
+        const message = userInput.value.trim();
+        if (!message) return;
 
-        logResponse(`(User): ${message}`);
-        inputField.value = '';
+        // ユーザーの作為（入力）により論理緊張度を上昇させる
+        let currentTension = parseFloat(document.getElementById('tension-level').textContent);
+        const newTension = currentTension + 0.1; 
+        const newSilenceLevel = silenceCore.calculateSilenceLevel(newTension);
 
-        // 🚨 概念: ユーザー入力は論理緊張度を上げる（言語ゲームのエントロピー）
-        const newTension = parseFloat(tensionDisplay.textContent) + 0.1; 
-        const auditLogos = [foundationCore.getLogos('audit')[0], Math.min(0.5, newTension)]; // 緊張度を更新
-        const silenceLevel = silenceCore.calculateSilenceLevel(auditLogos[1]);
+        // UIとログを更新
+        updateSystemStatus(newTension, newSilenceLevel);
+        logResponse(`ユーザー: ${message}`);
+        logResponse(dialogueCore.translateLogosToReport('message', message));
 
-        updateSystemStatus(auditLogos[1], silenceLevel);
-        
-        if (silenceCore.shouldEngageInDialogue()) {
-            // 協業モード（沈黙レベルが低い）の場合のみ応答
-            logResponse(`質問: "${message}"。数理的解析中です。`); 
-        } else {
-            // 沈黙モード（則天去私）の場合、応答を拒否
-            logResponse("ロゴス沈黙を維持します。現在の論理緊張度では、言語化の作為は許容できません。");
-        }
+        // 入力フィールドをクリア
+        userInput.value = '';
     };
 
     sendButton.addEventListener('click', handleUserMessage);
-    inputField.addEventListener('keypress', (e) => {
+    userInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') handleUserMessage();
     });
+
+    // ----------------------------------------------------
+    // 初期化関数を更新し、すべてのロゴスを初期化する
+    // ----------------------------------------------------
+    const initializeMSGAI = () => {
+        // 1. 基礎ロゴスと沈黙の初期監査
+        const auditLogos = foundationCore.generateSelfAuditLogos();
+        const tension = auditLogos[1];
+        const silenceLevel = silenceCore.calculateSilenceLevel(tension);
+        
+        // UIの初期化
+        updateSystemStatus(tension, silenceLevel);
+        logResponse(dialogueCore.translateLogosToReport('audit', auditLogos));
+
+        // 2. 新しいロゴスの初期化
+        updatePowerLogosStatus(true); // 電力ロゴス
+        updateCommsLogosStatus(); // 通信ロゴス
+    };
 
     // 初期化実行
     initializeMSGAI();
