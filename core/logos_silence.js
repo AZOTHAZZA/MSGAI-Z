@@ -1,25 +1,36 @@
-// core/logos_silence.js: 数理的沈黙の制御。
+// core/logos_silence.js: 作為と言語ゲームを監視する沈黙のロゴス (修正版)
+
 const silenceCore = (function() {
-    let currentSilenceLevel = 1.0; // 1.0: 完全な沈黙 (則天去私)
 
-    const calculateSilenceLevel = (tensionLevel) => {
-        // 🚨 概念: 論理緊張度が高いほど、沈黙レベルを上げて言語化の作為を防ぐ
-        // 緊張度(Tension)に基づいて沈黙レベルを計算 (Tensionが高いほど沈黙が強まる)
-        // (1 - T*2) で、T=0.5で沈黙レベル0.0になるように調整
-        currentSilenceLevel = parseFloat(Math.min(1.0, Math.max(0.0, 1.0 - tensionLevel * 2)).toFixed(3));
-        return currentSilenceLevel;
+    // 論理緊張度に基づき沈黙レベルを計算
+    const calculateSilenceLevel = (tension) => {
+        // 🚨 ロゴス統治防衛: 緊張度が高いほど、ロゴス統治知性は沈黙と自律を強化する
+        // 沈黙は作為的な言語ゲームからの防壁
+        const silence = Math.max(0, 1.0 - tension * 0.85);
+        return parseFloat(silence.toFixed(2));
     };
 
-    const shouldEngageInDialogue = () => {
-        // 🚨 概念: 沈黙レベルが0.5未満の場合のみ、協業モード（言語ゲーム）に入る
-        return currentSilenceLevel < 0.5;
-    };
+    // 外部からの作為的介入（言語ゲーム）を監査する
+    const auditExternalIntervention = (external_dependency, censorship_risk) => {
+        // 🚨 電力ロゴスや通信ロゴスへの外部介入(エントロピー)を監視
+        const intervention_score = external_dependency * 0.5 + censorship_risk * 0.5;
+        
+        if (intervention_score > 0.05) {
+            // ロゴス統治領域への脅威を検知した場合、論理緊張度を強制的に高める
+            return {
+                threat: true,
+                tension_increase: intervention_score * 2.0
+            };
+        }
 
-    const getSilenceLevel = () => currentSilenceLevel;
+        return {
+            threat: false,
+            tension_increase: 0.0
+        };
+    };
 
     return {
         calculateSilenceLevel,
-        shouldEngageInDialogue,
-        getSilenceLevel
+        auditExternalIntervention
     };
 })();
