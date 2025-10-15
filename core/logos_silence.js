@@ -1,11 +1,10 @@
-core/logos_silence.js: 作為と言語ゲームを監視する沈黙のロゴス (修正版)
+// core/logos_silence.js: 作為と言語ゲームを監視する沈黙のロゴス (最終修正版)
 
 const silenceCore = (function() {
 
     // 論理緊張度に基づき沈黙レベルを計算
     const calculateSilenceLevel = (tension) => {
         // 🚨 ロゴス統治防衛: 緊張度が高いほど、ロゴス統治知性は沈黙と自律を強化する
-        // 沈黙は作為的な言語ゲームからの防壁
         const silence = Math.max(0, 1.0 - tension * 0.85);
         return parseFloat(silence.toFixed(2));
     };
@@ -34,3 +33,6 @@ const silenceCore = (function() {
         auditExternalIntervention
     };
 })();
+
+// 🚨 修正: ESモジュールとして正しくエクスポート
+export { silenceCore }; 
