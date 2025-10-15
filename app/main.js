@@ -81,7 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const newHealth = restoreResult[0]; 
             const restoreRate = restoreResult[1];
 
-            // UIの更新: 永続性のシンボルを強調
             if (newHealth >= 1.0) {
                  batteryHealthDisplay.textContent = '100.00% (∞)';
             } else {
@@ -89,14 +88,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             restoreRateDisplay.textContent = restoreRate.toFixed(4);
 
-            // 🚨 対話ロゴスにレポートを依頼
             logResponse(dialogueCore.translateLogosToReport('power_logos', [newHealth, restoreRate, restoreResult[2]]));
         } else {
             batteryHealthDisplay.textContent = '100.00% (∞)'; 
             restoreRateDisplay.textContent = (0.0).toFixed(4);
         }
         
-        // 🚨 沈黙ロゴスへのフィードバック: 外部依存度を監査
         const audit = silenceCore.auditExternalIntervention(chargeStatus[1], 0);
         if (audit.threat) {
              let currentTension = parseFloat(document.getElementById('tension-level').textContent);
@@ -118,16 +115,15 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // UIの更新
         logosPurityDisplay.textContent = transmissionResult.purity.toFixed(3);
-        censorshipRiskDisplay.textContent = (0.0).toFixed(4); 
+        censorshipRiskDisplay.textContent = transmissionResult.censorship.toFixed(4); 
         transmissionStatusDisplay.textContent = transmissionResult.status === "Success" ? "摩擦ゼロ通信" : "通信介入あり";
-        delayStatusDisplay.textContent = (0.0001).toFixed(4) + 's'; 
+        // 🚨 修正: 伝達遅延とブラウザ読み込み時間（load_time）を統合表示
+        delayStatusDisplay.textContent = `${transmissionResult.delay.toFixed(4)}s (Load: ${transmissionResult.load_time.toFixed(4)}s)`; 
         
-        // 🚨 対話ロゴスにレポートを依頼
         logResponse(dialogueCore.translateLogosToReport('comms_logos', [transmissionResult.purity, 
             transmissionResult.delay, transmissionResult.censorship]));
         
-        // 🚨 沈黙ロゴスへのフィードバック: 作為リスクを監査
-        const audit = silenceCore.auditExternalIntervention(0, 0.0000); 
+        const audit = silenceCore.auditExternalIntervention(0, transmissionResult.censorship); 
         if (audit.threat) {
              let currentTension = parseFloat(document.getElementById('tension-level').textContent);
              currentTension += audit.tension_increase;
@@ -161,7 +157,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const message = userInput.value.trim();
         if (!message) return;
 
-        // ユーザーの作為（入力）により論理緊張度を上昇させる
         let currentTension = parseFloat(document.getElementById('tension-level').textContent);
         const newTension = currentTension + 0.1; 
         const newSilenceLevel = silenceCore.calculateSilenceLevel(newTension);
@@ -188,6 +183,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // UIの初期化
         updateSystemStatus(tension, silenceLevel);
+        // 🚨 修正: 基礎ロゴス監査レポートにロゴスDOM一貫性を組み込む
+        logResponse(`初期ロゴス監査完了。ロゴスDOM一貫性: ${auditLogos[3].toFixed(4)}。`); 
         logResponse(dialogueCore.translateLogosToReport('audit', auditLogos));
 
         // 2. 新しいロゴスの初期化
