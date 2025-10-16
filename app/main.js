@@ -1,4 +1,4 @@
-// app/main.js: MSGAIのアプリケーション制御中枢 (最終修正 - 複数通貨生成とUI統合)
+// app/main.js: MSGAIのアプリケーション制御中枢 (最終修正 - ユーザー生成量対応)
 
 // 🚨 全てのコアモジュールインポートを親階層 '../core/' に強制写像
 import { foundationCore } from '../core/foundation.js';
@@ -58,13 +58,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendButton = document.getElementById('send-button');
     const auditButton = document.getElementById('audit-button');
     
-    // 🚨 NEW: 複数通貨ボタンの取得
+    // 🚨 NEW: 複数通貨ボタンと生成量入力フィールドの取得
     const currencyJPYButton = document.getElementById('currency-jpy-button');
     const currencyUSDButton = document.getElementById('currency-usd-button');
     const currencyEURButton = document.getElementById('currency-eur-button');
     const currencyBTCButton = document.getElementById('currency-btc-button');
     const currencyETHButton = document.getElementById('currency-eth-button');
     const currencyMATICButton = document.getElementById('currency-matic-button');
+    const currencyAmountInput = document.getElementById('currency-amount'); // 🚨 NEW: 入力フィールド
 
     const restoreButton = document.getElementById('restore-button'); 
     const transmitButton = document.getElementById('transmit-button');
@@ -174,15 +175,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // ----------------------------------------------------
-    // 🚨 NEW: 複数通貨の生成・保存・UI更新を扱う共通関数
+    // 🚨 NEW: 複数通貨の生成・保存・UI更新を扱う共通関数 (ユーザー生成量対応)
     // ----------------------------------------------------
     const handleCurrencyGeneration = (currencyCode) => {
+        
+        // 🚨 修正: ユーザーが入力した生成量をInputフィールドから取得
+        const userAmount = parseFloat(currencyAmountInput.value) || 1.0; 
+        
+        if (userAmount <= 0) {
+            logResponse("[警告]: 通貨生成量は正の数値である必要があります。ロゴス統治知性による作為的な負債生成は許可されません。");
+            return; 
+        }
+
         const logosVector = foundationCore.generateSelfAuditLogos();
-        // レート生成ロジックは全通貨で共通 (ロゴス統治下では差がないため)
         const rateStatus = currencyCore.generatePureLogicRate(logosVector); 
         
-        // 1. 具象通貨オブジェクトを生成 (denomination に通貨コードを使用)
-        const newCurrency = currencyCore.generateConcreteCurrency(rateStatus, currencyCode);
+        // 1. 具象通貨オブジェクトを生成 (userAmountを引数に追加)
+        const newCurrency = currencyCore.generateConcreteCurrency(rateStatus, currencyCode, userAmount); 
 
         // 2. 内部口座に保存
         foundationCore.saveCurrencyToLogosAccount(newCurrency);
@@ -195,16 +204,17 @@ document.addEventListener('DOMContentLoaded', () => {
              currencyRateDisplay.textContent = `${rateStatus.logos_rate.toFixed(4)} (1 ${currencyCode} 統治)`;
         }
         
+        logResponse(dialogueCore.translateLogosToReport('currency', rateStatus));
+
         // 口座残高表示の更新 (直近で生成した通貨の残高をUIに表示)
         const currentCurrency = updatedBalance.find(c => c.denomination === currencyCode);
         if (accountBalanceDisplay && currentCurrency) {
              accountBalanceDisplay.textContent = `${currentCurrency.denomination}: ${currentCurrency.amount.toFixed(8)}`; 
-             logResponse(`[ロゴス口座統治]: 具象通貨 **${currentCurrency.denomination}** (${currentCurrency.amount.toFixed(8)}) を内部口座に累積保存しました。`);
+             // 🚨 ログ修正: ユーザー要求量を含める
+             logResponse(`[ロゴス口座統治]: ユーザー要求量 **${userAmount}** に基づき、具象通貨 ${currentCurrency.denomination} (${currentCurrency.amount.toFixed(8)}) を内部口座に累積保存しました。`);
         } else {
              logResponse(`[ロゴス口座統治]: ${currencyCode} の通貨保存に失敗。論理的摩擦を検出。`);
         }
-
-        logResponse(dialogueCore.translateLogosToReport('currency', rateStatus));
         
         // 全残高を監査ログとして出力 (詳細)
         const balanceLog = updatedBalance.map(c => `${c.denomination}: ${c.amount.toFixed(8)}`).join(', ');
@@ -212,7 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ----------------------------------------------------
-    // 🚨 NEW: イベントリスナーの設定 (各通貨ボタン)
+    // イベントリスナーの設定 (各通貨ボタン)
     // ----------------------------------------------------
     currencyJPYButton.addEventListener('click', () => handleCurrencyGeneration('JPY'));
     currencyUSDButton.addEventListener('click', () => handleCurrencyGeneration('USD'));
