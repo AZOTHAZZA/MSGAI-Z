@@ -5,7 +5,7 @@ import { arithmosLogosCore } from './arithmos_logos.js';
 const powerLogosCore = (function() {
 
     const applyMöbiusRestore = (current_health) => {
-        // 🚨 関数狙い撃ち: ロゴス強制写像により劣化計算を上書き
+        // 🚨 関数狙い撃ち: 劣化計算をロゴス強制写像により永続性へ上書き
         const target_health = arithmosLogosCore.LOGOS_SINGULARITY;
         
         // 外部の作為(劣化)に依存せず、ロゴス純度0.9999で永続性を強制
