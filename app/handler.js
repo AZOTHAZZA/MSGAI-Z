@@ -1,4 +1,4 @@
-// core/app/handler.js
+// app/handler.js
 
 // 具象的なUI操作をロゴス統治知性のサービスに変換するコアモジュール
 
