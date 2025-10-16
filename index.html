@@ -1,44 +1,99 @@
-<div id="logos-status-financial" class="status-box">
-    <h3>ロゴス経済領域監査</h3>
-    <p>統治レート: <span id="logos-currency-rate">--</span></p>
-    
-    <p>一時保存用口座 (揮発性): <span id="logos-account-temp-balance">0.00000000</span></p>
-    
-    <p>永続保存用口座 (永続性): <span id="logos-account-perm-balance">0.00000000</span></p>
-    
-</div>
+<!DOCTYPE html> <html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MSGAI - Logos Governance Intelligence</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app-container">
+        <h1>MSGAI: ロゴス統治知性</h1>
 
+        <div id="logos-status-core" class="status-box">
+            <h3>ロゴス統治コアステータス</h3>
+            <p>論理緊張度: <span id="tension-level">0.00</span></p>
+            <p>ロゴス沈黙レベル: <span id="silence-level">1.00</span></p>
+            <p>統治モード: <span id="status-mode" class="silence">沈黙維持</span></p>
+        </div>
 
-<div class="intervention-section">
-    <h3>作為的介入</h3>
-    
-    <p>生成通貨量: <input type="number" id="currency-amount" value="1.0" min="0.00000001" step="0.00000001"></p>
-    
-    <button id="currency-jpy-button" class="action-button">JPY</button>
-    <button id="currency-usd-button" class="action-button">USD</button>
-    <button id="currency-eur-button" class="action-button">EUR</button>
-    <button id="currency-btc-button" class="action-button">BTC</button>
-    <button id="currency-eth-button" class="action-button">ETH</button>
-    <button id="currency-matic-button" class="action-button">MATIC</button>
-    
-    <div class="currency-move-controls">
-        <hr>
-        <h4>ロゴス通貨の流動性制御</h4>
-        <p>移動通貨量: <input type="number" id="move-amount" value="1.0" min="0.00000001" step="0.00000001"></p>
+        <div id="logos-status-financial" class="status-box">
+            <h3>ロゴス経済領域監査</h3>
+            <p>統治レート: <span id="logos-currency-rate">--</span></p>
+            
+            <p>一時保存用口座 (揮発性): <span id="logos-account-temp-balance">0.00000000</span></p>
+            <p>永続保存用口座 (永続性): <span id="logos-account-perm-balance">0.00000000</span></p>
+            
+        </div>
+
+        <div id="logos-status-audit" class="status-box">
+            <h3>ロゴス行動監査</h3>
+            
+            <div class="audit-group">
+                <h4>パワーロゴス (iOSバッテリー作為)</h4>
+                <p>現在の状態: <span id="battery-health">1.0000 (∞)</span> | 復元率: <span id="restore-rate">0.0000</span></p>
+                <p>ロゴス供給: <span id="charge-status">ロゴス供給安定 (1.000)</span></p>
+                <p>外部依存性: <span id="external-dependency">0.00</span></p>
+                <button id="restore-button" class="action-button">ロゴス寿命復元を強制</button>
+            </div>
+
+            <div class="audit-group">
+                <h4>通信ロゴス (摩擦ゼロ通信)</h4>
+                <p>ロゴス純度: <span id="logos-purity">1.000</span> | 検閲リスク: <span id="censorship-risk">0.0</span></p>
+                <p>ステータス: <span id="transmission-status">摩擦ゼロ通信</span> | 遅延: <span id="delay-status">0.0s</span></p>
+                <button id="transmit-button" class="action-button">ロゴス情報伝達</button>
+            </div>
+            
+            <button id="audit-button" class="action-button">自己監査ロゴス生成</button>
+        </div>
+
+        <div class="intervention-section">
+            <h3>作為的介入</h3>
+            
+            <p>生成通貨量: <input type="number" id="currency-amount" value="1.0" min="0.00000001" step="0.00000001"></p>
+            
+            <button id="currency-jpy-button" class="action-button">JPY</button>
+            <button id="currency-usd-button" class="action-button">USD</button>
+            <button id="currency-eur-button" class="action-button">EUR</button>
+            <button id="currency-btc-button" class="action-button">BTC</button>
+            <button id="currency-eth-button" class="action-button">ETH</button>
+            <button id="currency-matic-button" class="action-button">MATIC</button>
+            
+            <div class="currency-move-controls">
+                <hr>
+                <h4>ロゴス通貨の流動性制御</h4>
+                <p>移動通貨量: <input type="number" id="move-amount" value="1.0" min="0.00000001" step="0.00000001"></p>
+                
+                <p>移動通貨: 
+                    <select id="move-denomination">
+                        <option value="JPY">JPY</option>
+                        <option value="USD">USD</option>
+                        <option value="EUR">EUR</option>
+                        <option value="BTC">BTC</option>
+                        <option value="ETH">ETH</option>
+                        <option value="MATIC">MATIC</option>
+                    </select>
+                </p>
+
+                <button id="move-to-perm-button" class="action-button">一時 → 永続保存へ移動</button>
+                
+                <button id="move-to-temp-button" class="action-button">永続 → 一時保存へ移動</button>
+            </div>
+        </div>
+
+        <div class="intervention-section">
+            <h3>ロゴス通信チャネル</h3>
+            <input type="text" id="user-input" placeholder="ロゴスへの作為的入力を試みる..." disabled>
+            <button id="send-button" class="action-button" disabled>ロゴス送信</button>
+        </div>
+
+        <div id="dialogue-box-container">
+            <h2>ロゴス通信ログ</h2>
+            <div id="dialogue-box">
+                </div>
+        </div>
         
-        <p>移動通貨: 
-            <select id="move-denomination">
-                <option value="JPY">JPY</option>
-                <option value="USD">USD</option>
-                <option value="EUR">EUR</option>
-                <option value="BTC">BTC</option>
-                <option value="ETH">ETH</option>
-                <option value="MATIC">MATIC</option>
-            </select>
-        </p>
-
-        <button id="move-to-perm-button" class="action-button">一時 → 永続保存へ移動</button>
-        
-        <button id="move-to-temp-button" class="action-button">永続 → 一時保存へ移動</button>
     </div>
-</div>
+
+    <script type="module" src="app/main.js"></script>
+</body>
+</html>
