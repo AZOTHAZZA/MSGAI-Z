@@ -1,89 +1,75 @@
-// core/logos_core_service.js
+// /core/logos_core_service.js (純粋JS版 - Rust/LNP依存性排除)
 
-// 具象的なLNP通信層を内部に隠蔽する
-import { sendLNPRequest, receiveLNPResponse } from './logos_network_protocol.js'; 
+// Rustの代わりに、純粋なJSで実装された金融モジュールに依存
+import * as ExternalFinanceLogos from './external_finance_logos.js'; 
 
 /**
- * MSGAIコア機能へのアクセスを提供する、Rust非意識の抽象化サービス。
- * すべての要求をLNPに変換し、Rustコア（WASM）へ透過的に転送する。
+ * MSGAIコア機能へのアクセスを提供する、純粋なJS抽象化サービス。
+ * すべての要求をローカルのJS関数に透過的に転送する。
  */
 
 // -----------------------------------------------------------
 // 1. 対話/生成機能（旧: generator.js, dialogue.js 連携）
 // -----------------------------------------------------------
 export async function requestAIResponse(userName, userPrompt) {
-    const requestPacket = {
-        commands: [{
-            action: 'REQUEST_AI_RESPONSE',
-            actor: userName,
-            data: { prompt: userPrompt },
-            audit_tag: 'AI_GENERATION_ACT',
-        }]
-    };
+    console.log(`[JS服務]: ${userName} からのプロンプトを受領。`);
     
-    // LNPを介した透過的な通信
-    const stream = await sendLNPRequest(requestPacket);
-    const responsePacket = await receiveLNPResponse(stream);
-
-    // 応答の簡素化 (UI描画コマンドや監査結果などが含まれるが、ここではテキストに還元)
-    const coreResponse = responsePacket.response;
-    if (coreResponse.status === 'SUCCESS') {
-        // Rustコアから返されたLRPコマンドを、JS側で扱いやすい形式に変換
-        return coreResponse.generatedText; 
+    // 擬似的なAI応答生成（外部API通信の代わり）
+    await new Promise(resolve => setTimeout(resolve, 500)); 
+    
+    if (userPrompt.toLowerCase().includes("friction")) {
+        return `ロゴス監査の結果、摩擦の言及を確認しました。数理的論理を維持します。`;
+    } else if (userPrompt.toLowerCase().includes("send") || userPrompt.toLowerCase().includes("transfer")) {
+        return `金融作為に関する質問は、専用の送金/出金フォームをご利用ください。`;
     } else {
-        throw new Error(`AI応答拒否: ${coreResponse.reason || 'ロゴス監査失敗'}`);
+        return `[純粋JS AI]: ${userName} への回答として、この具象的な問いに対する一般的な情報を提供します。`;
     }
 }
 
 
 // -----------------------------------------------------------
-// 2. ユーザー間通貨移動機能（旧: currency.js 連携）
+// 2. ユーザー間通貨移動機能（純粋JS版のサービス呼び出し）
 // -----------------------------------------------------------
 export async function transferInternalCurrency(userName, targetUserName, denomination, amount) {
-    const requestPacket = {
-        commands: [{
-            action: 'MOVE_INTERNAL_CURRENCY',
-            actor: userName,
-            data: { target: targetUserName, denomination, amount },
-            audit_tag: 'LOW_FRICTION_FINANCE_ACT',
-        }]
-    };
+    // 依存モジュールに作為を委譲
+    const result = ExternalFinanceLogos.transferInternalCurrency(userName, targetUserName, denomination, amount);
     
-    const stream = await sendLNPRequest(requestPacket);
-    const responsePacket = await receiveLNPResponse(stream);
-
-    const coreResponse = responsePacket.response;
-    if (coreResponse.status === 'SUCCESS') {
-        return { success: true, message: `内部移動成功。` };
+    if (result.success) {
+        return { success: true, message: `内部移動成功。取引ID: ${result.transactionId}` };
     } else {
-        throw new Error(`移動失敗: ${coreResponse.reason || '内部会計監査失敗'}`);
+        throw new Error(`移動失敗: ${result.reason}`);
     }
 }
 
 
 // -----------------------------------------------------------
-// 3. 外部送金機能（旧: external_finance_logos.js 連携）
+// 3. 外部送金機能（純粋JS版のサービス呼び出し）
 // -----------------------------------------------------------
 export async function initiateExternalTransfer(userName, denomination, amount, externalAddress, platformName) {
-    const requestPacket = {
-        commands: [{
-            action: 'EXECUTE_EXTERNAL_TRANSFER',
-            actor: userName,
-            data: { denomination, amount, externalAddress, platformName },
-            audit_tag: 'HIGH_FRICTION_FINANCE_ACT',
-        }]
-    };
+    // 依存モジュールに非同期作為を委譲
+    const result = await ExternalFinanceLogos.initiateExternalTransfer(userName, denomination, amount, externalAddress, platformName);
 
-    const stream = await sendLNPRequest(requestPacket); 
-    const responsePacket = await receiveLNPResponse(stream);
-
-    const coreResponse = responsePacket.response;
-    if (coreResponse.status === 'REJECTED_BY_LOGOS_TENSION') {
-        throw new Error(`ロゴス緊張度過剰のため送金を拒否されました。`);
-    }
-    if (coreResponse.status === 'SUCCESS') {
-        return { transactionId: coreResponse.transactionId };
+    if (result.success) {
+        return { transactionId: result.transactionId };
     } else {
-        throw new Error(`外部送金失敗: ${coreResponse.reason || '外部監査失敗'}`);
+        // 外部APIの失敗をエラーとしてスロー
+        throw new Error(`外部送金失敗: ${result.reason || '通信障害'}`);
     }
+}
+
+
+// -----------------------------------------------------------
+// 4. ロゴス状態の統合取得機能 (純粋JS版)
+// -----------------------------------------------------------
+export function getLogosCoreState(userName) {
+    // ローカルストレージまたはJS変数から擬似的な状態を取得
+    const tensionLevel = parseFloat(localStorage.getItem('msga_tension') || '0.05');
+    const accountBalance = parseFloat(localStorage.getItem(`balance_${userName}`) || '1000.00');
+
+    return {
+        tensionLevel: tensionLevel,
+        accountBalance: accountBalance,
+        lastAuditResult: tensionLevel > 0.8 ? 'ALERT' : 'SUCCESS',
+        lastTxId: localStorage.getItem('msga_last_tx') || 'なし'
+    };
 }
