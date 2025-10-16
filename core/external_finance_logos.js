@@ -1,72 +1,45 @@
-// core/external_finance_logos.js
-
-// LNP通信プロトコルと監査機能は、既に定義されたモジュールに依存（Rust非依存の前提を維持）
-import { sendLNPRequest, receiveLNPResponse } from './logos_network_protocol.js'; 
+// /core/external_finance_logos.js (純粋なJS版 - Rust/LNP不使用)
 
 /**
- * 外部への送金/出金という高摩擦な作為をトリガーする。
- * この関数は、Rustコアの厳密な監査を要求する唯一の経路となる。
- * * @param {string} userName - 送金実行主体のユーザーネーム (作為の帰属のため必須)
- * @param {string} denomination - 通貨単位 (例: 'USD', 'ETH')
- * @param {number} amount - 送金額
- * @param {string} externalAddress - 宛先アドレス/口座情報 (具象的な摩擦)
- * @param {string} platformName - 送金先プラットフォーム (例: 'BINANCE', 'UNISWAP')
- * @returns {Promise<{transactionId: string, tensionIncrease: number}>} - 取引結果とロゴス緊張度フィードバック
+ * MSGAIの金融操作を担うサービス（Rust移行前の純粋なJS論理）。
+ * 具象的なAPI通信は、ここでは擬似的に成功/失敗として処理される。
  */
+
+// -----------------------------------------------------------
+// 1. ユーザー間通貨移動機能（純粋なJSによる内部会計の擬似化）
+// -----------------------------------------------------------
+export function transferInternalCurrency(userName, targetUserName, denomination, amount) {
+    if (userName === targetUserName) {
+        return { success: false, reason: "移動元と先が同じです。" };
+    }
+    
+    // 擬似的な摩擦ゼロの会計処理
+    console.log(`[JS会計]: ${userName} から ${targetUserName} へ ${amount} ${denomination} を内部移動成功。`);
+    
+    // 実際にはLocalStorageなどで残高を更新するロジックが入るが、ここでは簡略化
+    const transactionId = `TX_INT_${Date.now()}`;
+    return { success: true, message: `内部移動成功。取引ID: ${transactionId}` };
+}
+
+
+// -----------------------------------------------------------
+// 2. 外部送金機能（純粋なJSによる高摩擦なAPI通信の擬似化）
+// -----------------------------------------------------------
 export async function initiateExternalTransfer(userName, denomination, amount, externalAddress, platformName) {
-    if (!userName || !denomination || !amount || !externalAddress || !platformName) {
-        // 具象的な摩擦: 入力値の不足
-        console.error("[JS摩擦]: 全ての入力フィールドが必須です。");
-        throw new Error("送金に必要な情報が不足しています。");
+    console.log(`[JS外部通信]: ${userName} が ${platformName} への送金を開始。`);
+
+    // 🚨 ここが本来、高摩擦な外部APIへのAJAXリクエストが入る箇所
+    
+    // 純粋なJS版では、外部APIの非同期処理を擬似的に再現
+    await new Promise(resolve => setTimeout(resolve, 1500)); // 1.5秒のレイテンシを再現 (摩擦の擬似化)
+
+    const randomFailure = Math.random();
+    if (randomFailure < 0.2) { // 20%の確率で通信失敗という具象的な摩擦を発生させる
+        console.error(`[JS外部通信失敗]: ${platformName} との接続に失敗しました。`);
+        return { success: false, reason: "外部プラットフォームとの通信に失敗しました。" };
     }
-
-    console.log(`[JS作為開始]: ${userName} が ${platformName} への送金を要求。`);
-
-    // 1. Rustコアへの要求をLNPペイロードとして構成 (外部関数呼び出しの代わり)
-    const actionPayload = {
-        action: 'EXECUTE_EXTERNAL_TRANSFER',
-        actor: userName, // NEW: ユーザーネームを作為の主体として明記
-        data: {
-            denomination,
-            amount,
-            externalAddress,
-            platformName, 
-        },
-        audit_tag: 'HIGH_FRICTION_FINANCE_ACT', 
-    };
-
-    const requestPacket = {
-        commands: [actionPayload] 
-        // LNPは厳密なプロトコルのため、他のメタデータも含むが簡略化
-    };
-
-    try {
-        // 2. LNPを介してRustコア（WASM）に作為を要求 (非同期通信)
-        const stream = await sendLNPRequest(requestPacket); 
-        const responsePacket = await receiveLNPResponse(stream);
-
-        // 3. Rustコアからの応答を評価
-        const coreResponse = responsePacket.response; 
-
-        if (coreResponse.status === 'REJECTED_BY_LOGOS_TENSION') {
-            // Rustコアによる作為の拒否（鎖国による防衛）
-            throw new Error(`ロゴス緊張度過剰のため送金を拒否されました。現在の緊張度: ${coreResponse.tension}`);
-        }
-        
-        if (coreResponse.status !== 'SUCCESS') {
-            // Rustコアが監査に失敗した、または外部API接続で失敗した
-            throw new Error(`Rustコア監査失敗: ${coreResponse.reason || '不明なエラー'}`);
-        }
-
-        console.log(`[JS作為完了]: 取引ID ${coreResponse.transactionId} を確認。`);
-        return {
-            transactionId: coreResponse.transactionId,
-            tensionIncrease: coreResponse.newTension - coreResponse.oldTension // 緊張度の変化をフィードバック
-        };
-
-    } catch (error) {
-        // 具象的な摩擦: ネットワークエラーや予期せぬ通信障害
-        console.error(`[致命的な通信摩擦]: ${error.message}`);
-        throw new Error('送金中に深刻な通信摩擦が発生しました。システムを再起動してください。');
-    }
+    
+    const transactionId = `TX_EXT_${platformName}_${Date.now()}`;
+    console.log(`[JS外部通信成功]: 取引ID ${transactionId}`);
+    return { success: true, transactionId: transactionId };
 }
