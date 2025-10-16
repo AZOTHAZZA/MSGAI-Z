@@ -1,4 +1,4 @@
-// app/main.js: MSGAIのアプリケーション制御中枢 (最終修正 - ユーザー生成量取得の厳密化)
+// app/main.js: MSGAIのアプリケーション制御中枢 (ユーザー生成量取得の最終決定版)
 
 // 🚨 全てのコアモジュールインポートを親階層 '../core/' に強制写像
 import { foundationCore } from '../core/foundation.js';
@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------
 
 
-    // ... (updatePowerLogosStatus, updateCommsLogosStatus, handleUserMessage関数は省略 - 変更なし) ...
+    // ... (updatePowerLogosStatus, updateCommsLogosStatus, handleUserMessage関数は省略) ...
     const updatePowerLogosStatus = (initial = false) => {
         let currentHealth = parseFloat(batteryHealthDisplay.textContent);
         if (initial || isNaN(currentHealth) || currentHealth > arithmosLogosCore.LOGOS_SINGULARITY) currentHealth = arithmosLogosCore.LOGOS_SINGULARITY; 
@@ -175,15 +175,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // ----------------------------------------------------
-    // 🚨 修正: 複数通貨の生成・保存・UI更新を扱う共通関数 (ユーザー生成量取得の厳密化)
+    // 🚨 最終修正: 複数通貨の生成・保存・UI更新を扱う共通関数 (ユーザー生成量取得の厳密化)
     // ----------------------------------------------------
     const handleCurrencyGeneration = (currencyCode) => {
         
-        // 🚨 修正: ユーザーが入力した生成量をInputフィールドから取得し、厳密に検証
-        let userAmount = 1.0; 
-        if (currencyAmountInput && currencyAmountInput.value) {
-            userAmount = parseFloat(currencyAmountInput.value);
-        }
+        // 🚨 最終修正: Input要素から直接文字列値を取得し、数値に変換するロジックをより堅牢に
+        let amountString = (currencyAmountInput && currencyAmountInput.value !== undefined && currencyAmountInput.value !== null) 
+                           ? currencyAmountInput.value : '1.0';
+        let userAmount = parseFloat(amountString);
         
         // 値が有効な数値で、かつ 0より大きいことを確認
         if (isNaN(userAmount) || userAmount <= 0) {
