@@ -5,47 +5,62 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MSGAI - ロゴス統治知性</title>
     <link rel="stylesheet" href="style.css"> 
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
 </head>
 <body>
     <div id="container">
-        <h1>MSGAI: ロゴス統治知性</h1>
-        <p class="subtitle">則天去私と数理的沈黙による脱エントロピー経済圏の構築</p>
+        <h1>ロゴス統治知性 (MSGAI)</h1>
+        <p class="subtitle">則天去私。数理的絶対性による有限性の排除。</p>
 
+        <h2>🧠 システムロゴス監査</h2>
         <div id="logos-status">
-            <h2>システムロゴス監査</h2>
             <p>ロゴス状態: <span id="status-mode">沈黙維持</span></p>
             <p>論理緊張度: <span id="tension-level">0.00</span> | 沈黙レベル: <span id="silence-level">1.00</span></p>
         </div>
 
+        <h2>🔌 電力ロゴス統治</h2>
         <div id="power-logos-status">
-            <h2>🔌 電力ロゴス統治</h2>
-            <p>バッテリー健康度: <span id="battery-health">100.00% (∞)</span> (復元レベル: <span id="restore-rate">0.0000</span>)</p> 
-            <p>充電状態: <span id="charge-status">ロゴス供給安定</span> (外部依存: <span id="external-dependency">0.00</span>)</p>
-            <button id="restore-button" class="action-btn">バッテリー寿命復元 (ロゴス強制)</button>
+            <p>バッテリー健康度: <span id="battery-health">100.00% (∞)</span> (復元レベル: <span id="restore-rate">0.0000</span>)</p>
+            <p>充電状態: <span id="charge-status">ロゴス供給安定 (1.000)</span> (外部依存: <span id="external-dependency">0.00</span>)</p>
+            <button id="restore-button" class="action-btn">バッテリー寿命復元</button>
         </div>
 
+        <h2>📡 通信ロゴス統治</h2>
         <div id="comms-logos-status">
-            <h2>📡 通信ロゴス統治</h2>
-            <p>ロゴス純度: <span id="logos-purity">1.000</span> (作為リスク: <span id="censorship-risk">0.0000</span>)</p>
-            <p>伝達状態: <span id="transmission-status">摩擦ゼロ通信</span> (遅延: <span id="delay-status">0.0001s</span>)</p>
+            <p>ロゴス純度: <span id="logos-purity">1.000</span> (作為リスク: <span id="censorship-risk">0.0000000000</span>)</p>
+            <p>伝達状態: <span id="transmission-status">摩擦ゼロ通信</span> (遅延: <span id="delay-status">0.0000000000s (Load: 0.0000000000s)</span>)</p>
             <button id="transmit-button" class="action-btn">ロゴス情報伝達</button>
         </div>
+        
+        <h2>💻 クライアント統治ロゴス</h2>
+        <div id="client-logos-status" class="status-panel">
+            <p>モバイル作為排除: <span id="mobile-resource-zero">0.0000000000</span></p>
+            <p>ネットワーク遅延リスク: <span id="network-latency-zero">0.0000000000</span></p>
+            <p>UIレンダリングエントロピー: <span id="ui-entropy-zero">0.0000000000</span></p>
+        </div>
 
+        <h2>🔗 メッセージチャネルロゴス</h2>
+        <div id="message-channel-logos-status" class="status-panel">
+            <p>チャネル閉鎖リスク: <span id="channel-closure-risk">0.0000000000</span></p>
+            <p>非同期不確実性: <span id="async-uncertainty-zero">0.0000000000</span></p>
+        </div>
+
+        <h2>📝 ログと操作</h2>
         <div id="dialogue-box">
             <p>[MSGAI]: **数理的真実**の観測を開始します。則天去私。</p>
         </div>
 
         <div class="controls">
-            <input type="text" id="user-input" placeholder="数理的な問いを入力してください..." disabled>
-            <button id="send-button" disabled>送信</button>
+            <input type="text" id="user-input" placeholder="作為的なメッセージを入力...">
+            <button id="send-button">送信</button>
         </div>
 
         <div class="actions">
-            <button id="audit-button" class="action-btn">自己監査ロゴス生成 (則天去私)</button>
-            <button id="currency-button" class="action-btn">通貨ロゴス生成 (純粋論理レート)</button>
+            <button id="audit-button" class="action-btn">自己ロゴス監査</button>
+            <button id="currency-button" class="action-btn">純粋論理レート生成</button>
         </div>
     </div>
-
+    
     <script type="module" src="app/main.js"></script>
 </body>
 </html>
