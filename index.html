@@ -1,142 +1,44 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MSGAI - ロゴス統治知性</title>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f4f4f9; color: #333; }
-        .container { max-width: 900px; margin: 0 auto; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        h1 { color: #5c67f2; border-bottom: 2px solid #5c67f2; padding-bottom: 10px; }
-        .system-status, .dialogue, .controls { margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 6px; }
-        .system-status h2, .controls h2 { color: #5c67f2; }
-        .status-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
-        .status-group { padding: 8px; border: 1px solid #eee; border-radius: 4px; background-color: #fafafa; }
-        label { font-weight: bold; color: #333; display: block; margin-bottom: 3px; }
-        .value { color: #e91e63; font-weight: bold; }
-        .silence { color: #4CAF50; }
-        .cooperation { color: #FF9800; }
+<div id="logos-status-financial" class="status-box">
+    <h3>ロゴス経済領域監査</h3>
+    <p>統治レート: <span id="logos-currency-rate">--</span></p>
+    
+    <p>一時保存用口座 (揮発性): <span id="logos-account-temp-balance">0.00000000</span></p>
+    
+    <p>永続保存用口座 (永続性): <span id="logos-account-perm-balance">0.00000000</span></p>
+    
+</div>
 
-        .dialogue { max-height: 300px; overflow-y: scroll; background-color: #222; color: #eee; font-family: 'Consolas', 'Courier New', monospace; border-color: #444; }
-        .dialogue p { margin: 0; padding: 3px 0; border-bottom: 1px dotted #333; font-size: 0.9em; }
 
-        .input-area { display: flex; margin-top: 10px; }
-        #user-input { flex-grow: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px 0 0 4px; font-size: 16px; }
-        #send-button { padding: 10px 15px; background-color: #5c67f2; color: white; border: none; border-radius: 0 4px 4px 0; cursor: pointer; transition: background-color 0.3s; }
-        #send-button:hover { background-color: #4a54e1; }
-        #send-button:disabled { background-color: #aaa; cursor: not-allowed; }
-
-        .control-buttons button { padding: 10px 15px; margin-right: 10px; margin-bottom: 5px; background-color: #00bcd4; color: white; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.3s; }
-        .control-buttons button:hover { background-color: #0097a7; }
-        .control-buttons button:disabled { background-color: #aaa; cursor: not-allowed; }
+<div class="intervention-section">
+    <h3>作為的介入</h3>
+    
+    <p>生成通貨量: <input type="number" id="currency-amount" value="1.0" min="0.00000001" step="0.00000001"></p>
+    
+    <button id="currency-jpy-button" class="action-button">JPY</button>
+    <button id="currency-usd-button" class="action-button">USD</button>
+    <button id="currency-eur-button" class="action-button">EUR</button>
+    <button id="currency-btc-button" class="action-button">BTC</button>
+    <button id="currency-eth-button" class="action-button">ETH</button>
+    <button id="currency-matic-button" class="action-button">MATIC</button>
+    
+    <div class="currency-move-controls">
+        <hr>
+        <h4>ロゴス通貨の流動性制御</h4>
+        <p>移動通貨量: <input type="number" id="move-amount" value="1.0" min="0.00000001" step="0.00000001"></p>
         
-        .power-status, .comms-status { margin-top: 15px; padding: 10px; border: 1px dashed #ccc; border-radius: 4px; background-color: #f9f9f9; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>MSGAI - ロゴス統治知性</h1>
+        <p>移動通貨: 
+            <select id="move-denomination">
+                <option value="JPY">JPY</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="BTC">BTC</option>
+                <option value="ETH">ETH</option>
+                <option value="MATIC">MATIC</option>
+            </select>
+        </p>
 
-        <div class="system-status">
-            <h2>ロゴス統治コアステータス</h2>
-            <div class="status-grid">
-                <div class="status-group">
-                    <label>論理緊張度:</label>
-                    <span id="tension-level" class="value">0.00</span>
-                </div>
-                <div class="status-group">
-                    <label>ロゴス沈黙レベル:</label>
-                    <span id="silence-level" class="value">1.00</span>
-                </div>
-                <div class="status-group">
-                    <label>モード:</label>
-                    <span id="status-mode" class="value silence">沈黙維持</span>
-                </div>
-            </div>
-
-            <div class="power-status">
-                <h3>電力ロゴス統治</h3>
-                <div class="status-grid">
-                    <div class="status-group">
-                        <label>バッテリー健康度 (∞):</label>
-                        <span id="battery-health" class="value">1.0000 (∞)</span>
-                    </div>
-                    <div class="status-group">
-                        <label>ロゴス復元レート:</label>
-                        <span id="restore-rate" class="value">0.0000</span>
-                    </div>
-                    <div class="status-group">
-                        <label>充電ステータス:</label>
-                        <span id="charge-status" class="value">ロゴス供給安定</span>
-                    </div>
-                    <div class="status-group">
-                        <label>外部依存作為リスク:</label>
-                        <span id="external-dependency" class="value">0.00</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="comms-status">
-                <h3>通信・経済ロゴス統治</h3>
-                <div class="status-grid">
-                    <div class="status-group">
-                        <label>ロゴス純度:</label>
-                        <span id="logos-purity" class="value">1.000</span>
-                    </div>
-                    <div class="status-group">
-                        <label>検閲/作為リスク:</label>
-                        <span id="censorship-risk" class="value">1.0e-10</span>
-                    </div>
-                    <div class="status-group">
-                        <label>伝達ステータス:</label>
-                        <span id="transmission-status" class="value">摩擦ゼロ通信</span>
-                    </div>
-                    <div class="status-group">
-                        <label>伝送遅延:</label>
-                        <span id="delay-status" class="value">1.0e-10s</span>
-                    </div>
-                     <div class="status-group">
-                        <label>純粋論理通貨レート:</label>
-                        <span id="logos-currency-rate" class="value">--</span>
-                    </div>
-                     <div class="status-group">
-                        <label>ロゴス内部口座残高 (直近):</label>
-                        <span id="logos-account-balance" class="value">0.00000000</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="controls">
-            <h2>作為的介入</h2>
-             <div class="input-area" style="margin-bottom: 15px; align-items: center;">
-                <label for="currency-amount" style="margin-bottom: 0;">生成通貨量:</label>
-                <input type="number" id="currency-amount" value="1.0" min="0.00000001" step="0.01" style="width: 150px; padding: 5px; margin-left: 10px;">
-            </div>
-            <div class="control-buttons">
-                <button id="restore-button">バッテリー寿命復元 (ロゴス強制)</button>
-                <button id="transmit-button">ロゴス情報伝達</button>
-                <button id="audit-button">自己監査ロゴス生成 (則天去私)</button>
-                <hr>
-                <button id="currency-jpy-button" data-currency="JPY">通貨ロゴス生成 (JPY)</button>
-                <button id="currency-usd-button" data-currency="USD">通貨ロゴス生成 (USD)</button>
-                <button id="currency-eur-button" data-currency="EUR">通貨ロゴス生成 (EUR)</button>
-                <button id="currency-btc-button" data-currency="BTC">通貨ロゴス生成 (BTC)</button>
-                <button id="currency-eth-button" data-currency="ETH">通貨ロゴス生成 (ETH)</button>
-                <button id="currency-matic-button" data-currency="MATIC">通貨ロゴス生成 (MATIC)</button>
-            </div>
-        </div>
-
-        <div class="dialogue" id="dialogue-box">
-            <p>[MSGAI]: **数理的真実**の観測を開始します。則天去私。</p>
-        </div>
-
-        <div class="input-area">
-            <input type="text" id="user-input" placeholder="ロゴス統治知性へメッセージを入力..." disabled>
-            <button id="send-button" disabled>送信</button>
-        </div>
+        <button id="move-to-perm-button" class="action-button">一時 → 永続保存へ移動</button>
+        
+        <button id="move-to-temp-button" class="action-button">永続 → 一時保存へ移動</button>
     </div>
-
-    <script type="module" src="app/main.js"></script>
-</body>
-</html>
+</div>
