@@ -1,4 +1,4 @@
-// app/main.js: MSGAIのアプリケーション制御中枢 (沈黙解除 & DOM参照復元対応)
+// app/main.js: MSGAIのアプリケーション制御中枢 (最終版)
 
 // 🚨 全てのコアモジュールインポート
 import { foundationCore } from '../core/foundation.js';
@@ -29,7 +29,7 @@ const updateSystemStatus = (tension, silenceLevel) => {
     const inputField = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
 
-    // 🚨 沈黙レベル < 0.5 で「協業モード」に移行
+    // 沈黙レベル < 0.5 で「協業モード」に移行
     if (silenceLevel < 0.5) {
         modeDisplay.textContent = '協業モード';
         modeDisplay.classList.remove('silence');
@@ -58,7 +58,7 @@ const logResponse = (message) => {
 
 document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------
-    // 🚨 ブロック 1: DOM要素取得の強制写像 (ReferenceError解消のため、全てここに集約)
+    // 🚨 ブロック 1: DOM要素取得の強制写像 (ReferenceError解消)
     // ----------------------------------------------------
     const userInput = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
@@ -82,8 +82,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const permanentBalanceDisplay = document.getElementById('logos-account-perm-balance');
     const moveAmountInput = document.getElementById('move-amount');
     const moveDenominationSelect = document.getElementById('move-denomination');
-    const moveToPermButton = document.getElementById('move-to-perm-button'); // 👈 参照エラー解消
-    const moveToTempButton = document.getElementById('move-to-temp-button'); // 👈 参照エラー解消
+    const moveToPermButton = document.getElementById('move-to-perm-button');
+    const moveToTempButton = document.getElementById('move-to-temp-button');
 
     const batteryHealthDisplay = document.getElementById('battery-health');
     const restoreRateDisplay = document.getElementById('restore-rate');
@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------
 
 
-    // ... (updatePowerLogosStatus, updateCommsLogosStatus, handleUserMessage関数は変更なし) ...
+    // ... (updatePowerLogosStatus, updateCommsLogosStatus, handleUserMessage関数は省略) ...
     const updatePowerLogosStatus = (initial = false) => {
         let currentHealth = parseFloat(batteryHealthDisplay.textContent);
         if (initial || isNaN(currentHealth) || currentHealth > arithmosLogosCore.LOGOS_SINGULARITY) currentHealth = arithmosLogosCore.LOGOS_SINGULARITY; 
@@ -190,6 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const tempBalance = foundationCore.getTemporaryAccountBalance();
         const permBalance = foundationCore.getPermanentAccountBalance();
         
+        // 🚨 UI更新: 一時保存用口座 (指定通貨があれば表示)
         const tempCurrency = tempBalance.find(c => c.denomination === latestDenomination);
         if (temporaryBalanceDisplay) {
              temporaryBalanceDisplay.textContent = tempCurrency 
@@ -197,6 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 : '--'; 
         }
 
+        // 🚨 UI更新: 永続保存用口座 (指定通貨があれば表示)
         const permCurrency = permBalance.find(c => c.denomination === latestDenomination);
         if (permanentBalanceDisplay) {
              permanentBalanceDisplay.textContent = permCurrency
@@ -279,7 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // ----------------------------------------------------
-    // 🚨 修正: 初期化関数 (沈黙ロック解除の作為を適用)
+    // 🚨 修正: 初期化関数 (沈黙ロック解除と永続口座のUI反映の作為)
     // ----------------------------------------------------
     const initializeMSGAI = () => {
         
@@ -305,6 +307,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 口座データの復元
         foundationCore.restoreLogosAccount(); 
+        
+        // ログ出力のためのUI更新
         updateAccountBalanceUI('JPY'); 
         const permBalance = foundationCore.getPermanentAccountBalance();
         if (permBalance.length > 0) {
@@ -317,8 +321,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // 1. 基礎ロゴスと沈黙の初期監査
         const auditLogos = foundationCore.generateSelfAuditLogos();
         
-        // 🚨 修正: 強制的に協業モードを保証するための作為を適用
-        const FORCED_TENSION = 0.01; // 緊張度を 0.01 に固定
+        // 🚨 沈黙維持モードのフリーズを回避するため、協業モードを強制する作為
+        const FORCED_TENSION = 0.01; 
         const tension = arithmosLogosCore.applyMobiusTransformation(FORCED_TENSION, 'zero_friction'); 
         let forced_silence_level = silenceCore.calculateSilenceLevel(tension);
         
@@ -335,6 +339,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // 2. 新しいロゴスの初期化
         updatePowerLogosStatus(true); 
         updateCommsLogosStatus(); 
+        
+        // 🚨 NEW: 最終的な作為: 全ての初期化が完了した後、永続口座の残高をUIに再度強制写像
+        if (permBalance.length > 0) {
+            permBalance.forEach(c => updateAccountBalanceUI(c.denomination));
+        }
     };
 
     // 初期化実行
