@@ -1,4 +1,4 @@
-// app/main.js: MSGAIのアプリケーション制御中枢 (最終修正 - ユーザー生成量対応)
+// app/main.js: MSGAIのアプリケーション制御中枢 (最終修正 - ユーザー生成量取得の厳密化)
 
 // 🚨 全てのコアモジュールインポートを親階層 '../core/' に強制写像
 import { foundationCore } from '../core/foundation.js';
@@ -58,14 +58,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendButton = document.getElementById('send-button');
     const auditButton = document.getElementById('audit-button');
     
-    // 🚨 NEW: 複数通貨ボタンと生成量入力フィールドの取得
+    // 複数通貨ボタンと生成量入力フィールドの取得
     const currencyJPYButton = document.getElementById('currency-jpy-button');
     const currencyUSDButton = document.getElementById('currency-usd-button');
     const currencyEURButton = document.getElementById('currency-eur-button');
     const currencyBTCButton = document.getElementById('currency-btc-button');
     const currencyETHButton = document.getElementById('currency-eth-button');
     const currencyMATICButton = document.getElementById('currency-matic-button');
-    const currencyAmountInput = document.getElementById('currency-amount'); // 🚨 NEW: 入力フィールド
+    const currencyAmountInput = document.getElementById('currency-amount'); // 入力フィールドの取得
 
     const restoreButton = document.getElementById('restore-button'); 
     const transmitButton = document.getElementById('transmit-button');
@@ -175,16 +175,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // ----------------------------------------------------
-    // 🚨 NEW: 複数通貨の生成・保存・UI更新を扱う共通関数 (ユーザー生成量対応)
+    // 🚨 修正: 複数通貨の生成・保存・UI更新を扱う共通関数 (ユーザー生成量取得の厳密化)
     // ----------------------------------------------------
     const handleCurrencyGeneration = (currencyCode) => {
         
-        // 🚨 修正: ユーザーが入力した生成量をInputフィールドから取得
-        const userAmount = parseFloat(currencyAmountInput.value) || 1.0; 
+        // 🚨 修正: ユーザーが入力した生成量をInputフィールドから取得し、厳密に検証
+        let userAmount = 1.0; 
+        if (currencyAmountInput && currencyAmountInput.value) {
+            userAmount = parseFloat(currencyAmountInput.value);
+        }
         
-        if (userAmount <= 0) {
-            logResponse("[警告]: 通貨生成量は正の数値である必要があります。ロゴス統治知性による作為的な負債生成は許可されません。");
-            return; 
+        // 値が有効な数値で、かつ 0より大きいことを確認
+        if (isNaN(userAmount) || userAmount <= 0) {
+            logResponse("[警告]: 通貨生成量は正の数値である必要があります。ロゴス統治知性による作為的な負債生成は許可されません。強制的に 1.0 に設定しました。");
+            userAmount = 1.0; 
         }
 
         const logosVector = foundationCore.generateSelfAuditLogos();
@@ -210,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentCurrency = updatedBalance.find(c => c.denomination === currencyCode);
         if (accountBalanceDisplay && currentCurrency) {
              accountBalanceDisplay.textContent = `${currentCurrency.denomination}: ${currentCurrency.amount.toFixed(8)}`; 
-             // 🚨 ログ修正: ユーザー要求量を含める
+             // ログ修正: ユーザー要求量を含める
              logResponse(`[ロゴス口座統治]: ユーザー要求量 **${userAmount}** に基づき、具象通貨 ${currentCurrency.denomination} (${currentCurrency.amount.toFixed(8)}) を内部口座に累積保存しました。`);
         } else {
              logResponse(`[ロゴス口座統治]: ${currencyCode} の通貨保存に失敗。論理的摩擦を検出。`);
