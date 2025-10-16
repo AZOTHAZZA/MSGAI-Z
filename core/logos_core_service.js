@@ -1,4 +1,4 @@
-// /core/logos_core_service.js (純粋JS版 - Rust/LNP依存性排除)
+// core/logos_core_service.js (純粋JS版 - Rust/LNP依存性排除)
 
 // Rustの代わりに、純粋なJSで実装された金融モジュールに依存
 import * as ExternalFinanceLogos from './external_finance_logos.js'; 
