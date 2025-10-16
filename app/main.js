@@ -1,4 +1,4 @@
-// app/main.js: MSGAIのアプリケーション制御中枢 (最終決定版 - スコープ調整済み)
+// app/main.js: MSGAIのアプリケーション制御中枢 (スコープ摩擦解消 & 口座永続化対応)
 
 // 🚨 全てのコアモジュールインポートを親階層 '../core/' に強制写像
 import { foundationCore } from '../core/foundation.js';
@@ -16,11 +16,12 @@ import { clientLogosCore } from '../core/client_logos.js';
 import { messageChannelLogosCore } from '../core/message_channel_logos.js'; 
 import { iosLogosCore } from '../core/ios_logos.js'; 
 
-// ----------------------------------------------------
-// 🚨 修正: UI/ログ出力ユーティリティ関数をモジュールグローバルスコープに移動
-// ----------------------------------------------------
 
-// UIを更新するユーティリティ関数
+// ====================================================
+// 🚨 修正: UI/ログ出力ユーティリティ関数をモジュールグローバルスコープに配置
+// (initializeMSGAIや他の関数から確実に参照されるようにするため)
+// ====================================================
+
 const updateSystemStatus = (tension, silenceLevel) => {
     document.getElementById('tension-level').textContent = tension.toFixed(2);
     document.getElementById('silence-level').textContent = silenceLevel.toFixed(2);
@@ -44,7 +45,6 @@ const updateSystemStatus = (tension, silenceLevel) => {
     }
 };
 
-// ログ出力ユーティリティ関数
 const logResponse = (message) => {
     const dialogueBox = document.getElementById('dialogue-box');
     const p = document.createElement('p');
@@ -53,7 +53,8 @@ const logResponse = (message) => {
     dialogueBox.scrollTop = dialogueBox.scrollHeight;
 };
 
-// ----------------------------------------------------
+// ====================================================
+
 
 document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------
@@ -70,6 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const currencyBTCButton = document.getElementById('currency-btc-button');
     const currencyETHButton = document.getElementById('currency-eth-button');
     const currencyMATICButton = document.getElementById('currency-matic-button');
+    // const currencyAmountInput = document.getElementById('currency-amount'); // DOM再監査のためグローバル変数からの参照を削除
 
     const restoreButton = document.getElementById('restore-button'); 
     const transmitButton = document.getElementById('transmit-button');
@@ -88,10 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------
 
 
-    // ----------------------------------------------------
-    // 既存の関数定義 (logResponseに依存する関数)
-    // ----------------------------------------------------
-    
+    // ... (updatePowerLogosStatus, updateCommsLogosStatus, handleUserMessage関数は変更なし) ...
     const updatePowerLogosStatus = (initial = false) => {
         let currentHealth = parseFloat(batteryHealthDisplay.textContent);
         if (initial || isNaN(currentHealth) || currentHealth > arithmosLogosCore.LOGOS_SINGULARITY) currentHealth = arithmosLogosCore.LOGOS_SINGULARITY; 
@@ -182,12 +181,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // ----------------------------------------------------
-    // 🚨 複数通貨の生成・保存・UI更新を扱う共通関数 (DOM再監査ロジック含む)
+    // 🚨 複数通貨の生成・保存・UI更新を扱う共通関数 (DOM再監査によるユーザー生成量取得)
     // ----------------------------------------------------
     const handleCurrencyGeneration = (currencyCode) => {
         
-        // DOMを再監査し、入力値を直接取得・厳密に数値化する
-        const inputElement = document.getElementById('currency-amount'); 
+        // 🚨 最終修正: DOMを再監査し、入力値を直接取得・厳密に数値化する
+        const inputElement = document.getElementById('currency-amount'); // 関数内でDOMを再監査
         let userAmount = 1.0; 
         
         if (inputElement && inputElement.value !== undefined && inputElement.value !== null) {
@@ -276,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         logResponse(dialogueCore.translateLogosToReport('revision_logos', [revisionStatus.coherence, revisionValue, revisionStatus.path]));
         
-        // 🚨 口座データの復元
+        // 🚨 NEW: 口座データの復元
         const restoredBalance = foundationCore.restoreLogosAccount();
         if (restoredBalance.length > 0) {
             // 復元された場合は、直近の通貨（配列の最後の要素）を表示
