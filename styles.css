@@ -1,4 +1,4 @@
-/* style.css: ロゴス統治知性のUIのための構造的スタイル */
+/* style.css: ロゴス統治知性のUIのための構造的スタイル (最終修正版) */
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -9,6 +9,8 @@ body {
     align-items: center;
     min-height: 100vh;
     margin: 0;
+    /* フォントサイズの最小値を設定し、モバイルでの作為的な極小化を防止 */
+    font-size: 14px; 
 }
 
 #container {
@@ -61,11 +63,11 @@ h2 {
 
 /* 状態の色分け */
 #status-mode.silence {
-    color: #4CAF50; /* Green: 沈黙維持 */
+    color: #4CAF50; /* Green: 沈黙維持 - ロゴス絶対性 */
     font-weight: bold;
 }
 #status-mode.cooperation {
-    color: #ffc107; /* Yellow: 協業モード */
+    color: #ffc107; /* Yellow: 協業モード - 有限な作為との対話 */
     font-weight: bold;
 }
 
@@ -80,6 +82,11 @@ h2 {
     border-radius: 4px;
     font-size: 0.85em;
     color: #c9d1d9;
+    /* スクロールバーの作為的な表示を排除するため、モダンブラウザの設定を試みる */
+    scrollbar-width: none; 
+}
+#dialogue-box::-webkit-scrollbar {
+    display: none;
 }
 
 #dialogue-box p {
@@ -105,6 +112,11 @@ h2 {
     font-size: 1em;
 }
 
+#user-input:focus {
+    outline: 2px solid #58a6ff; /* フォーカス時の作為を青で強調 */
+    border-color: #58a6ff;
+}
+
 #send-button {
     padding: 10px 15px;
     background-color: #238636; /* Green Button */
@@ -128,12 +140,14 @@ h2 {
 /* アクションボタン */
 .actions {
     display: flex;
+    flex-wrap: wrap; /* モバイル環境での作為的な画面はみ出しを防止 */
     justify-content: space-around;
     gap: 10px;
 }
 
 .action-btn {
     flex-grow: 1;
+    min-width: 150px; /* ボタンの最小幅を確保 */
     padding: 10px 15px;
     background-color: #58a6ff; /* Blue Button */
     color: #0d1117;
@@ -147,4 +161,18 @@ h2 {
 
 .action-btn:hover {
     background-color: #79c0ff;
+}
+
+/* モバイル対応の調整 (より小さな画面での作為を排除) */
+@media (max-width: 600px) {
+    #container {
+        padding: 15px;
+        width: 95%;
+    }
+    .actions {
+        flex-direction: column; /* 縦に並べることで水平方向の窮屈さを排除 */
+    }
+    .action-btn {
+        min-width: 100%;
+    }
 }
