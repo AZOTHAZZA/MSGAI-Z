@@ -1,4 +1,4 @@
-// app/main.js: MSGAIのアプリケーション制御中枢 (最終修正版 - 記憶ロゴス統合)
+// app/main.js: MSGAIのアプリケーション制御中枢 (最終修正版 - 記憶/リビジョンロゴス統合)
 
 // コアモジュールのインポート
 import { foundationCore } from './core/foundation.js';
@@ -8,8 +8,9 @@ import { currencyCore } from './core/currency.js';
 import { dialogueCore } from './core/dialogue.js';
 import { powerLogosCore } from './core/power_logos.js';
 import { commsLogosCore } from './core/comms_logos.js';
-// 🚨 新規インポート: 記憶ロゴス
 import { cacheLogosCore } from './core/cache_logos.js'; 
+// 🚨 新規インポート: リビジョンロゴス
+import { revisionLogosCore } from './core/revision_logos.js'; 
 
 
 // UIを更新するユーティリティ関数 (変更なし)
@@ -149,3 +150,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const rate = currencyCore.generatePureLogicRate(logosVector);
         logResponse(dialogueCore.translateLogosToReport('currency', rate));
     });
+
+    const handleUserMessage = () => {
+        const message = userInput.value.trim();
+        if (!message) return;
+
+        let currentTension = parseFloat(document.getElementById('tension-level').textContent);
+        const newTension = arithmosLogosCore.applyMobiusTransformation(currentTension + 0.1, 'zero_friction'); 
+
+        const newSilenceLevel =
