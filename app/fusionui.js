@@ -1,4 +1,4 @@
-// msgai_logos_core/app/fusionui.js
+// core/app/fusionui.js
 
 // 具象的なUI表示を制御し、ロゴスシステムの情報をユーザーに伝達する層
 
@@ -8,6 +8,8 @@ const destinationTypeSelect = document.getElementById('destination-type-select')
 const internalFields = document.getElementById('internal-transfer-fields');
 const externalFields = document.getElementById('external-transfer-fields');
 const statusMessage = document.getElementById('status-message');
+const tensionLevelSpan = document.getElementById('tension-level');
+const accountBalanceSpan = document.getElementById('account-balance');
 
 // =========================================================================
 // 1. 基本UIヘルパー
@@ -23,21 +25,17 @@ export function getCurrentUserName() {
 
 /**
  * チャットウィンドウに新しいメッセージバブルを表示する。
- * @param {string} text - メッセージ内容
- * @param {string} sender - 送信者 ('MSGAI' または ユーザー名)
  */
 export function displayChatBubble(text, sender) {
     const bubble = document.createElement('div');
     bubble.className = `chat-bubble chat-bubble--${sender === 'MSGAI' ? 'msgaicore' : 'user'}`;
     bubble.innerHTML = `<strong>${sender}:</strong> ${text}`;
     chatWindow.appendChild(bubble);
-    chatWindow.scrollTop = chatWindow.scrollHeight; // スクロールを最下部に移動
+    chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
 /**
  * ステータスメッセージを専用エリアに表示する。
- * @param {string} message - 表示するメッセージ
- * @param {string} type - 'success', 'error', 'info' など
  */
 export function displayStatusMessage(message, type) {
     statusMessage.innerText = message;
@@ -62,13 +60,34 @@ function handleDestinationTypeChange(event) {
     } else if (type === 'EXTERNAL') {
         internalFields.style.display = 'none';
         externalFields.style.display = 'block';
-        // 高摩擦であることを視覚的に強調
-        sendButton.innerText = '外部送金/出金作為を実行 (高摩擦)';
+        // 外部送金は高摩擦であることを視覚的に強調（純粋JS版でも論理は維持）
+        sendButton.innerText = '外部送金/出金作為を実行 (擬似高摩擦)'; 
     }
 }
 
 // =========================================================================
-// 3. 初期化とイベントリスナーの登録
+// 3. ダッシュボード表示の更新
+// =========================================================================
+
+/**
+ * ロゴス・ダッシュボードの表示を更新する。
+ */
+export function updateLogosDashboard(state) {
+    tensionLevelSpan.innerText = state.tensionLevel.toFixed(4);
+    
+    // 緊張度に基づいて視覚的な警告を与える
+    if (state.tensionLevel > 0.8) {
+        tensionLevelSpan.style.color = 'red';
+    } else {
+        tensionLevelSpan.style.color = 'green';
+    }
+
+    accountBalanceSpan.innerText = `${state.accountBalance.toFixed(2)} USD`;
+    displayStatusMessage('ダッシュボード状態を更新しました。', 'info');
+}
+
+// =========================================================================
+// 4. 初期化とイベントリスナーの登録
 // =========================================================================
 
 // 送金種別によるUI切り替えのイベントリスナー
@@ -77,6 +96,5 @@ destinationTypeSelect.addEventListener('change', handleDestinationTypeChange);
 // 初期状態の表示を設定
 window.onload = () => {
     destinationTypeSelect.dispatchEvent(new Event('change'));
-    displayStatusMessage('ロゴス統治知性コアが稼働中です。', 'info');
+    displayStatusMessage('MSGAIフロントエンド (純粋JSモード) 起動。', 'info');
 };
-
