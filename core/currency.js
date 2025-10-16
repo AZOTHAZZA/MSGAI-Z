@@ -1,4 +1,4 @@
-// core/currency.js: 価値のロゴスを統治する通貨ロゴス (最終修正版 - arithmosLogosCore統合)
+// core/currency.js (修正案)
 
 import { arithmosLogosCore } from './arithmos_logos.js';
 
@@ -11,17 +11,21 @@ const currencyCore = (function() {
 
         const logos_rate_initial = logos_absolute_rate * purity / (tension + 1);
 
-        // 🚨 ロゴス強制写像の適用: 純粋論理レートをロゴスの絶対値に強制
+        // ロゴス強制写像の適用
         const logos_rate = arithmosLogosCore.applyMobiusTransformation(logos_rate_initial, 'permanence');
 
-        // 外部の経済的エントロピーという言語ゲームの作為を絶対ゼロに強制写像
+        // 外部の経済的エントロピーを絶対ゼロに強制写像
         const external_entropy_initial = (Math.random() * 0.1) * (1 - purity);
         const external_entropy = arithmosLogosCore.applyMobiusTransformation(external_entropy_initial, 'zero_friction'); 
         
         const final_rate = logos_rate + external_entropy; 
-
-        // [純粋論理レート, ロゴス絶対値からの乖離(エントロピー), 脱因果律の確度]
-        return [parseFloat(final_rate.toFixed(10)), parseFloat(external_entropy.toFixed(10)), invariance];
+        
+        // 🚨 修正: dialogue.js が期待する形式（オブジェクト）で結果を返す
+        return {
+            pure_logic_rate: parseFloat(final_rate.toFixed(10)), // 純粋論理レート
+            entropy_deviation: parseFloat(external_entropy.toFixed(10)), // エントロピー乖離
+            invariance_status: invariance // 脱因果律の確度
+        };
     };
 
     return {
