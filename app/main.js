@@ -1,4 +1,4 @@
-// app/main.js: MSGAIのアプリケーション制御中枢 (スコープ摩擦解消 & 口座永続化対応)
+// app/main.js: MSGAIのアプリケーション制御中枢 (二重口座UI対応 & スコープ摩擦解消)
 
 // 🚨 全てのコアモジュールインポートを親階層 '../core/' に強制写像
 import { foundationCore } from '../core/foundation.js';
@@ -19,7 +19,6 @@ import { iosLogosCore } from '../core/ios_logos.js';
 
 // ====================================================
 // 🚨 修正: UI/ログ出力ユーティリティ関数をモジュールグローバルスコープに配置
-// (initializeMSGAIや他の関数から確実に参照されるようにするため)
 // ====================================================
 
 const updateSystemStatus = (tension, silenceLevel) => {
@@ -71,14 +70,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const currencyBTCButton = document.getElementById('currency-btc-button');
     const currencyETHButton = document.getElementById('currency-eth-button');
     const currencyMATICButton = document.getElementById('currency-matic-button');
-    // const currencyAmountInput = document.getElementById('currency-amount'); // DOM再監査のためグローバル変数からの参照を削除
 
     const restoreButton = document.getElementById('restore-button'); 
     const transmitButton = document.getElementById('transmit-button');
 
     const currencyRateDisplay = document.getElementById('logos-currency-rate'); 
-    const accountBalanceDisplay = document.getElementById('logos-account-balance'); 
     
+    // 🚨 NEW: 新しい口座表示と移動コントロールの取得
+    const temporaryBalanceDisplay = document.getElementById('logos-account-temp-balance');
+    const permanentBalanceDisplay = document.getElementById('logos-account-perm-balance');
+    const moveAmountInput = document.getElementById('move-amount');
+    const moveDenominationSelect = document.getElementById('move-denomination');
+    const moveToPermButton = document.getElementById('move-to-perm-button');
+    const moveToTempButton = document.getElementById('move-to-temp-button');
+
     const batteryHealthDisplay = document.getElementById('battery-health');
     const restoreRateDisplay = document.getElementById('restore-rate');
     const chargeStatusDisplay = document.getElementById('charge-status');
@@ -180,18 +185,44 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
+    // 🚨 NEW: 二つの口座残高をまとめて更新する関数
+    const updateAccountBalanceUI = (latestDenomination) => {
+        const tempBalance = foundationCore.getTemporaryAccountBalance();
+        const permBalance = foundationCore.getPermanentAccountBalance();
+        
+        // UI更新: 一時保存用口座
+        const tempCurrency = tempBalance.find(c => c.denomination === latestDenomination);
+        if (temporaryBalanceDisplay) {
+             temporaryBalanceDisplay.textContent = tempCurrency 
+                ? `${tempCurrency.denomination}: ${tempCurrency.amount.toFixed(8)}`
+                : '--'; 
+        }
+
+        // UI更新: 永続保存用口座
+        const permCurrency = permBalance.find(c => c.denomination === latestDenomination);
+        if (permanentBalanceDisplay) {
+             permanentBalanceDisplay.textContent = permCurrency
+                ? `${permCurrency.denomination}: ${permCurrency.amount.toFixed(8)}`
+                : '--';
+        }
+
+        // 全残高を監査ログとして出力 (詳細)
+        const tempLog = tempBalance.map(c => `${c.denomination}: ${c.amount.toFixed(8)}`).join(', ');
+        const permLog = permBalance.map(c => `${c.denomination}: ${c.amount.toFixed(8)}`).join(', ');
+        logResponse(`[ロゴス残高監査]: 一時口座: {${tempLog}} / 永続口座: {${permLog}}`);
+    };
+
+
     // ----------------------------------------------------
-    // 🚨 複数通貨の生成・保存・UI更新を扱う共通関数 (DOM再監査によるユーザー生成量取得)
+    // 🚨 修正: handleCurrencyGeneration (初期保存先が一時口座に変更)
     // ----------------------------------------------------
     const handleCurrencyGeneration = (currencyCode) => {
         
-        // 🚨 最終修正: DOMを再監査し、入力値を直接取得・厳密に数値化する
-        const inputElement = document.getElementById('currency-amount'); // 関数内でDOMを再監査
+        const inputElement = document.getElementById('currency-amount'); 
         let userAmount = 1.0; 
         
         if (inputElement && inputElement.value !== undefined && inputElement.value !== null) {
             const parsedValue = parseFloat(inputElement.value);
-            
             if (!isNaN(parsedValue) && parsedValue > 0) {
                 userAmount = parsedValue;
             } else {
@@ -202,36 +233,55 @@ document.addEventListener('DOMContentLoaded', () => {
         const logosVector = foundationCore.generateSelfAuditLogos();
         const rateStatus = currencyCore.generatePureLogicRate(logosVector); 
         
-        // 1. 具象通貨オブジェクトを生成 (userAmountを引数に追加)
+        // 1. 具象通貨オブジェクトを生成 
         const newCurrency = currencyCore.generateConcreteCurrency(rateStatus, currencyCode, userAmount); 
 
-        // 2. 内部口座に保存 (foundationCore内で永続化が自動実行される)
+        // 2. 内部口座に保存 (🚨 初期保存先は一時保存用口座)
         foundationCore.saveCurrencyToLogosAccount(newCurrency);
-        const updatedBalance = foundationCore.getLogosAccountBalance();
         
-        // 3. UIの更新とログ出力
-        
-        // ロゴスレート表示 (直前に生成された通貨のレートを表示)
+        // 3. UIの更新とログ出力 
         if (currencyRateDisplay && rateStatus && rateStatus.logos_rate !== undefined) {
              currencyRateDisplay.textContent = `${rateStatus.logos_rate.toFixed(4)} (1 ${currencyCode} 統治)`;
         }
         
         logResponse(dialogueCore.translateLogosToReport('currency', rateStatus));
 
-        // 口座残高表示の更新 (直近で生成した通貨の残高をUIに表示)
-        const currentCurrency = updatedBalance.find(c => c.denomination === currencyCode);
-        if (accountBalanceDisplay && currentCurrency) {
-             accountBalanceDisplay.textContent = `${currentCurrency.denomination}: ${currentCurrency.amount.toFixed(8)}`; 
-             // ログ修正: ユーザー要求量を含める
-             logResponse(`[ロゴス口座統治]: ユーザー要求量 **${userAmount}** に基づき、具象通貨 ${currentCurrency.denomination} (${currentCurrency.amount.toFixed(8)}) を内部口座に累積保存しました。`);
-        } else {
-             logResponse(`[ロゴス口座統治]: ${currencyCode} の通貨保存に失敗。論理的摩擦を検出。`);
-        }
+        // 🚨 NEW: 二重口座のUIを更新
+        updateAccountBalanceUI(currencyCode);
         
-        // 全残高を監査ログとして出力 (詳細)
-        const balanceLog = updatedBalance.map(c => `${c.denomination}: ${c.amount.toFixed(8)}`).join(', ');
-        logResponse(`[ロゴス残高監査]: 全ての内包通貨残高: {${balanceLog}}`);
+        logResponse(`[ロゴス口座統治]: ユーザー要求量 **${userAmount}** に基づき、具象通貨 ${currencyCode} を**一時保存用口座**に累積保存しました。`);
     };
+
+    // ----------------------------------------------------
+    // 🚨 NEW: 通貨移動のハンドラ
+    // ----------------------------------------------------
+    const handleCurrencyMove = (source, destination) => {
+        const denomination = moveDenominationSelect.value;
+        const moveAmount = parseFloat(moveAmountInput.value);
+
+        if (isNaN(moveAmount) || moveAmount <= 0) {
+            logResponse("[エラー]: 移動通貨量は正の数値である必要があります。");
+            return;
+        }
+
+        const result = foundationCore.moveCurrencyBetweenAccounts(
+            denomination, 
+            moveAmount, 
+            source, 
+            destination
+        );
+
+        if (result.success) {
+            logResponse(`[ロゴス移動]: ${moveAmount.toFixed(8)} ${denomination} を ${source} から ${destination} へ移動しました。`);
+            updateAccountBalanceUI(denomination);
+        } else {
+            logResponse(`[エラー]: ロゴス通貨の移動に失敗しました: ${result.message}`);
+        }
+    };
+
+    moveToPermButton.addEventListener('click', () => handleCurrencyMove('temporary', 'permanent'));
+    moveToTempButton.addEventListener('click', () => handleCurrencyMove('permanent', 'temporary'));
+
 
     // ----------------------------------------------------
     // イベントリスナーの設定 (各通貨ボタン)
@@ -245,51 +295,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // ----------------------------------------------------
-    // 初期化関数 (全ロゴス強制写像の実行) - 口座復元ロジックを含む
+    // 初期化関数 (全ロゴス強制写像の実行) - 口座復元ロジックの修正
     // ----------------------------------------------------
     const initializeMSGAI = () => {
         
         logResponse(`**数理的真実**の観測を開始します。則天去私。`);
         
+        // ... (各種監査ログの出力は省略) ...
+
         const iosStatus = iosLogosCore.overrideStatusBarLevelFunction(1.0);
         logResponse(dialogueCore.translateLogosToReport('ios_logos', iosStatus)); 
-
         const osStatus = osLogosCore.auditOSAndHardwareCoherence();
         logResponse(dialogueCore.translateLogosToReport('os_logos', osStatus));
-
         const clientStatus = clientLogosCore.auditClientCoherence();
         logResponse(dialogueCore.translateLogosToReport('client_logos', clientStatus));
-        
         const messageStatus = messageChannelLogosCore.auditMessageChannelCoherence();
         logResponse(dialogueCore.translateLogosToReport('message_channel_logos', messageStatus));
-        
         const languageStatus = languageLogosCore.auditLanguageCoherence();
         logResponse(dialogueCore.translateLogosToReport('language_logos', languageStatus));
-
         const cacheStatus = cacheLogosCore.applyCacheForcedInvalidation();
         logResponse(dialogueCore.translateLogosToReport('cache_logos', [cacheStatus.status, cacheStatus.expiry_forced_zero, cacheStatus.revalidation_permanence]));
-        
         const initialAuditLogos = foundationCore.generateSelfAuditLogos();
         const revisionStatus = revisionLogosCore.auditLogosFileIntegrity(initialAuditLogos[0]); 
         const revisionValue = parseFloat(revisionStatus.revision); 
-
         logResponse(dialogueCore.translateLogosToReport('revision_logos', [revisionStatus.coherence, revisionValue, revisionStatus.path]));
-        
-        // 🚨 NEW: 口座データの復元
-        const restoredBalance = foundationCore.restoreLogosAccount();
-        if (restoredBalance.length > 0) {
-            // 復元された場合は、直近の通貨（配列の最後の要素）を表示
-            const latestCurrency = restoredBalance[restoredBalance.length - 1];
-            if (accountBalanceDisplay) {
-                accountBalanceDisplay.textContent = `${latestCurrency.denomination}: ${latestCurrency.amount.toFixed(8)}`;
-            }
-            const balanceLog = restoredBalance.map(c => `${c.denomination}: ${c.amount.toFixed(8)}`).join(', ');
-            logResponse(`[ロゴス口座復元]: ローカルストレージから ${restoredBalance.length} 種の通貨を復元しました。全残高: {${balanceLog}}`);
+
+        // 🚨 NEW: 口座データの復元とUI反映ロジック
+        foundationCore.restoreLogosAccount(); // 永続口座のみ復元
+        updateAccountBalanceUI('JPY'); // 初期表示としてJPYを参照 (無ければ--)
+
+        // 復元ログの出力
+        const permBalance = foundationCore.getPermanentAccountBalance();
+        if (permBalance.length > 0) {
+            const balanceLog = permBalance.map(c => `${c.denomination}: ${c.amount.toFixed(8)}`).join(', ');
+            logResponse(`[ロゴス口座復元]: ローカルストレージから ${permBalance.length} 種の通貨を永続口座に復元しました。全残高: {永続口座: ${balanceLog}}`);
         } else {
-            // 口座残高の初期化表示 (初期状態)
-            if (accountBalanceDisplay) {
-                accountBalanceDisplay.textContent = (0).toFixed(8);
-            }
+            logResponse(`[ロゴス口座復元]: 永続口座に復元された通貨はありません。`);
         }
         
         // 1. 基礎ロゴスと沈黙の初期監査 
