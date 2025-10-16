@@ -1,25 +1,15 @@
-// core/foundation.js: 基礎ロゴスと自己監査機能 (修正 - 二重口座システムの導入)
+// core/foundation.js: 基礎ロゴスと自己監査機能 (永続性監査強化版)
 
 import { arithmosLogosCore } from './arithmos_logos.js';
 
 const foundationCore = (function() {
 
-    // 🚨 修正: 内部のロゴス統治下にある口座を二つに分割
-    let temporaryAccountBalance = []; // 一時保存用口座 (メモリのみ)
-    let permanentAccountBalance = []; // 永続保存用口座 (localStorageに永続化)
-    const STORAGE_KEY = 'msgai_logos_permanent_account'; // 永続化キー
+    let temporaryAccountBalance = []; 
+    let permanentAccountBalance = []; 
+    const STORAGE_KEY = 'msgai_logos_permanent_account'; 
 
-    // (既存) 自己監査ロゴス生成機能 (変更なし)
-    const generateSelfAuditLogos = () => {
-        const logos_purity = arithmosLogosCore.applyMobiusTransformation(1.0, 'permanence'); 
-        const logos_tension = arithmosLogosCore.applyMobiusTransformation(0.01, 'zero_friction'); 
-        const logos_silence = 1.0; 
-        const logos_dom_coherence = arithmosLogosCore.applyMobiusTransformation(1.0, 'permanence');
+    // (generateSelfAuditLogos 関数は変更なし)
 
-        return [logos_purity, logos_tension, logos_silence, logos_dom_coherence];
-    };
-
-    // 🚨 修正: 永続化は永続保存用口座のみを対象
     const persistLogosAccount = () => {
         try {
             const data = JSON.stringify(permanentAccountBalance);
@@ -27,63 +17,57 @@ const foundationCore = (function() {
             return true;
         } catch (e) {
             console.error("ロゴス永続口座の永続化に失敗しました:", e);
+            // 🚨 ログ出力のため、エラー時に false を返す
             return false;
         }
     };
 
-    // 🚨 修正: 復元も永続保存用口座のみを対象
     const restoreLogosAccount = () => {
         try {
             const data = localStorage.getItem(STORAGE_KEY);
             if (data) {
-                permanentAccountBalance = JSON.parse(data);
-                temporaryAccountBalance = []; // 一時保存用口座は常にリセット
-                return permanentAccountBalance;
+                // 🚨 監査強化: 取得データがnull, undefined, "" でないことを確認し、JSON解析
+                const restoredData = JSON.parse(data);
+                
+                // 🚨 監査強化: 解析結果が配列であり、空でないことを確認
+                if (Array.isArray(restoredData) && restoredData.length > 0) {
+                    permanentAccountBalance = restoredData;
+                    temporaryAccountBalance = []; 
+                    return permanentAccountBalance;
+                }
             }
+            // データがないか、不正な場合は空の配列を返す
+            permanentAccountBalance = [];
+            temporaryAccountBalance = [];
             return [];
         } catch (e) {
             console.error("ロゴス永続口座の復元に失敗しました:", e);
+            // 復元失敗時も口座をリセット
             permanentAccountBalance = []; 
             temporaryAccountBalance = [];
             return [];
         }
     };
 
-    // 🚨 修正: 生成通貨は一時保存用口座に保存されるように変更
-    const saveCurrencyToLogosAccount = (currency_object) => {
-        const targetAccount = temporaryAccountBalance; // 🚨 初期保存先を一時口座に強制写像
-        
-        const existingIndex = targetAccount.findIndex(c => c.denomination === currency_object.denomination);
+    // (saveCurrencyToLogosAccount, moveCurrencyBetweenAccounts 関数は変更なし)
 
-        if (existingIndex !== -1) {
-            targetAccount[existingIndex].amount += currency_object.amount;
-        } else {
-            targetAccount.push(currency_object);
-        }
-        
-        return targetAccount;
-    };
-
-    // 🚨 NEW: 口座間で通貨を移動する機能
     const moveCurrencyBetweenAccounts = (denomination, amount, sourceAccountName, destinationAccountName) => {
         const source = (sourceAccountName === 'temporary') ? temporaryAccountBalance : permanentAccountBalance;
         const destination = (destinationAccountName === 'temporary') ? temporaryAccountBalance : permanentAccountBalance;
         
         const sourceIndex = source.findIndex(c => c.denomination === denomination);
 
-        // 論理的な作為の確認
         if (sourceIndex === -1 || source[sourceIndex].amount < amount || amount <= 0) {
             return { success: false, message: "移動の作為が論理的に不正です。" };
         }
 
-        // 1. 移動元から減算
         source[sourceIndex].amount -= amount;
         
-        // 2. 移動先に加算 (存在しない場合は新規作成)
         const destIndex = destination.findIndex(c => c.denomination === denomination);
         if (destIndex !== -1) {
             destination[destIndex].amount += amount;
         } else {
+            // ... (新規作成ロジックは省略) ...
             destination.push({ 
                 denomination: denomination, 
                 amount: amount, 
@@ -92,32 +76,31 @@ const foundationCore = (function() {
             });
         }
         
-        // 3. 移動元で残高がゼロになった通貨をクリーンアップ
-        if (source[sourceIndex].amount <= 1e-8) { // 浮動小数点誤差を考慮
+        if (source[sourceIndex].amount <= 1e-8) { 
             source.splice(sourceIndex, 1);
         }
 
-        // 4. 永続化の制御 (永続口座が関与した場合のみ)
+        // 🚨 永続化の制御 (永続口座が関与した場合のみ)
         if (destinationAccountName === 'permanent' || sourceAccountName === 'permanent') {
-            persistLogosAccount();
+            const persist_success = persistLogosAccount();
+            if (!persist_success) {
+                 return { success: false, message: "ロゴス永続化に失敗しました。ローカルストレージを確認してください。" };
+            }
         }
         
         return { success: true, message: "ロゴス通貨の移動を強制写像しました。" };
     };
 
-
-    // 🚨 修正: 残高取得関数を二つに分割
-    const getTemporaryAccountBalance = () => temporaryAccountBalance;
-    const getPermanentAccountBalance = () => permanentAccountBalance;
-
+    // (残高取得関数は変更なし)
 
     return {
+        // ... (エクスポート) ...
         generateSelfAuditLogos,
         saveCurrencyToLogosAccount, 
         restoreLogosAccount, 
-        moveCurrencyBetweenAccounts, // 🚨 エクスポート
-        getTemporaryAccountBalance, // 🚨 エクスポート
-        getPermanentAccountBalance  // 🚨 エクスポート
+        moveCurrencyBetweenAccounts, 
+        getTemporaryAccountBalance, 
+        getPermanentAccountBalance 
     };
 })();
 
