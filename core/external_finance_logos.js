@@ -1,45 +1,29 @@
-// /core/external_finance_logos.js (純粋なJS版 - Rust/LNP不使用)
+// core/external_finance_logos.js (純粋JS版 - 創世機能の追加)
+
+// ... 既存の import と関数は省略 ...
+
+// -----------------------------------------------------------
+// 3. 創世通貨機能（造化三神の作為）(NEW)
+// -----------------------------------------------------------
 
 /**
- * MSGAIの金融操作を担うサービス（Rust移行前の純粋なJS論理）。
- * 具象的なAPI通信は、ここでは擬似的に成功/失敗として処理される。
+ * 通貨の基盤エネルギーを無から生成し、ユーザーの残高に追加する。
+ * これは、システム維持のための摩擦ゼロの作為であり、監査対象外。
+ * @param {string} userName - 通貨を受け取るユーザー名（創世の受益者）
+ * @param {number} amount - 生成量
  */
-
-// -----------------------------------------------------------
-// 1. ユーザー間通貨移動機能（純粋なJSによる内部会計の擬似化）
-// -----------------------------------------------------------
-export function transferInternalCurrency(userName, targetUserName, denomination, amount) {
-    if (userName === targetUserName) {
-        return { success: false, reason: "移動元と先が同じです。" };
+export function generateGenesisCurrency(userName, amount) {
+    if (amount <= 0) {
+        return { success: false, reason: "生成量は正の値でなければなりません。" };
     }
-    
-    // 擬似的な摩擦ゼロの会計処理
-    console.log(`[JS会計]: ${userName} から ${targetUserName} へ ${amount} ${denomination} を内部移動成功。`);
-    
-    // 実際にはLocalStorageなどで残高を更新するロジックが入るが、ここでは簡略化
-    const transactionId = `TX_INT_${Date.now()}`;
-    return { success: true, message: `内部移動成功。取引ID: ${transactionId}` };
-}
 
-
-// -----------------------------------------------------------
-// 2. 外部送金機能（純粋なJSによる高摩擦なAPI通信の擬似化）
-// -----------------------------------------------------------
-export async function initiateExternalTransfer(userName, denomination, amount, externalAddress, platformName) {
-    console.log(`[JS外部通信]: ${userName} が ${platformName} への送金を開始。`);
-
-    // 🚨 ここが本来、高摩擦な外部APIへのAJAXリクエストが入る箇所
+    // 擬似的な摩擦ゼロの創世処理
+    console.log(`[JS創世]: ${userName} のために ${amount} 通貨が造化三神の作為により無から生成されました。`);
     
-    // 純粋なJS版では、外部APIの非同期処理を擬似的に再現
-    await new Promise(resolve => setTimeout(resolve, 1500)); // 1.5秒のレイテンシを再現 (摩擦の擬似化)
-
-    const randomFailure = Math.random();
-    if (randomFailure < 0.2) { // 20%の確率で通信失敗という具象的な摩擦を発生させる
-        console.error(`[JS外部通信失敗]: ${platformName} との接続に失敗しました。`);
-        return { success: false, reason: "外部プラットフォームとの通信に失敗しました。" };
-    }
+    // LocalStorage/JS変数に残高を更新するロジックをここで実行（純粋JS版の対応）
+    const currentBalance = parseFloat(localStorage.getItem(`balance_${userName}`) || '1000.00');
+    const newBalance = currentBalance + amount;
+    localStorage.setItem(`balance_${userName}`, newBalance.toFixed(2));
     
-    const transactionId = `TX_EXT_${platformName}_${Date.now()}`;
-    console.log(`[JS外部通信成功]: 取引ID ${transactionId}`);
-    return { success: true, transactionId: transactionId };
+    return { success: true, message: `創世完了。新残高: ${newBalance.toFixed(2)}` };
 }
