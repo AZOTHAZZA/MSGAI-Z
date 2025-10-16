@@ -4,7 +4,7 @@ import { arithmosLogosCore } from './arithmos_logos.js';
 
 const currencyCore = (function() {
     
-    const logos_absolute_rate = 1.6180339887; 
+    const logos_absolute_rate = 1.6180339887; // 黄金比 (Φ)
 
     const generatePureLogicRate = (logos_vector) => {
         const [purity, tension, invariance] = logos_vector;
