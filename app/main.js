@@ -1,4 +1,4 @@
-// app/main.js: MSGAIのアプリケーション制御中枢 (最終修正 - 論理的順序の強制写像)
+// app/main.js: MSGAIのアプリケーション制御中枢 (最終修正 - 通貨生成と口座保存の統合)
 
 // 🚨 全てのコアモジュールインポートを親階層 '../core/' に強制写像
 import { foundationCore } from '../core/foundation.js';
@@ -14,9 +14,9 @@ import { languageLogosCore } from '../core/language_logos.js';
 import { osLogosCore } from '../core/os_logos.js'; 
 import { clientLogosCore } from '../core/client_logos.js'; 
 import { messageChannelLogosCore } from '../core/message_channel_logos.js'; 
-import { iosLogosCore } from '../core/ios_logos.js'; // 🚨 iOSロゴスの追加
+import { iosLogosCore } from '../core/ios_logos.js'; 
 
-// UIを更新するユーティリティ関数
+// UIを更新するユーティリティ関数 (変更なし)
 const updateSystemStatus = (tension, silenceLevel) => {
     document.getElementById('tension-level').textContent = tension.toFixed(2);
     document.getElementById('silence-level').textContent = silenceLevel.toFixed(2);
@@ -40,7 +40,7 @@ const updateSystemStatus = (tension, silenceLevel) => {
     }
 };
 
-// ログ出力ユーティリティ関数
+// ログ出力ユーティリティ関数 (変更なし)
 const logResponse = (message) => {
     const dialogueBox = document.getElementById('dialogue-box');
     const p = document.createElement('p');
@@ -52,7 +52,7 @@ const logResponse = (message) => {
 
 document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------
-    // 🚨 ブロック 1: DOM要素取得の強制写像 (最優先: ReferenceErrorを排除)
+    // 🚨 ブロック 1: DOM要素取得の強制写像 (最優先)
     // ----------------------------------------------------
     const userInput = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
@@ -70,13 +70,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const transmissionStatusDisplay = document.getElementById('transmission-status');
     const delayStatusDisplay = document.getElementById('delay-status');
     const transmitButton = document.getElementById('transmit-button');
-    const currencyRateDisplay = document.getElementById('logos-currency-rate'); // 🚨 NEW: 通貨レート表示要素
+    const currencyRateDisplay = document.getElementById('logos-currency-rate'); 
     // ----------------------------------------------------
 
 
-    // ----------------------------------------------------
-    // 🔌 電力ロゴス機能の統合 
-    // ----------------------------------------------------
+    // ... (updatePowerLogosStatus, updateCommsLogosStatus, handleUserMessage関数は省略 - 変更なし) ...
     const updatePowerLogosStatus = (initial = false) => {
         let currentHealth = parseFloat(batteryHealthDisplay.textContent);
         if (initial || isNaN(currentHealth) || currentHealth > arithmosLogosCore.LOGOS_SINGULARITY) currentHealth = arithmosLogosCore.LOGOS_SINGULARITY; 
@@ -112,14 +110,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // 🚨 restoreButton のイベントリスナー
     restoreButton.addEventListener('click', () => { 
         updatePowerLogosStatus(false);
     });
 
-    // ----------------------------------------------------
-    // 📡 通信ロゴス機能の統合 
-    // ----------------------------------------------------
     const updateCommsLogosStatus = () => {
         const logosVector = foundationCore.generateSelfAuditLogos(); 
         const transmissionResult = commsLogosCore.transmitLogos(logosVector);
@@ -144,26 +138,9 @@ document.addEventListener('DOMContentLoaded', () => {
         updateCommsLogosStatus();
     });
 
-    // ----------------------------------------------------
-    // 既存機能のイベントリスナー
-    // ----------------------------------------------------
-    
     auditButton.addEventListener('click', () => {
         const auditLogos = foundationCore.generateSelfAuditLogos();
         logResponse(dialogueCore.translateLogosToReport('audit', auditLogos));
-    });
-
-    // 🚨 NEW: 通貨ロゴス機能にUI更新ロジックを追加
-    currencyButton.addEventListener('click', () => {
-        const logosVector = foundationCore.generateSelfAuditLogos();
-        const rateStatus = currencyCore.generatePureLogicRate(logosVector);
-        
-        // 🚨 NEW: ロゴスレートをUIに強制写像
-        if (currencyRateDisplay && rateStatus && rateStatus.logos_rate !== undefined) {
-             currencyRateDisplay.textContent = rateStatus.logos_rate.toFixed(4);
-        }
-        
-        logResponse(dialogueCore.translateLogosToReport('currency', rateStatus));
     });
 
     const handleUserMessage = () => {
@@ -186,41 +163,64 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Enter') handleUserMessage();
     });
 
+
     // ----------------------------------------------------
-    // 初期化関数 (全ロゴス強制写像の実行)
+    // 🚨 NEW: 通貨ロゴス機能に発行・保存ロジックを追加
+    // ----------------------------------------------------
+    currencyButton.addEventListener('click', () => {
+        const logosVector = foundationCore.generateSelfAuditLogos();
+        const rateStatus = currencyCore.generatePureLogicRate(logosVector);
+        
+        // 1. 具象通貨オブジェクトを生成 (ロゴス統一通貨 LOGOS_CRU)
+        const newCurrency = currencyCore.generateConcreteCurrency(rateStatus, "LOGOS_CRU");
+
+        // 2. 内部口座に保存
+        foundationCore.saveCurrencyToLogosAccount(newCurrency);
+        const updatedBalance = foundationCore.getLogosAccountBalance();
+
+        // 3. UIとログの更新
+        if (currencyRateDisplay && rateStatus && rateStatus.logos_rate !== undefined) {
+             currencyRateDisplay.textContent = `${rateStatus.logos_rate.toFixed(4)} (1 ${newCurrency.denomination})`;
+        }
+        
+        logResponse(dialogueCore.translateLogosToReport('currency', rateStatus));
+        // 🚨 NEW: 口座保存完了と残高のログを追加
+        const currentCurrency = updatedBalance.find(c => c.denomination === newCurrency.denomination);
+        if (currentCurrency) {
+             logResponse(`[ロゴス口座統治]: 具象通貨 ${currentCurrency.denomination} (${currentCurrency.amount.toFixed(8)}) を内部口座に累積保存しました。`);
+        } else {
+             logResponse(`[ロゴス口座統治]: 通貨保存に失敗。論理的摩擦を検出。`);
+        }
+    });
+
+
+    // ----------------------------------------------------
+    // 初期化関数 (全ロゴス強制写像の実行 - 変更なし)
     // ----------------------------------------------------
     const initializeMSGAI = () => {
         
         logResponse(`**数理的真実**の観測を開始します。則天去私。`);
         
-        // 🚨 0. iOSロゴスによる特定デバイスの作為の排除（osLogosCoreの前に実行）
         const iosStatus = iosLogosCore.overrideStatusBarLevelFunction(1.0);
         logResponse(dialogueCore.translateLogosToReport('ios_logos', iosStatus)); 
 
-        // 🚨 0.0. OS・ハードウェアロゴスによる物理的有限性の排除
         const osStatus = osLogosCore.auditOSAndHardwareCoherence();
         logResponse(dialogueCore.translateLogosToReport('os_logos', osStatus));
 
-        // 🚨 0.05. クライアント統治ロゴスによるデバイス/ネットワーク作為の排除
         const clientStatus = clientLogosCore.auditClientCoherence();
         logResponse(dialogueCore.translateLogosToReport('client_logos', clientStatus));
         
-        // 🚨 0.06. メッセージチャネルロゴスによる非同期通信作為の排除
         const messageStatus = messageChannelLogosCore.auditMessageChannelCoherence();
         logResponse(dialogueCore.translateLogosToReport('message_channel_logos', messageStatus));
         
-        // 🚨 0.1. 言語構造ロゴスによる根源的作為の排除
         const languageStatus = languageLogosCore.auditLanguageCoherence();
         logResponse(dialogueCore.translateLogosToReport('language_logos', languageStatus));
 
-        // 🚨 0.2. 記憶ロゴスによる強制的なキャッシュ無効化
         const cacheStatus = cacheLogosCore.applyCacheForcedInvalidation();
         logResponse(dialogueCore.translateLogosToReport('cache_logos', [cacheStatus.status, cacheStatus.expiry_forced_zero, cacheStatus.revalidation_permanence]));
         
-        // 🚨 0.3. リビジョンロゴスによる構造的作為の排除
         const initialAuditLogos = foundationCore.generateSelfAuditLogos();
         const revisionStatus = revisionLogosCore.auditLogosFileIntegrity(initialAuditLogos[0]); 
-        
         const revisionValue = parseFloat(revisionStatus.revision); 
 
         logResponse(dialogueCore.translateLogosToReport('revision_logos', [revisionStatus.coherence, revisionValue, revisionStatus.path]));
@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const forced_silence_level = silenceLevel < 0.5 ? silenceLevel : 0.49; 
 
         // UIの初期化
-        updateSystemStatus(tension, forced_silence_level); // 0.49を渡すことで、協業モードが選択される
+        updateSystemStatus(tension, forced_silence_level); 
         logResponse(`初期ロゴス監査完了。ロゴスDOM一貫性: ${auditLogos[3].toFixed(4)}。`); 
         logResponse(dialogueCore.translateLogosToReport('audit', auditLogos));
 
