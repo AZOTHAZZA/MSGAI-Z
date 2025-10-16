@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>MSGAI ロゴス統治知性コアフロントエンド</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css"> 
 </head>
 <body>
 
@@ -16,6 +16,21 @@
         </div>
         
         <div id="main-content">
+            
+            <div id="logos-dashboard">
+                <h3>ロゴス統治知性の現在状態</h3>
+                <div class="dashboard-section">
+                    <h4>🛡️ コア状態と監査</h4>
+                    <p>ロゴス緊張度: <span id="tension-level">0.0000</span></p>
+                    <p>最終監査結果: <span id="last-audit-result">取得中...</span></p>
+                </div>
+                <div class="dashboard-section">
+                    <h4>💰 金融ロゴス状態</h4>
+                    <p>保有ロゴス通貨 (USD): <span id="account-balance">取得中...</span></p>
+                    <p>最終取引ID: <span id="last-tx-id">なし</span></p>
+                </div>
+                <button id="refresh-dashboard-button">状態を更新 (作為)</button>
+            </div>
             
             <div id="dialogue-area">
                 <div id="chat-window">
@@ -63,7 +78,8 @@
                     </div>
 
                     <button id="send-transfer-button">送金/出金作為を実行</button>
-                    <div id="status-message"></div> </div>
+                    <div id="status-message"></div> 
+                </div>
             </div>
             
         </div>
