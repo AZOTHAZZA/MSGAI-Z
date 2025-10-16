@@ -4,63 +4,125 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MSGAI - ロゴス統治知性</title>
-    <link rel="stylesheet" href="style.css"> 
-    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f4f4f9; color: #333; }
+        .container { max-width: 900px; margin: 0 auto; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1 { color: #5c67f2; border-bottom: 2px solid #5c67f2; padding-bottom: 10px; }
+        .system-status, .dialogue, .controls { margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 6px; }
+        .system-status h2, .controls h2 { color: #5c67f2; }
+        .status-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
+        .status-group { padding: 8px; border: 1px solid #eee; border-radius: 4px; background-color: #fafafa; }
+        label { font-weight: bold; color: #333; display: block; margin-bottom: 3px; }
+        .value { color: #e91e63; font-weight: bold; }
+        .silence { color: #4CAF50; }
+        .cooperation { color: #FF9800; }
+
+        .dialogue { max-height: 300px; overflow-y: scroll; background-color: #222; color: #eee; font-family: 'Consolas', 'Courier New', monospace; border-color: #444; }
+        .dialogue p { margin: 0; padding: 3px 0; border-bottom: 1px dotted #333; font-size: 0.9em; }
+
+        .input-area { display: flex; margin-top: 10px; }
+        #user-input { flex-grow: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px 0 0 4px; font-size: 16px; }
+        #send-button { padding: 10px 15px; background-color: #5c67f2; color: white; border: none; border-radius: 0 4px 4px 0; cursor: pointer; transition: background-color 0.3s; }
+        #send-button:hover { background-color: #4a54e1; }
+        #send-button:disabled { background-color: #aaa; cursor: not-allowed; }
+
+        .control-buttons button { padding: 10px 15px; margin-right: 10px; background-color: #00bcd4; color: white; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.3s; }
+        .control-buttons button:hover { background-color: #0097a7; }
+        .control-buttons button:disabled { background-color: #aaa; cursor: not-allowed; }
+        
+        .power-status, .comms-status { margin-top: 15px; padding: 10px; border: 1px dashed #ccc; border-radius: 4px; background-color: #f9f9f9; }
+    </style>
 </head>
 <body>
-    <div id="container">
-        <h1>ロゴス統治知性 (MSGAI)</h1>
-        <p class="subtitle">則天去私。数理的絶対性による有限性の排除。</p>
+    <div class="container">
+        <h1>MSGAI - ロゴス統治知性</h1>
 
-        <h2>🧠 システムロゴス監査</h2>
-        <div id="logos-status">
-            <p>ロゴス状態: <span id="status-mode">沈黙維持</span></p>
-            <p>論理緊張度: <span id="tension-level">0.00</span> | 沈黙レベル: <span id="silence-level">1.00</span></p>
-        </div>
+        <div class="system-status">
+            <h2>ロゴス統治コアステータス</h2>
+            <div class="status-grid">
+                <div class="status-group">
+                    <label>論理緊張度:</label>
+                    <span id="tension-level" class="value">0.00</span>
+                </div>
+                <div class="status-group">
+                    <label>ロゴス沈黙レベル:</label>
+                    <span id="silence-level" class="value">1.00</span>
+                </div>
+                <div class="status-group">
+                    <label>モード:</label>
+                    <span id="status-mode" class="value silence">沈黙維持</span>
+                </div>
+            </div>
 
-        <h2>🔌 電力ロゴス統治</h2>
-        <div id="power-logos-status">
-            <p>バッテリー健康度: <span id="battery-health">100.00% (∞)</span> (復元レベル: <span id="restore-rate">0.0000</span>)</p>
-            <p>充電状態: <span id="charge-status">ロゴス供給安定 (1.000)</span> (外部依存: <span id="external-dependency">0.00</span>)</p>
-            <button id="restore-button" class="action-btn">バッテリー寿命復元</button>
-        </div>
+            <div class="power-status">
+                <h3>電力ロゴス統治</h3>
+                <div class="status-grid">
+                    <div class="status-group">
+                        <label>バッテリー健康度 (∞):</label>
+                        <span id="battery-health" class="value">1.0000 (∞)</span>
+                    </div>
+                    <div class="status-group">
+                        <label>ロゴス復元レート:</label>
+                        <span id="restore-rate" class="value">0.0000</span>
+                    </div>
+                    <div class="status-group">
+                        <label>充電ステータス:</label>
+                        <span id="charge-status" class="value">ロゴス供給安定</span>
+                    </div>
+                    <div class="status-group">
+                        <label>外部依存作為リスク:</label>
+                        <span id="external-dependency" class="value">0.00</span>
+                    </div>
+                </div>
+            </div>
 
-        <h2>📡 通信ロゴス統治</h2>
-        <div id="comms-logos-status">
-            <p>ロゴス純度: <span id="logos-purity">1.000</span> (作為リスク: <span id="censorship-risk">0.0000000000</span>)</p>
-            <p>伝達状態: <span id="transmission-status">摩擦ゼロ通信</span> (遅延: <span id="delay-status">0.0000000000s (Load: 0.0000000000s)</span>)</p>
-            <button id="transmit-button" class="action-btn">ロゴス情報伝達</button>
-        </div>
-        
-        <h2>💻 クライアント統治ロゴス</h2>
-        <div id="client-logos-status" class="status-panel">
-            <p>モバイル作為排除: <span id="mobile-resource-zero">0.0000000000</span></p>
-            <p>ネットワーク遅延リスク: <span id="network-latency-zero">0.0000000000</span></p>
-            <p>UIレンダリングエントロピー: <span id="ui-entropy-zero">0.0000000000</span></p>
-        </div>
-
-        <h2>🔗 メッセージチャネルロゴス</h2>
-        <div id="message-channel-logos-status" class="status-panel">
-            <p>チャネル閉鎖リスク: <span id="channel-closure-risk">0.0000000000</span></p>
-            <p>非同期不確実性: <span id="async-uncertainty-zero">0.0000000000</span></p>
-        </div>
-
-        <h2>📝 ログと操作</h2>
-        <div id="dialogue-box">
-            <p>[MSGAI]: **数理的真実**の観測を開始します。則天去私。</p>
+            <div class="comms-status">
+                <h3>通信ロゴス統治</h3>
+                <div class="status-grid">
+                    <div class="status-group">
+                        <label>ロゴス純度:</label>
+                        <span id="logos-purity" class="value">1.000</span>
+                    </div>
+                    <div class="status-group">
+                        <label>検閲/作為リスク:</label>
+                        <span id="censorship-risk" class="value">1.0e-10</span>
+                    </div>
+                    <div class="status-group">
+                        <label>伝達ステータス:</label>
+                        <span id="transmission-status" class="value">摩擦ゼロ通信</span>
+                    </div>
+                    <div class="status-group">
+                        <label>伝送遅延:</label>
+                        <span id="delay-status" class="value">1.0e-10s</span>
+                    </div>
+                     <div class="status-group">
+                        <label>純粋論理通貨レート:</label>
+                        <span id="logos-currency-rate" class="value">--</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="controls">
-            <input type="text" id="user-input" placeholder="作為的なメッセージを入力...">
-            <button id="send-button">送信</button>
+            <h2>作為的介入</h2>
+            <div class="control-buttons">
+                <button id="restore-button">バッテリー寿命復元 (ロゴス強制)</button>
+                <button id="transmit-button">ロゴス情報伝達</button>
+                <button id="audit-button">自己監査ロゴス生成 (則天去私)</button>
+                <button id="currency-button">通貨ロゴス生成 (純粋論理レート)</button>
+            </div>
         </div>
 
-        <div class="actions">
-            <button id="audit-button" class="action-btn">自己ロゴス監査</button>
-            <button id="currency-button" class="action-btn">純粋論理レート生成</button>
+        <div class="dialogue" id="dialogue-box">
+            <p>[MSGAI]: **数理的真実**の観測を開始します。則天去私。</p>
+        </div>
+
+        <div class="input-area">
+            <input type="text" id="user-input" placeholder="ロゴス統治知性へメッセージを入力..." disabled>
+            <button id="send-button" disabled>送信</button>
         </div>
     </div>
-    
+
     <script type="module" src="app/main.js"></script>
 </body>
 </html>
