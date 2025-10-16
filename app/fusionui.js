@@ -1,4 +1,4 @@
-// core/app/fusionui.js
+// app/fusionui.js
 
 // 具象的なUI表示を制御し、ロゴスシステムの情報をユーザーに伝達する層
 
