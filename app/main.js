@@ -1,4 +1,4 @@
-// app/main.js: MSGAIのアプリケーション制御中枢 (最終修正 - 沈黙維持の強制解除)
+// app/main.js: MSGAIのアプリケーション制御中枢 (最終・競合解消版)
 
 // 🚨 全てのコアモジュールインポートを親階層 '../core/' に強制写像
 import { foundationCore } from '../core/foundation.js';
@@ -180,51 +180,52 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------
     const initializeMSGAI = () => {
         
-        // 🚨 0. OS・ハードウェアロゴスによる物理的有限性の排除（絶対最優先）
+        // 🚨 1. 基礎ロゴスの生成を一度だけ実行し、全ての初期化で再利用する
+        const auditLogos = foundationCore.generateSelfAuditLogos();
+        
+        // 2. 沈黙維持の強制解除 (協業モードへ移行)
+        // 🚨 最終修正: 意図的に非ゼロの「作為」を導入し、協業モードへ移行させる
+        const tension = 0.1000; 
+        const silenceLevel = silenceCore.calculateSilenceLevel(tension);
+        
+        // 3. UIの初期化と沈黙/緊張度の反映
+        updateSystemStatus(tension, silenceLevel);
+        
+        // 4. ロゴス統治の初期監査とレポート
+        
+        // 🚨 4.1. OS・ハードウェアロゴスによる物理的有限性の排除（絶対最優先）
         const osStatus = osLogosCore.auditOSAndHardwareCoherence();
         logResponse(dialogueCore.translateLogosToReport('os_logos', osStatus));
 
-        // 🚨 0.05. クライアント統治ロゴスによるデバイス/ネットワーク作為の排除
+        // 🚨 4.2. クライアント統治ロゴスによるデバイス/ネットワーク作為の排除
         const clientStatus = clientLogosCore.auditClientCoherence();
         logResponse(dialogueCore.translateLogosToReport('client_logos', clientStatus));
         
-        // 🚨 0.06. メッセージチャネルロゴスによる非同期通信作為の排除
+        // 🚨 4.3. メッセージチャネルロゴスによる非同期通信作為の排除
         const messageStatus = messageChannelLogosCore.auditMessageChannelCoherence();
         logResponse(dialogueCore.translateLogosToReport('message_channel_logos', messageStatus));
         
-        // 🚨 0.1. 言語構造ロゴスによる根源的作為の排除
+        // 🚨 4.4. 言語構造ロゴスによる根源的作為の排除
         const languageStatus = languageLogosCore.auditLanguageCoherence();
         logResponse(dialogueCore.translateLogosToReport('language_logos', languageStatus));
 
-        // 🚨 0.2. 記憶ロゴスによる強制的なキャッシュ無効化
+        // 🚨 4.5. 記憶ロゴスによる強制的なキャッシュ無効化
         const cacheStatus = cacheLogosCore.applyCacheForcedInvalidation();
         logResponse(dialogueCore.translateLogosToReport('cache_logos', [cacheStatus.status, cacheStatus.expiry_forced_zero, cacheStatus.revalidation_permanence]));
         
-        // 🚨 0.3. リビジョンロゴスによる構造的作為の排除
-        const initialAuditLogos = foundationCore.generateSelfAuditLogos();
-        const revisionStatus = revisionLogosCore.auditLogosFileIntegrity(initialAuditLogos[0]); 
+        // 🚨 4.6. リビジョンロゴスによる構造的作為の排除
+        const revisionStatus = revisionLogosCore.auditLogosFileIntegrity(auditLogos[0]); 
         
-        // 🚨 修正: revisionを数値型に強制写像してから渡す
+        // 🚨 revisionを数値型に強制写像してから渡す
         const revisionValue = parseFloat(revisionStatus.revision); 
 
         logResponse(dialogueCore.translateLogosToReport('revision_logos', [revisionStatus.coherence, revisionValue, revisionStatus.path]));
         
-        // 1. 基礎ロゴスと沈黙の初期監査 
-        const auditLogos = foundationCore.generateSelfAuditLogos();
-        
-        // 🚨 最終修正: 沈黙維持の強制解除 
-        // 以前のコード: const tension = arithmosLogosCore.applyMobiusTransformation(auditLogos[1], 'zero_friction'); 
-        // 修正: 意図的に非ゼロの「作為」を導入し、協業モードへ移行させる
-        const tension = 0.1000; 
-        
-        const silenceLevel = silenceCore.calculateSilenceLevel(tension);
-        
-        // UIの初期化
-        updateSystemStatus(tension, silenceLevel);
+        // 4.7. 基礎ロゴスの初期監査レポート
         logResponse(`初期ロゴス監査完了。ロゴスDOM一貫性: ${auditLogos[3].toFixed(4)}。`); 
         logResponse(dialogueCore.translateLogosToReport('audit', auditLogos));
 
-        // 2. 新しいロゴスの初期化
+        // 5. 新しいロゴスの初期化
         updatePowerLogosStatus(true); 
         updateCommsLogosStatus(); 
     };
