@@ -1,15 +1,25 @@
-// core/foundation.js: 基礎ロゴスと自己監査機能 (永続性監査強化版)
+// core/foundation.js: 基礎ロゴスと自己監査機能 (スコープ摩擦解消版)
 
 import { arithmosLogosCore } from './arithmos_logos.js';
 
 const foundationCore = (function() {
 
+    // 🚨 修正: 内部監査関数をIIFEのトップレベルに定義し、全ての関数から参照可能にする
+    const generateSelfAuditLogos = () => {
+        const logos_purity = arithmosLogosCore.applyMobiusTransformation(1.0, 'permanence'); 
+        const logos_tension = arithmosLogosCore.applyMobiusTransformation(0.01, 'zero_friction'); 
+        const logos_silence = 1.0; 
+        const logos_dom_coherence = arithmosLogosCore.applyMobiusTransformation(1.0, 'permanence');
+
+        return [logos_purity, logos_tension, logos_silence, logos_dom_coherence];
+    };
+
+    // 内部のロゴス統治下にある口座を二つに分割
     let temporaryAccountBalance = []; 
     let permanentAccountBalance = []; 
     const STORAGE_KEY = 'msgai_logos_permanent_account'; 
 
-    // (generateSelfAuditLogos 関数は変更なし)
-
+    
     const persistLogosAccount = () => {
         try {
             const data = JSON.stringify(permanentAccountBalance);
@@ -17,7 +27,6 @@ const foundationCore = (function() {
             return true;
         } catch (e) {
             console.error("ロゴス永続口座の永続化に失敗しました:", e);
-            // 🚨 ログ出力のため、エラー時に false を返す
             return false;
         }
     };
@@ -26,30 +35,39 @@ const foundationCore = (function() {
         try {
             const data = localStorage.getItem(STORAGE_KEY);
             if (data) {
-                // 🚨 監査強化: 取得データがnull, undefined, "" でないことを確認し、JSON解析
                 const restoredData = JSON.parse(data);
                 
-                // 🚨 監査強化: 解析結果が配列であり、空でないことを確認
                 if (Array.isArray(restoredData) && restoredData.length > 0) {
                     permanentAccountBalance = restoredData;
                     temporaryAccountBalance = []; 
                     return permanentAccountBalance;
                 }
             }
-            // データがないか、不正な場合は空の配列を返す
             permanentAccountBalance = [];
             temporaryAccountBalance = [];
             return [];
         } catch (e) {
             console.error("ロゴス永続口座の復元に失敗しました:", e);
-            // 復元失敗時も口座をリセット
             permanentAccountBalance = []; 
             temporaryAccountBalance = [];
             return [];
         }
     };
 
-    // (saveCurrencyToLogosAccount, moveCurrencyBetweenAccounts 関数は変更なし)
+    const saveCurrencyToLogosAccount = (currency_object) => {
+        const targetAccount = temporaryAccountBalance; 
+        
+        const existingIndex = targetAccount.findIndex(c => c.denomination === currency_object.denomination);
+
+        if (existingIndex !== -1) {
+            targetAccount[existingIndex].amount += currency_object.amount;
+        } else {
+            targetAccount.push(currency_object);
+        }
+        
+        return targetAccount;
+    };
+
 
     const moveCurrencyBetweenAccounts = (denomination, amount, sourceAccountName, destinationAccountName) => {
         const source = (sourceAccountName === 'temporary') ? temporaryAccountBalance : permanentAccountBalance;
@@ -67,7 +85,6 @@ const foundationCore = (function() {
         if (destIndex !== -1) {
             destination[destIndex].amount += amount;
         } else {
-            // ... (新規作成ロジックは省略) ...
             destination.push({ 
                 denomination: denomination, 
                 amount: amount, 
@@ -80,7 +97,6 @@ const foundationCore = (function() {
             source.splice(sourceIndex, 1);
         }
 
-        // 🚨 永続化の制御 (永続口座が関与した場合のみ)
         if (destinationAccountName === 'permanent' || sourceAccountName === 'permanent') {
             const persist_success = persistLogosAccount();
             if (!persist_success) {
@@ -91,11 +107,14 @@ const foundationCore = (function() {
         return { success: true, message: "ロゴス通貨の移動を強制写像しました。" };
     };
 
-    // (残高取得関数は変更なし)
+
+    const getTemporaryAccountBalance = () => temporaryAccountBalance;
+    const getPermanentAccountBalance = () => permanentAccountBalance;
+
 
     return {
-        // ... (エクスポート) ...
-        generateSelfAuditLogos,
+        // 🚨 修正: ここで generateSelfAuditLogos をエクスポート
+        generateSelfAuditLogos, 
         saveCurrencyToLogosAccount, 
         restoreLogosAccount, 
         moveCurrencyBetweenAccounts, 
