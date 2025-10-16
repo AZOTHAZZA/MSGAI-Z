@@ -1,10 +1,10 @@
-// core/foundation.js: 基礎ロゴスと自己監査機能 (スコープ摩擦解消版)
+// core/foundation.js: 基礎ロゴスと自己監査機能 (永続性ロゴス強化版)
 
 import { arithmosLogosCore } from './arithmos_logos.js';
 
 const foundationCore = (function() {
 
-    // 🚨 修正: 内部監査関数をIIFEのトップレベルに定義し、全ての関数から参照可能にする
+    // 🚨 修正: 内部監査関数をIIFEのトップレベルに定義し、スコープ摩擦を解消
     const generateSelfAuditLogos = () => {
         const logos_purity = arithmosLogosCore.applyMobiusTransformation(1.0, 'permanence'); 
         const logos_tension = arithmosLogosCore.applyMobiusTransformation(0.01, 'zero_friction'); 
@@ -15,9 +15,9 @@ const foundationCore = (function() {
     };
 
     // 内部のロゴス統治下にある口座を二つに分割
-    let temporaryAccountBalance = []; 
-    let permanentAccountBalance = []; 
-    const STORAGE_KEY = 'msgai_logos_permanent_account'; 
+    let temporaryAccountBalance = []; // 一時保存用口座 (メモリのみ)
+    let permanentAccountBalance = []; // 永続保存用口座 (localStorageに永続化)
+    const STORAGE_KEY = 'msgai_logos_permanent_account'; // 永続化キー
 
     
     const persistLogosAccount = () => {
@@ -37,21 +37,20 @@ const foundationCore = (function() {
             if (data) {
                 const restoredData = JSON.parse(data);
                 
-                if (Array.isArray(restoredData) && restoredData.length > 0) {
+                // 🚨 修正: 解析結果が配列であれば、空であっても復元を試みる
+                if (Array.isArray(restoredData)) { 
                     permanentAccountBalance = restoredData;
                     temporaryAccountBalance = []; 
                     return permanentAccountBalance;
                 }
             }
-            permanentAccountBalance = [];
-            temporaryAccountBalance = [];
-            return [];
         } catch (e) {
-            console.error("ロゴス永続口座の復元に失敗しました:", e);
-            permanentAccountBalance = []; 
-            temporaryAccountBalance = [];
-            return [];
+            // 🚨 永続性の摩擦解消: 復元失敗時に口座を空にリセットしない
+            console.error("ロゴス永続口座の復元に失敗しました。ローカルストレージのデータが不正です:", e);
+            temporaryAccountBalance = []; // 一時口座はリセット
         }
+        // データがないか、復元エラーの場合は現在の口座状態を維持または空を返す
+        return permanentAccountBalance; 
     };
 
     const saveCurrencyToLogosAccount = (currency_object) => {
@@ -113,7 +112,6 @@ const foundationCore = (function() {
 
 
     return {
-        // 🚨 修正: ここで generateSelfAuditLogos をエクスポート
         generateSelfAuditLogos, 
         saveCurrencyToLogosAccount, 
         restoreLogosAccount, 
