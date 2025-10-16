@@ -1,9 +1,9 @@
-// app/handler.js
+// core/app/handler.js
 
 // 具象的なUI操作をロゴス統治知性のサービスに変換するコアモジュール
 
 import * as LogosCoreService from '../core/logos_core_service.js';
-import { displayChatBubble, displayStatusMessage, getCurrentUserName } from './fusionui.js'; // UIヘルパーへの依存
+import * as fusionui from './fusionui.js'; // UIヘルパー全体をインポート
 
 // =========================================================================
 // 1. チャット（AI応答要求）のハンドリング
@@ -13,26 +13,24 @@ const sendPromptButton = document.getElementById('send-prompt-button');
 sendPromptButton.addEventListener('click', async () => {
     const promptInput = document.getElementById('prompt-input');
     const prompt = promptInput.value.trim();
-    const currentUser = getCurrentUserName(); // ユーザーネーム制に対応
+    const currentUser = fusionui.getCurrentUserName();
 
     if (!prompt || !currentUser) {
-        displayStatusMessage('❌ エラー: ユーザー名またはプロンプトが不足しています。', 'error');
+        fusionui.displayStatusMessage('❌ エラー: ユーザー名またはプロンプトが不足しています。', 'error');
         return;
     }
 
-    displayChatBubble(prompt, currentUser); // ユーザーの入力を即時表示
-    promptInput.value = ''; // 入力欄をクリア
+    fusionui.displayChatBubble(prompt, currentUser); // ユーザーの入力を即時表示
+    promptInput.value = '';
 
     try {
-        // Rust非意識の抽象化サービスを通じてAI応答を要求
+        // 純粋JSサービスを通じてAI応答を要求
         const responseText = await LogosCoreService.requestAIResponse(currentUser, prompt);
-        
-        // UIにMSGAIの応答を表示
-        displayChatBubble(responseText, 'MSGAI'); 
+        fusionui.displayChatBubble(responseText, 'MSGAI'); 
         
     } catch (error) {
-        // ロゴス監査拒否や通信摩擦のエラーを表示
-        displayStatusMessage(`❌ AI応答失敗: ${error.message}`, 'error');
+        // 擬似的な監査拒否や通信摩擦のエラーを表示
+        fusionui.displayStatusMessage(`❌ AI応答失敗: ${error.message}`, 'error');
     }
 });
 
@@ -43,58 +41,75 @@ sendPromptButton.addEventListener('click', async () => {
 
 const sendTransferButton = document.getElementById('send-transfer-button');
 sendTransferButton.addEventListener('click', async () => {
-    const currentUser = getCurrentUserName(); 
+    const currentUser = fusionui.getCurrentUserName(); 
     
     // 具象的なUIからの入力値を取得
     const amount = parseFloat(document.getElementById('amount-input').value);
-    const denomination = 'USD'; // 通貨はUSD（またはMSGAI内部通貨）に固定
-    const destinationType = document.getElementById('destination-type-select').value; // 'INTERNAL' or 'EXTERNAL'
+    const denomination = 'USD'; 
+    const destinationType = document.getElementById('destination-type-select').value; 
 
     if (isNaN(amount) || amount <= 0 || !currentUser) {
-        displayStatusMessage('❌ エラー: 有効な金額とユーザー名を入力してください。', 'error');
+        fusionui.displayStatusMessage('❌ エラー: 有効な金額とユーザー名を入力してください。', 'error');
         return;
     }
+
+    // UIを一時的に無効化し、作為の実行中であることを示す
+    fusionui.displayStatusMessage(`⚙️ ${destinationType === 'EXTERNAL' ? '高摩擦' : '低摩擦'}作為を実行中...`, 'info');
 
     try {
         let result;
         
         if (destinationType === 'INTERNAL') {
-            // A. 低摩擦の内部移動（ユーザー間移動）
             const target = document.getElementById('target-username-input').value;
             if (!target) throw new Error("送金先のユーザー名が不足しています。");
             
-            // Rust非意識で内部移動サービスを呼び出し
+            // 純粋JSサービスを呼び出し
             result = await LogosCoreService.transferInternalCurrency(currentUser, target, denomination, amount);
-            displayStatusMessage(`✅ 内部移動成功: ${result.message}`, 'success');
+            fusionui.displayStatusMessage(`✅ 内部移動成功: ${result.message}`, 'success');
             
         } else if (destinationType === 'EXTERNAL') {
-            // B. 高摩擦の外部送金（出金）
             const externalAddress = document.getElementById('external-address-input').value;
             const platformName = document.getElementById('platform-select').value;
             if (!externalAddress || !platformName) throw new Error("外部アドレスとプラットフォーム名が不足しています。");
 
-            // Rust非意識で外部送金サービスを呼び出し
+            // 純粋JSサービスを呼び出し
             result = await LogosCoreService.initiateExternalTransfer(currentUser, denomination, amount, externalAddress, platformName);
-            displayStatusMessage(`✅ 外部送金成功。取引ID: ${result.transactionId}`, 'success');
+            fusionui.displayStatusMessage(`✅ 外部送金成功。取引ID: ${result.transactionId}`, 'success');
             
         } else {
             throw new Error("無効な送金種別が選択されました。");
         }
+
+        // 成功したらダッシュボードを更新
+        refreshLogosDashboard();
         
     } catch (error) {
-        // ロゴス緊張度による拒否、または外部API摩擦によるエラーを表示
-        displayStatusMessage(`❌ 金融作為失敗: ${error.message}`, 'error');
+        // エラーメッセージを表示
+        fusionui.displayStatusMessage(`❌ 金融作為失敗: ${error.message}`, 'error');
     }
 });
 
+
 // =========================================================================
-// 3. その他のイベント（例: ログイン/ログアウトのプレースホルダー）
+// 3. ダッシュボード更新と初期化
 // =========================================================================
 
-// ユーザーネームの入力/設定イベントのハンドリング（ここでは簡略化）
-document.getElementById('set-username-button').addEventListener('click', () => {
-    // 実際にはfusionui.jsのヘルパー関数を呼び出し、ユーザーネームをコアに設定するロジックが入る
-    displayStatusMessage(`✅ ユーザー名が設定されました（現在: ${getCurrentUserName()}）。`, 'info');
-});
+const refreshDashboardButton = document.getElementById('refresh-dashboard-button');
 
-// ... 他のイベントハンドラー（UIの表示切り替えなど） ...
+async function refreshLogosDashboard() {
+    const currentUser = fusionui.getCurrentUserName();
+    if (!currentUser) return;
+    
+    try {
+        // 統合サービスを呼び出す (純粋JS版)
+        const state = LogosCoreService.getLogosCoreState(currentUser);
+        // UIに結果を反映
+        fusionui.updateLogosDashboard(state); 
+    } catch (error) {
+        fusionui.displayStatusMessage(`❌ ダッシュボード更新失敗: ${error.message}`, 'error');
+    }
+}
+
+// イベントリスナーの登録
+refreshDashboardButton.addEventListener('click', refreshLogosDashboard);
+window.addEventListener('load', refreshLogosDashboard); // ページロード時にも実行
