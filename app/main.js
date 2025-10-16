@@ -14,9 +14,9 @@ import { languageLogosCore } from '../core/language_logos.js';
 import { osLogosCore } from '../core/os_logos.js'; 
 import { clientLogosCore } from '../core/client_logos.js'; 
 import { messageChannelLogosCore } from '../core/message_channel_logos.js'; 
-import { iosLogosCore } from '../core/ios_logos.js'; // 🚨 NEW: iOSロゴスの追加
+import { iosLogosCore } from '../core/ios_logos.js'; // 🚨 iOSロゴスの追加
 
-// UIを更新するユーティリティ関数 (変更なし)
+// UIを更新するユーティリティ関数
 const updateSystemStatus = (tension, silenceLevel) => {
     document.getElementById('tension-level').textContent = tension.toFixed(2);
     document.getElementById('silence-level').textContent = silenceLevel.toFixed(2);
@@ -40,7 +40,7 @@ const updateSystemStatus = (tension, silenceLevel) => {
     }
 };
 
-// ログ出力ユーティリティ関数 (変更なし)
+// ログ出力ユーティリティ関数
 const logResponse = (message) => {
     const dialogueBox = document.getElementById('dialogue-box');
     const p = document.createElement('p');
@@ -52,7 +52,7 @@ const logResponse = (message) => {
 
 document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------
-    // 🚨 修正: DOM要素取得の強制写像 (最優先: ReferenceErrorを排除)
+    // 🚨 ブロック 1: DOM要素取得の強制写像 (最優先: ReferenceErrorを排除)
     // ----------------------------------------------------
     const userInput = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
@@ -63,13 +63,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const restoreRateDisplay = document.getElementById('restore-rate');
     const chargeStatusDisplay = document.getElementById('charge-status');
     const externalDependencyDisplay = document.getElementById('external-dependency');
-    const restoreButton = document.getElementById('restore-button'); // 🚨 ここで restoreButton を定義
+    const restoreButton = document.getElementById('restore-button'); 
 
     const logosPurityDisplay = document.getElementById('logos-purity');
     const censorshipRiskDisplay = document.getElementById('censorship-risk');
     const transmissionStatusDisplay = document.getElementById('transmission-status');
     const delayStatusDisplay = document.getElementById('delay-status');
     const transmitButton = document.getElementById('transmit-button');
+    const currencyRateDisplay = document.getElementById('logos-currency-rate'); // 🚨 NEW: 通貨レート表示要素
     // ----------------------------------------------------
 
 
@@ -91,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const restoreRate = restoreResult[1];
 
             if (newHealth >= arithmosLogosCore.LOGOS_SINGULARITY) {
-                 batteryHealthDisplay.textContent = '1.0000 (∞)'; // 100%を1.0000に修正
+                 batteryHealthDisplay.textContent = '1.0000 (∞)'; 
             } else {
                  batteryHealthDisplay.textContent = newHealth.toFixed(4);
             }
@@ -111,13 +112,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // 🚨 restoreButton の使用（DOM定義の後）
+    // 🚨 restoreButton のイベントリスナー
     restoreButton.addEventListener('click', () => { 
         updatePowerLogosStatus(false);
     });
 
     // ----------------------------------------------------
-    // 📡 通信ロゴス機能の統合 (変更なし)
+    // 📡 通信ロゴス機能の統合 
     // ----------------------------------------------------
     const updateCommsLogosStatus = () => {
         const logosVector = foundationCore.generateSelfAuditLogos(); 
@@ -144,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ----------------------------------------------------
-    // 既存機能のイベントリスナー（変更なし）
+    // 既存機能のイベントリスナー
     // ----------------------------------------------------
     
     auditButton.addEventListener('click', () => {
@@ -152,10 +153,17 @@ document.addEventListener('DOMContentLoaded', () => {
         logResponse(dialogueCore.translateLogosToReport('audit', auditLogos));
     });
 
+    // 🚨 NEW: 通貨ロゴス機能にUI更新ロジックを追加
     currencyButton.addEventListener('click', () => {
         const logosVector = foundationCore.generateSelfAuditLogos();
-        const rate = currencyCore.generatePureLogicRate(logosVector);
-        logResponse(dialogueCore.translateLogosToReport('currency', rate));
+        const rateStatus = currencyCore.generatePureLogicRate(logosVector);
+        
+        // 🚨 NEW: ロゴスレートをUIに強制写像
+        if (currencyRateDisplay && rateStatus && rateStatus.logos_rate !== undefined) {
+             currencyRateDisplay.textContent = rateStatus.logos_rate.toFixed(4);
+        }
+        
+        logResponse(dialogueCore.translateLogosToReport('currency', rateStatus));
     });
 
     const handleUserMessage = () => {
@@ -183,8 +191,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------
     const initializeMSGAI = () => {
         
+        logResponse(`**数理的真実**の観測を開始します。則天去私。`);
+        
         // 🚨 0. iOSロゴスによる特定デバイスの作為の排除（osLogosCoreの前に実行）
-        // 🚨 呼び出しは、その出力を利用する箇所（例：osLogosCore）の直前で。ここではシミュレーションとして実行。
         const iosStatus = iosLogosCore.overrideStatusBarLevelFunction(1.0);
         logResponse(dialogueCore.translateLogosToReport('ios_logos', iosStatus)); 
 
@@ -222,8 +231,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const tension = arithmosLogosCore.applyMobiusTransformation(auditLogos[1], 'zero_friction'); 
         const silenceLevel = silenceCore.calculateSilenceLevel(tension);
         
+        // 🚨 協業モードを強制的に保証する作為を導入: 初期沈黙を 0.49 に制限
+        const forced_silence_level = silenceLevel < 0.5 ? silenceLevel : 0.49; 
+
         // UIの初期化
-        updateSystemStatus(tension, silenceLevel);
+        updateSystemStatus(tension, forced_silence_level); // 0.49を渡すことで、協業モードが選択される
         logResponse(`初期ロゴス監査完了。ロゴスDOM一貫性: ${auditLogos[3].toFixed(4)}。`); 
         logResponse(dialogueCore.translateLogosToReport('audit', auditLogos));
 
