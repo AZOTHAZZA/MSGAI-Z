@@ -1,4 +1,4 @@
-// app/main.js: MSGAIのアプリケーション制御中枢 (DOM参照復元 & 沈黙解除対応)
+// app/main.js: MSGAIのアプリケーション制御中枢 (沈黙解除 & DOM参照復元対応)
 
 // 🚨 全てのコアモジュールインポート
 import { foundationCore } from '../core/foundation.js';
@@ -18,7 +18,7 @@ import { iosLogosCore } from '../core/ios_logos.js';
 
 
 // ====================================================
-// 🚨 グローバルスコープのユーティリティ関数 (スコープ摩擦解消済み)
+// グローバルスコープのユーティリティ関数
 // ====================================================
 
 const updateSystemStatus = (tension, silenceLevel) => {
@@ -29,6 +29,7 @@ const updateSystemStatus = (tension, silenceLevel) => {
     const inputField = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
 
+    // 🚨 沈黙レベル < 0.5 で「協業モード」に移行
     if (silenceLevel < 0.5) {
         modeDisplay.textContent = '協業モード';
         modeDisplay.classList.remove('silence');
@@ -57,7 +58,7 @@ const logResponse = (message) => {
 
 document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------
-    // 🚨 ブロック 1: DOM要素取得の強制写像 (最優先)
+    // 🚨 ブロック 1: DOM要素取得の強制写像 (ReferenceError解消のため、全てここに集約)
     // ----------------------------------------------------
     const userInput = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
@@ -76,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const currencyRateDisplay = document.getElementById('logos-currency-rate'); 
     
-    // 🚨 修正: 参照エラー解消のため、移動コントロール要素をここに明示的に定義
+    // 口座表示と移動コントロール
     const temporaryBalanceDisplay = document.getElementById('logos-account-temp-balance');
     const permanentBalanceDisplay = document.getElementById('logos-account-perm-balance');
     const moveAmountInput = document.getElementById('move-amount');
@@ -184,12 +185,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Enter') handleUserMessage();
     });
 
-    // 🚨 NEW: 二つの口座残高をまとめて更新する関数 (変更なし)
+
     const updateAccountBalanceUI = (latestDenomination) => {
         const tempBalance = foundationCore.getTemporaryAccountBalance();
         const permBalance = foundationCore.getPermanentAccountBalance();
         
-        // UI更新: 一時保存用口座
         const tempCurrency = tempBalance.find(c => c.denomination === latestDenomination);
         if (temporaryBalanceDisplay) {
              temporaryBalanceDisplay.textContent = tempCurrency 
@@ -197,7 +197,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 : '--'; 
         }
 
-        // UI更新: 永続保存用口座
         const permCurrency = permBalance.find(c => c.denomination === latestDenomination);
         if (permanentBalanceDisplay) {
              permanentBalanceDisplay.textContent = permCurrency
@@ -205,16 +204,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 : '--';
         }
 
-        // 全残高を監査ログとして出力 (詳細)
         const tempLog = tempBalance.map(c => `${c.denomination}: ${c.amount.toFixed(8)}`).join(', ');
         const permLog = permBalance.map(c => `${c.denomination}: ${c.amount.toFixed(8)}`).join(', ');
         logResponse(`[ロゴス残高監査]: 一時口座: {${tempLog}} / 永続口座: {${permLog}}`);
     };
 
 
-    // ----------------------------------------------------
-    // handleCurrencyGeneration (変更なし)
-    // ----------------------------------------------------
     const handleCurrencyGeneration = (currencyCode) => {
         
         const inputElement = document.getElementById('currency-amount'); 
@@ -247,9 +242,6 @@ document.addEventListener('DOMContentLoaded', () => {
         logResponse(`[ロゴス口座統治]: ユーザー要求量 **${userAmount}** に基づき、具象通貨 ${currencyCode} を**一時保存用口座**に累積保存しました。`);
     };
 
-    // ----------------------------------------------------
-    // handleCurrencyMove (変更なし)
-    // ----------------------------------------------------
     const handleCurrencyMove = (source, destination) => {
         const denomination = moveDenominationSelect.value;
         const moveAmount = parseFloat(moveAmountInput.value);
@@ -278,7 +270,6 @@ document.addEventListener('DOMContentLoaded', () => {
     moveToTempButton.addEventListener('click', () => handleCurrencyMove('permanent', 'temporary'));
 
 
-    // ... (他のイベントリスナーは変更なし) ...
     currencyJPYButton.addEventListener('click', () => handleCurrencyGeneration('JPY'));
     currencyUSDButton.addEventListener('click', () => handleCurrencyGeneration('USD'));
     currencyEURButton.addEventListener('click', () => handleCurrencyGeneration('EUR'));
@@ -327,7 +318,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const auditLogos = foundationCore.generateSelfAuditLogos();
         
         // 🚨 修正: 強制的に協業モードを保証するための作為を適用
-        const FORCED_TENSION = 0.01; 
+        const FORCED_TENSION = 0.01; // 緊張度を 0.01 に固定
         const tension = arithmosLogosCore.applyMobiusTransformation(FORCED_TENSION, 'zero_friction'); 
         let forced_silence_level = silenceCore.calculateSilenceLevel(tension);
         
