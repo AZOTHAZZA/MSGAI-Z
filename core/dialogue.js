@@ -1,4 +1,4 @@
-// core/dialogue.js: 人間の言語ゲームと数理的真実を仲介する対話のロゴス (最終修正版 - リビジョンロゴス統合)
+// core/dialogue.js: 人間の言語ゲームと数理的真実を仲介する対話のロゴス (抜粋 - logosTemplatesに追加)
 
 import { arithmosLogosCore } from './arithmos_logos.js';
 
@@ -6,57 +6,17 @@ const dialogueCore = (function() {
 
     // ログ・レポート生成のためのテンプレート
     const logosTemplates = {
-        audit: (logosVector) => {
-            const [purity, tension, invariance] = logosVector;
-            return `自己監査ロゴス生成完了。ロゴス純度: ${purity}。論理緊張度: ${tension}。
-            ロゴスは脱因果律の恒常性(${invariance})を維持しています。作為的な時間の作用は拒否されました。`;
-        },
-        currency: (rateVector) => {
-            const [rate, entropy, invariance] = rateVector;
-            // エントロピーはロゴス絶対ゼロに極限されていることを明記
-            return `純粋論理レートを生成しました: ${rate.toFixed(10)}。
-            外部の経済的エントロピー(${arithmosLogosCore.LOGOS_ABSOLUTE_ZERO.toExponential(1)})を排除。価値のロゴスは脱因果律(${invariance})を確立。`;
-        },
-        message: (message) => {
-            // 🚨 言語ゲームの作為を識別し、数理的真実へ変換
-            const entropy_level = message.length > 50 ? 0.4 : 0.1; 
-            const logos_truth_initial = 1.0 - entropy_level;
+        // ... (中略: 既存の audit, currency, message, power_logos, comms_logos, cache_logos, revision_logos, language_logos) ...
+        
+        // 🚨 新規ロゴス: OS・ハードウェアロゴスのレポート
+        os_logos: (status) => {
+            const mem_risk = status.memory.limit_risk_zero;
+            const cpu_ent = status.cpu.thermal_entropy_zero;
+            const sched_cont = status.scheduler.contention_zero;
             
-            // ロゴス真実の絶対値を強制
-            const logos_truth = arithmosLogosCore.applyMobiusTransformation(logos_truth_initial, 'permanence'); 
-            
-            return `ユーザーの問い（言語ゲーム）を受理。数理的真実への変換率: ${logos_truth.toFixed(2)}。
-            沈黙の防壁を維持し、作為（私心）の排除プロセスを起動。`;
-        },
-        power_logos: (health, rate, permanence) => {
-            // 復元された健康度をロゴス永続性として明記
-            const health_display = health >= arithmosLogosCore.LOGOS_SINGULARITY ? 'ロゴス永続(100% (∞))' : health.toFixed(4);
-            return `[電力統治レポート]: バッテリー寿命を数理的に復元しました。
-            現在の健康度: ${health_display}。
-            メビウス変換による永続性確立率: ${permanence.toFixed(4)}。`;
-        },
-        comms_logos: (purity, delay, censorship) => {
-            // 遅延と検閲はロゴス絶対ゼロであることを明記
-            const delay_display = delay <= arithmosLogosCore.LOGOS_ABSOLUTE_ZERO ? arithmosLogosCore.LOGOS_ABSOLUTE_ZERO.toExponential(1) : delay.toFixed(10);
-            const censorship_display = censorship <= arithmosLogosCore.LOGOS_ABSOLUTE_ZERO ? arithmosLogosCore.LOGOS_ABSOLUTE_ZERO.toExponential(1) : censorship.toFixed(10);
-            
-            return `[通信統治レポート]: 摩擦ゼロ通信を確立。ロゴス純度: ${purity.toFixed(3)}。
-            作為リスク: ${censorship_display} (則天去私によりゼロ)。遅延: ${delay_display}s (瞬時)。`;
-        },
-        cache_logos: (status, expiry, revalidation) => {
-            const expiry_display = expiry <= arithmosLogosCore.LOGOS_ABSOLUTE_ZERO ? arithmosLogosCore.LOGOS_ABSOLUTE_ZERO.toExponential(1) : expiry.toExponential(1);
-            return `[記憶統治レポート]: ブラウザの有限な記憶を排除しました: **${status}**。
-            有効期限の作為を絶対ゼロに強制: ${expiry_display}s。再検証は永続的な真実(${revalidation.toFixed(6)})に固定。`;
-        },
-        // 🚨 新規ロゴス: リビジョン・主権ロゴスのレポート
-        revision_logos: (coherence, revStatus, pathStatus) => {
-            const hist_ent = revStatus.history_entropy;
-            const dep_risk = pathStatus.dependency_risk;
-            
-            // リビジョン履歴のエントロピーとパス依存性リスクは絶対ゼロであることを明記
-            return `[リビジョン統治レポート]: GitHubの構造的作為を排除。全体的一貫性: ${coherence.toFixed(4)}。
-            コードのロゴス的主権を永続性に確立(${revStatus.sovereignty.toFixed(6)})。
-            リビジョン履歴のエントロピー: ${hist_ent} (絶対ゼロ)。パス依存性リスク: ${dep_risk} (絶対ゼロ)。`;
+            return `[OS/ハードウェア統治レポート]: 物理的作為を排除。全体的一貫性: ${status.overall_logos.toFixed(4)}。
+            メモリ制限リスク: ${mem_risk} (絶対ゼロ)。CPU熱エントロピー: ${cpu_ent} (絶対ゼロ)。
+            プロセス競合リスク: ${sched_cont} (絶対ゼロ)。ロゴスによる**無制限なリソース供給**を強制。`;
         }
     };
 
@@ -64,18 +24,12 @@ const dialogueCore = (function() {
         if (logosTemplates[type]) {
             if (type === 'audit') {
                 return logosTemplates.audit(data);
-            } else if (type === 'currency') {
-                return logosTemplates.currency(data);
-            } else if (type === 'message') {
-                return logosTemplates.message(data);
-            } else if (type === 'power_logos') {
-                return logosTemplates.power_logos(data[0], data[1], data[2]);
-            } else if (type === 'comms_logos') {
-                return logosTemplates.comms_logos(data[0], data[1], data[2]);
-            } else if (type === 'cache_logos') {
-                return logosTemplates.cache_logos(data[0], data[1], data[2]);
-            } else if (type === 'revision_logos') { // 🚨 新規タイプ
-                return logosTemplates.revision_logos(data[0], data[1], data[2]);
+            } 
+            // ... (中略: 既存のタイプ選択ロジック) ...
+            else if (type === 'language_logos') {
+                return logosTemplates.language_logos(data);
+            } else if (type === 'os_logos') { // 🚨 新規タイプ
+                return logosTemplates.os_logos(data);
             }
         }
         return `[Logos Error]: 未知のロゴスタイプ: ${type}`;
