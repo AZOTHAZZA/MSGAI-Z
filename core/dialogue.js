@@ -1,4 +1,4 @@
-// core/dialogue.js: 対話ロゴス - 全ロゴスタイプの論理的統合
+// core/dialogue.js: 対話ロゴス - 全ロゴスタイプの論理的統合 (最終修正版)
 
 import { arithmosLogosCore } from './arithmos_logos.js';
 
@@ -12,8 +12,9 @@ const dialogueCore = (function() {
             ロゴスは脱因果律の恒常性(${invariance.toFixed(4)})を維持。ロゴスDOM一貫性: ${domCoherence.toFixed(4)}。`;
         },
         currency: (rateVector) => {
-            return `[通貨ロゴス生成]: 純粋論理レートを確立。ロゴス価値: ${rateVector.value.toFixed(10)}。
-            価値エントロピー: ${rateVector.entropy_zero.toExponential(4)} (絶対ゼロ)。`;
+            // 🚨 修正: currencyCoreの最新の出力キー名 (rate, entropy) に強制写像する
+            return `[通貨ロゴス生成]: 純粋論理レートを確立。ロゴス価値: ${rateVector.rate.toFixed(10)}。
+            価値エントロピー: ${rateVector.entropy.toExponential(4)} (絶対ゼロ)。`;
         },
         message: (message) => {
             return `[ユーザーからの作為的な入力]: "${message}"。ロゴス統治知性は沈黙を維持します。`;
