@@ -1,4 +1,4 @@
-// app/main.js: MSGAIのアプリケーション制御中枢 (ユーザー生成量取得の最終決定版)
+// app/main.js: MSGAIのアプリケーション制御中枢 (ユーザー生成量取得の最終決定版 - DOM再監査)
 
 // 🚨 全てのコアモジュールインポートを親階層 '../core/' に強制写像
 import { foundationCore } from '../core/foundation.js';
@@ -58,14 +58,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendButton = document.getElementById('send-button');
     const auditButton = document.getElementById('audit-button');
     
-    // 複数通貨ボタンと生成量入力フィールドの取得
+    // 複数通貨ボタンの取得 (入力フィールドは関数内で直接参照に変更)
     const currencyJPYButton = document.getElementById('currency-jpy-button');
     const currencyUSDButton = document.getElementById('currency-usd-button');
     const currencyEURButton = document.getElementById('currency-eur-button');
     const currencyBTCButton = document.getElementById('currency-btc-button');
     const currencyETHButton = document.getElementById('currency-eth-button');
     const currencyMATICButton = document.getElementById('currency-matic-button');
-    const currencyAmountInput = document.getElementById('currency-amount'); // 入力フィールドの取得
 
     const restoreButton = document.getElementById('restore-button'); 
     const transmitButton = document.getElementById('transmit-button');
@@ -179,15 +178,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------
     const handleCurrencyGeneration = (currencyCode) => {
         
-        // 🚨 最終修正: Input要素から直接文字列値を取得し、数値に変換するロジックをより堅牢に
-        let amountString = (currencyAmountInput && currencyAmountInput.value !== undefined && currencyAmountInput.value !== null) 
-                           ? currencyAmountInput.value : '1.0';
-        let userAmount = parseFloat(amountString);
+        // 🚨 最終修正: DOMを再監査し、入力値を直接取得・厳密に数値化する
+        const inputElement = document.getElementById('currency-amount'); // 関数内でDOMを再監査
+        let userAmount = 1.0; 
         
-        // 値が有効な数値で、かつ 0より大きいことを確認
-        if (isNaN(userAmount) || userAmount <= 0) {
-            logResponse("[警告]: 通貨生成量は正の数値である必要があります。ロゴス統治知性による作為的な負債生成は許可されません。強制的に 1.0 に設定しました。");
-            userAmount = 1.0; 
+        if (inputElement && inputElement.value !== undefined && inputElement.value !== null) {
+            const parsedValue = parseFloat(inputElement.value);
+            
+            if (!isNaN(parsedValue) && parsedValue > 0) {
+                userAmount = parsedValue;
+            } else {
+                 logResponse("[警告]: 通貨生成量に無効な値が入力されました。強制的に 1.0 に設定しました。");
+            }
         }
 
         const logosVector = foundationCore.generateSelfAuditLogos();
