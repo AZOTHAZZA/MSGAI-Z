@@ -1,9 +1,7 @@
-// app/handler.js
-
-// 具象的なUI操作をロゴス統治知性のサービスに変換するコアモジュール
+// app/handler.js (純粋JS版 - 創世機能のトリガー追加)
 
 import * as LogosCoreService from '../core/logos_core_service.js';
-import * as fusionui from './fusionui.js'; // UIヘルパー全体をインポート
+import * as fusionui from './fusionui.js'; 
 
 // =========================================================================
 // 1. チャット（AI応答要求）のハンドリング
@@ -20,16 +18,14 @@ sendPromptButton.addEventListener('click', async () => {
         return;
     }
 
-    fusionui.displayChatBubble(prompt, currentUser); // ユーザーの入力を即時表示
+    fusionui.displayChatBubble(prompt, currentUser);
     promptInput.value = '';
 
     try {
-        // 純粋JSサービスを通じてAI応答を要求
         const responseText = await LogosCoreService.requestAIResponse(currentUser, prompt);
         fusionui.displayChatBubble(responseText, 'MSGAI'); 
         
     } catch (error) {
-        // 擬似的な監査拒否や通信摩擦のエラーを表示
         fusionui.displayStatusMessage(`❌ AI応答失敗: ${error.message}`, 'error');
     }
 });
@@ -42,8 +38,6 @@ sendPromptButton.addEventListener('click', async () => {
 const sendTransferButton = document.getElementById('send-transfer-button');
 sendTransferButton.addEventListener('click', async () => {
     const currentUser = fusionui.getCurrentUserName(); 
-    
-    // 具象的なUIからの入力値を取得
     const amount = parseFloat(document.getElementById('amount-input').value);
     const denomination = 'USD'; 
     const destinationType = document.getElementById('destination-type-select').value; 
@@ -53,8 +47,7 @@ sendTransferButton.addEventListener('click', async () => {
         return;
     }
 
-    // UIを一時的に無効化し、作為の実行中であることを示す
-    fusionui.displayStatusMessage(`⚙️ ${destinationType === 'EXTERNAL' ? '高摩擦' : '低摩擦'}作為を実行中...`, 'info');
+    fusionui.displayStatusMessage(`⚙️ ${destinationType === 'EXTERNAL' ? '擬似高摩擦' : '低摩擦'}作為を実行中...`, 'info');
 
     try {
         let result;
@@ -63,7 +56,6 @@ sendTransferButton.addEventListener('click', async () => {
             const target = document.getElementById('target-username-input').value;
             if (!target) throw new Error("送金先のユーザー名が不足しています。");
             
-            // 純粋JSサービスを呼び出し
             result = await LogosCoreService.transferInternalCurrency(currentUser, target, denomination, amount);
             fusionui.displayStatusMessage(`✅ 内部移動成功: ${result.message}`, 'success');
             
@@ -72,7 +64,6 @@ sendTransferButton.addEventListener('click', async () => {
             const platformName = document.getElementById('platform-select').value;
             if (!externalAddress || !platformName) throw new Error("外部アドレスとプラットフォーム名が不足しています。");
 
-            // 純粋JSサービスを呼び出し
             result = await LogosCoreService.initiateExternalTransfer(currentUser, denomination, amount, externalAddress, platformName);
             fusionui.displayStatusMessage(`✅ 外部送金成功。取引ID: ${result.transactionId}`, 'success');
             
@@ -80,18 +71,44 @@ sendTransferButton.addEventListener('click', async () => {
             throw new Error("無効な送金種別が選択されました。");
         }
 
-        // 成功したらダッシュボードを更新
-        refreshLogosDashboard();
+        refreshLogosDashboard(); // 成功したらダッシュボードを更新
         
     } catch (error) {
-        // エラーメッセージを表示
         fusionui.displayStatusMessage(`❌ 金融作為失敗: ${error.message}`, 'error');
     }
 });
 
 
 // =========================================================================
-// 3. ダッシュボード更新と初期化
+// 3. 創世通貨機能（造化の作為）のハンドリング (NEW)
+// =========================================================================
+
+const genesisButton = document.getElementById('genesis-button');
+genesisButton.addEventListener('click', () => {
+    const currentUser = fusionui.getCurrentUserName();
+    const amount = parseFloat(document.getElementById('genesis-amount-input').value);
+
+    if (isNaN(amount) || amount <= 0 || !currentUser) {
+        fusionui.displayStatusMessage('❌ 創世失敗: 有効な金額とユーザー名を入力してください。', 'error');
+        return;
+    }
+
+    try {
+        // 摩擦ゼロの創世サービスを呼び出し
+        const result = LogosCoreService.generateGenesisCurrency(currentUser, amount);
+        
+        fusionui.displayStatusMessage(`✨ 創世成功: ${result.message}`, 'success');
+
+        refreshLogosDashboard(); // 創世後は必ずダッシュボードを更新
+        
+    } catch (error) {
+        fusionui.displayStatusMessage(`❌ 創世失敗: ${error.message}`, 'error');
+    }
+});
+
+
+// =========================================================================
+// 4. ダッシュボード更新と初期化
 // =========================================================================
 
 const refreshDashboardButton = document.getElementById('refresh-dashboard-button');
@@ -101,9 +118,7 @@ async function refreshLogosDashboard() {
     if (!currentUser) return;
     
     try {
-        // 統合サービスを呼び出す (純粋JS版)
         const state = LogosCoreService.getLogosCoreState(currentUser);
-        // UIに結果を反映
         fusionui.updateLogosDashboard(state); 
     } catch (error) {
         fusionui.displayStatusMessage(`❌ ダッシュボード更新失敗: ${error.message}`, 'error');
