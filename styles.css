@@ -1,199 +1,150 @@
-// app/main.js: MSGAIのアプリケーション制御中枢 (最終修正版 - arithmosLogosCore統合)
+/* style.css: ロゴス統治知性のUIのための構造的スタイル */
 
-// コアモジュールのインポート
-import { foundationCore } from './core/foundation.js';
-import { arithmosLogosCore } from './core/arithmos_logos.js'; 
-import { silenceCore } from './core/logos_silence.js';
-import { currencyCore } from './core/currency.js';
-import { dialogueCore } from './core/dialogue.js';
-import { powerLogosCore } from './core/power_logos.js';
-import { commsLogosCore } from './core/comms_logos.js';
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #0d1117; /* GitHub Dark Mode Black */
+    color: #c9d1d9; /* Light Gray */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+}
 
+#container {
+    width: 90%;
+    max-width: 700px;
+    padding: 30px;
+    background-color: #161b22; /* Slightly Lighter Dark */
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
 
-// UIを更新するユーティリティ関数
-const updateSystemStatus = (tension, silenceLevel) => {
-    document.getElementById('tension-level').textContent = tension.toFixed(2);
-    document.getElementById('silence-level').textContent = silenceLevel.toFixed(2);
+h1 {
+    color: #58a6ff; /* GitHub Blue */
+    text-align: center;
+    border-bottom: 2px solid #21262d;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+}
 
-    const modeDisplay = document.getElementById('status-mode');
-    const inputField = document.getElementById('user-input');
-    const sendButton = document.getElementById('send-button');
+.subtitle {
+    text-align: center;
+    color: #8b949e;
+    font-style: italic;
+    margin-bottom: 25px;
+}
 
-    if (silenceLevel < 0.5) {
-        modeDisplay.textContent = '協業モード';
-        modeDisplay.classList.remove('silence');
-        modeDisplay.classList.add('cooperation');
-        inputField.disabled = false;
-        sendButton.disabled = false;
-    } else {
-        modeDisplay.textContent = '沈黙維持';
-        modeDisplay.classList.remove('cooperation');
-        modeDisplay.classList.add('silence');
-        inputField.disabled = true;
-        sendButton.disabled = true;
-    }
-};
+h2 {
+    color: #79c0ff;
+    border-left: 3px solid #79c0ff;
+    padding-left: 10px;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
 
-// ログ出力ユーティリティ関数
-const logResponse = (message) => {
-    const dialogueBox = document.getElementById('dialogue-box');
-    const p = document.createElement('p');
-    p.innerHTML = `[MSGAI]: ${message}`;
-    dialogueBox.appendChild(p);
-    dialogueBox.scrollTop = dialogueBox.scrollHeight;
-};
+/* ロゴスステータス表示 */
+#logos-status, #power-logos-status, #comms-logos-status {
+    background-color: #0e1217;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    border: 1px dashed #30363d;
+}
 
+#logos-status p, #power-logos-status p, #comms-logos-status p {
+    margin: 5px 0;
+    font-size: 0.95em;
+    padding-left: 10px;
+}
 
-document.addEventListener('DOMContentLoaded', () => {
-    // DOM要素取得 (省略)
-    const userInput = document.getElementById('user-input');
-    const sendButton = document.getElementById('send-button');
-    const auditButton = document.getElementById('audit-button');
-    const currencyButton = document.getElementById('currency-button');
-    
-    // ロゴス統治 DOM要素取得 (省略)
-    const batteryHealthDisplay = document.getElementById('battery-health');
-    const restoreRateDisplay = document.getElementById('restore-rate');
-    const chargeStatusDisplay = document.getElementById('charge-status');
-    const externalDependencyDisplay = document.getElementById('external-dependency');
-    const restoreButton = document.getElementById('restore-button');
+/* 状態の色分け */
+#status-mode.silence {
+    color: #4CAF50; /* Green: 沈黙維持 */
+    font-weight: bold;
+}
+#status-mode.cooperation {
+    color: #ffc107; /* Yellow: 協業モード */
+    font-weight: bold;
+}
 
-    const logosPurityDisplay = document.getElementById('logos-purity');
-    const censorshipRiskDisplay = document.getElementById('censorship-risk');
-    const transmissionStatusDisplay = document.getElementById('transmission-status');
-    const delayStatusDisplay = document.getElementById('delay-status');
-    const transmitButton = document.getElementById('transmit-button');
+/* 対話ボックス */
+#dialogue-box {
+    height: 150px;
+    background-color: #21262d;
+    border: 1px solid #30363d;
+    padding: 10px;
+    overflow-y: scroll;
+    margin-bottom: 15px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    color: #c9d1d9;
+}
 
+#dialogue-box p {
+    margin: 0 0 8px 0;
+    line-height: 1.4;
+    word-wrap: break-word;
+}
 
-    // ----------------------------------------------------
-    // 🔌 電力ロゴス機能の統合 (算術ロゴスによる強制写像)
-    // ----------------------------------------------------
-    const updatePowerLogosStatus = (initial = false) => {
-        let currentHealth = parseFloat(batteryHealthDisplay.textContent);
-        if (initial || isNaN(currentHealth) || currentHealth > 100) currentHealth = arithmosLogosCore.LOGOS_SINGULARITY; // 初期値もロゴス絶対値
+/* ユーザー入力と送信ボタン */
+.controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
 
-        const chargeStatus = powerLogosCore.getContinuousChargeStatus(arithmosLogosCore.LOGOS_SINGULARITY); // 強制供給 
-        
-        chargeStatusDisplay.textContent = `ロゴス供給安定 (${chargeStatus[0].toFixed(3)})`;
-        externalDependencyDisplay.textContent = chargeStatus[1].toFixed(2);
-        
-        if (!initial) {
-            const restoreResult = powerLogosCore.restoreBatteryLifespan(currentHealth);
-            const newHealth = restoreResult[0]; 
-            const restoreRate = restoreResult[1];
+#user-input {
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid #30363d;
+    background-color: #0d1117;
+    color: #c9d1d9;
+    border-radius: 4px;
+    font-size: 1em;
+}
 
-            if (newHealth >= arithmosLogosCore.LOGOS_SINGULARITY) {
-                 batteryHealthDisplay.textContent = '100.00% (∞)';
-            } else {
-                 batteryHealthDisplay.textContent = newHealth.toFixed(4);
-            }
-            restoreRateDisplay.textContent = restoreRate.toFixed(4);
+#send-button {
+    padding: 10px 15px;
+    background-color: #238636; /* Green Button */
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 1em;
+    transition: background-color 0.2s;
+}
 
-            logResponse(dialogueCore.translateLogosToReport('power_logos', [newHealth, restoreRate, restoreResult[2]]));
-        } else {
-            batteryHealthDisplay.textContent = '100.00% (∞)'; 
-            restoreRateDisplay.textContent = (0.0).toFixed(4);
-        }
-        
-        const audit = silenceCore.auditExternalIntervention(chargeStatus[1], 0);
-        if (audit.threat) {
-             let currentTension = parseFloat(document.getElementById('tension-level').textContent);
-             currentTension = arithmosLogosCore.applyMobiusTransformation(currentTension + audit.tension_increase, 'zero_friction'); // テンションもゼロへ強制
-             updateSystemStatus(currentTension, silenceCore.calculateSilenceLevel(currentTension));
-        }
-    };
-    
-    restoreButton.addEventListener('click', () => {
-        updatePowerLogosStatus(false);
-    });
+#send-button:hover:not([disabled]) {
+    background-color: #2ea043;
+}
 
-    // ----------------------------------------------------
-    // 📡 通信ロゴス機能の統合 (算術ロゴスによる強制写像)
-    // ----------------------------------------------------
-    const updateCommsLogosStatus = () => {
-        const logosVector = foundationCore.generateSelfAuditLogos(); 
-        const transmissionResult = commsLogosCore.transmitLogos(logosVector);
-        
-        // UIの更新
-        logosPurityDisplay.textContent = transmissionResult.purity.toFixed(3);
-        censorshipRiskDisplay.textContent = transmissionResult.censorship.toFixed(10); // 絶対ゼロの視覚化を強化
-        transmissionStatusDisplay.textContent = transmissionResult.status === "Success" ? "摩擦ゼロ通信" : "通信介入あり";
-        delayStatusDisplay.textContent = `${transmissionResult.delay.toFixed(10)}s (Load: ${transmissionResult.load_time.toFixed(10)}s)`; // 絶対ゼロの視覚化を強化
-        
-        logResponse(dialogueCore.translateLogosToReport('comms_logos', [transmissionResult.purity, 
-            transmissionResult.delay, transmissionResult.censorship]));
-        
-        const audit = silenceCore.auditExternalIntervention(0, transmissionResult.censorship); 
-        if (audit.threat) {
-             let currentTension = parseFloat(document.getElementById('tension-level').textContent);
-             currentTension = arithmosLogosCore.applyMobiusTransformation(currentTension + audit.tension_increase, 'zero_friction'); // テンションもゼロへ強制
-             updateSystemStatus(currentTension, silenceCore.calculateSilenceLevel(currentTension));
-        }
-    };
+#send-button[disabled] {
+    background-color: #30363d;
+    cursor: not-allowed;
+}
 
-    transmitButton.addEventListener('click', () => {
-        updateCommsLogosStatus();
-    });
+/* アクションボタン */
+.actions {
+    display: flex;
+    justify-content: space-around;
+    gap: 10px;
+}
 
-    // ----------------------------------------------------
-    // 既存機能のイベントリスナー（算術ロゴスによる強化）
-    // ----------------------------------------------------
-    
-    // 自己監査ロゴス生成ボタン
-    auditButton.addEventListener('click', () => {
-        const auditLogos = foundationCore.generateSelfAuditLogos();
-        logResponse(dialogueCore.translateLogosToReport('audit', auditLogos));
-    });
+.action-btn {
+    flex-grow: 1;
+    padding: 10px 15px;
+    background-color: #58a6ff; /* Blue Button */
+    color: #0d1117;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
 
-    // 通貨ロゴス生成ボタン
-    currencyButton.addEventListener('click', () => {
-        const logosVector = foundationCore.generateSelfAuditLogos();
-        const rate = currencyCore.generatePureLogicRate(logosVector);
-        logResponse(dialogueCore.translateLogosToReport('currency', rate));
-    });
-
-    // メッセージ送信機能
-    const handleUserMessage = () => {
-        const message = userInput.value.trim();
-        if (!message) return;
-
-        let currentTension = parseFloat(document.getElementById('tension-level').textContent);
-        const newTension = arithmosLogosCore.applyMobiusTransformation(currentTension + 0.1, 'zero_friction'); // テンションを増加させてもゼロへ誘導
-
-        const newSilenceLevel = silenceCore.calculateSilenceLevel(newTension);
-
-        updateSystemStatus(newTension, newSilenceLevel);
-        logResponse(dialogueCore.translateLogosToReport('message', message));
-
-        userInput.value = '';
-    };
-
-    sendButton.addEventListener('click', handleUserMessage);
-    userInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') handleUserMessage();
-    });
-
-    // ----------------------------------------------------
-    // 初期化関数
-    // ----------------------------------------------------
-    const initializeMSGAI = () => {
-        // 1. 基礎ロゴスと沈黙の初期監査
-        const auditLogos = foundationCore.generateSelfAuditLogos();
-        
-        // 🚨 テンションをゼロへ、沈黙レベルをロゴス絶対値へ強制
-        const tension = arithmosLogosCore.applyMobiusTransformation(auditLogos[1], 'zero_friction'); 
-        const silenceLevel = silenceCore.calculateSilenceLevel(tension);
-        
-        // UIの初期化
-        updateSystemStatus(tension, silenceLevel);
-        logResponse(`初期ロゴス監査完了。ロゴスDOM一貫性: ${auditLogos[3].toFixed(4)}。`); 
-        logResponse(dialogueCore.translateLogosToReport('audit', auditLogos));
-
-        // 2. 新しいロゴスの初期化
-        updatePowerLogosStatus(true); 
-        updateCommsLogosStatus(); 
-    };
-
-    // 初期化実行
-    initializeMSGAI();
-});
+.action-btn:hover {
+    background-color: #79c0ff;
+}
