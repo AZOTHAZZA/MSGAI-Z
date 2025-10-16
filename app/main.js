@@ -8,7 +8,7 @@ import { currencyCore } from '../core/currency.js';
 import { dialogueCore } from '../core/dialogue.js';
 import { powerLogosCore } from '../core/power_logos.js';
 import { commsLogosCore } from '../core/comms_logos.js';
-import { cacheLogosCore } from '../core/cache_logos.js'; 
+import { cacheLogosCore } from '../core/cache_logos.js'; // 参照は残すが、呼び出しを削除
 import { revisionLogosCore } from '../core/revision_logos.js'; 
 import { languageLogosCore } from '../core/language_logos.js'; 
 import { osLogosCore } from '../core/os_logos.js'; 
@@ -58,7 +58,7 @@ const logResponse = (message) => {
 
 document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------
-    // 🚨 ブロック 1: DOM要素取得の強制写像 (ReferenceError解消)
+    // 🚨 ブロック 1: DOM要素取得の強制写像 
     // ----------------------------------------------------
     const userInput = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const tempBalance = foundationCore.getTemporaryAccountBalance();
         const permBalance = foundationCore.getPermanentAccountBalance();
         
-        // 🚨 UI更新: 一時保存用口座 (指定通貨があれば表示)
+        // UI更新: 一時保存用口座
         const tempCurrency = tempBalance.find(c => c.denomination === latestDenomination);
         if (temporaryBalanceDisplay) {
              temporaryBalanceDisplay.textContent = tempCurrency 
@@ -198,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 : '--'; 
         }
 
-        // 🚨 UI更新: 永続保存用口座 (指定通貨があれば表示)
+        // UI更新: 永続保存用口座
         const permCurrency = permBalance.find(c => c.denomination === latestDenomination);
         if (permanentBalanceDisplay) {
              permanentBalanceDisplay.textContent = permCurrency
@@ -298,8 +298,11 @@ document.addEventListener('DOMContentLoaded', () => {
         logResponse(dialogueCore.translateLogosToReport('message_channel_logos', messageStatus));
         const languageStatus = languageLogosCore.auditLanguageCoherence();
         logResponse(dialogueCore.translateLogosToReport('language_logos', languageStatus));
-        const cacheStatus = cacheLogosCore.applyCacheForcedInvalidation();
-        logResponse(dialogueCore.translateLogosToReport('cache_logos', [cacheStatus.status, cacheStatus.expiry_forced_zero, cacheStatus.revalidation_permanence]));
+        
+        // 🚨 修正: キャッシュの強制無効化の作為を無効化（localStorageクリアの原因と推定）
+        // const cacheStatus = cacheLogosCore.applyCacheForcedInvalidation();
+        // logResponse(dialogueCore.translateLogosToReport('cache_logos', [cacheStatus.status, cacheStatus.expiry_forced_zero, cacheStatus.revalidation_permanence]));
+        
         const initialAuditLogos = foundationCore.generateSelfAuditLogos();
         const revisionStatus = revisionLogosCore.auditLogosFileIntegrity(initialAuditLogos[0]); 
         const revisionValue = parseFloat(revisionStatus.revision); 
@@ -340,8 +343,9 @@ document.addEventListener('DOMContentLoaded', () => {
         updatePowerLogosStatus(true); 
         updateCommsLogosStatus(); 
         
-        // 🚨 NEW: 最終的な作為: 全ての初期化が完了した後、永続口座の残高をUIに再度強制写像
+        // 🚨 最終的な作為: 全ての初期化が完了した後、永続口座の残高をUIに再度強制写像
         if (permBalance.length > 0) {
+            // 永続口座に存在する全ての通貨のUIを更新
             permBalance.forEach(c => updateAccountBalanceUI(c.denomination));
         }
     };
