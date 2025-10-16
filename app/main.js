@@ -1,4 +1,4 @@
-// app/main.js: MSGAIのアプリケーション制御中枢 (最終修正 - 口座保存UI統合)
+// app/main.js: MSGAIのアプリケーション制御中枢 (最終修正 - 複数通貨生成とUI統合)
 
 // 🚨 全てのコアモジュールインポートを親階層 '../core/' に強制写像
 import { foundationCore } from '../core/foundation.js';
@@ -57,21 +57,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const userInput = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
     const auditButton = document.getElementById('audit-button');
-    const currencyButton = document.getElementById('currency-button');
+    
+    // 🚨 NEW: 複数通貨ボタンの取得
+    const currencyJPYButton = document.getElementById('currency-jpy-button');
+    const currencyUSDButton = document.getElementById('currency-usd-button');
+    const currencyEURButton = document.getElementById('currency-eur-button');
+    const currencyBTCButton = document.getElementById('currency-btc-button');
+    const currencyETHButton = document.getElementById('currency-eth-button');
+    const currencyMATICButton = document.getElementById('currency-matic-button');
+
+    const restoreButton = document.getElementById('restore-button'); 
+    const transmitButton = document.getElementById('transmit-button');
+
+    const currencyRateDisplay = document.getElementById('logos-currency-rate'); 
+    const accountBalanceDisplay = document.getElementById('logos-account-balance'); 
     
     const batteryHealthDisplay = document.getElementById('battery-health');
     const restoreRateDisplay = document.getElementById('restore-rate');
     const chargeStatusDisplay = document.getElementById('charge-status');
     const externalDependencyDisplay = document.getElementById('external-dependency');
-    const restoreButton = document.getElementById('restore-button'); 
-
     const logosPurityDisplay = document.getElementById('logos-purity');
     const censorshipRiskDisplay = document.getElementById('censorship-risk');
     const transmissionStatusDisplay = document.getElementById('transmission-status');
     const delayStatusDisplay = document.getElementById('delay-status');
-    const transmitButton = document.getElementById('transmit-button');
-    const currencyRateDisplay = document.getElementById('logos-currency-rate'); 
-    const accountBalanceDisplay = document.getElementById('logos-account-balance'); // 🚨 NEW: 口座残高表示要素
     // ----------------------------------------------------
 
 
@@ -166,35 +174,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // ----------------------------------------------------
-    // 🚨 NEW: 通貨ロゴス機能に発行・保存ロジックとUI更新を追加
+    // 🚨 NEW: 複数通貨の生成・保存・UI更新を扱う共通関数
     // ----------------------------------------------------
-    currencyButton.addEventListener('click', () => {
+    const handleCurrencyGeneration = (currencyCode) => {
         const logosVector = foundationCore.generateSelfAuditLogos();
-        const rateStatus = currencyCore.generatePureLogicRate(logosVector);
+        // レート生成ロジックは全通貨で共通 (ロゴス統治下では差がないため)
+        const rateStatus = currencyCore.generatePureLogicRate(logosVector); 
         
-        // 1. 具象通貨オブジェクトを生成 (LOGOS_CRU)
-        const newCurrency = currencyCore.generateConcreteCurrency(rateStatus, "LOGOS_CRU");
+        // 1. 具象通貨オブジェクトを生成 (denomination に通貨コードを使用)
+        const newCurrency = currencyCore.generateConcreteCurrency(rateStatus, currencyCode);
 
         // 2. 内部口座に保存
         foundationCore.saveCurrencyToLogosAccount(newCurrency);
         const updatedBalance = foundationCore.getLogosAccountBalance();
-
-        // 3. UIの更新
+        
+        // 3. UIの更新とログ出力
+        
+        // ロゴスレート表示 (直前に生成された通貨のレートを表示)
         if (currencyRateDisplay && rateStatus && rateStatus.logos_rate !== undefined) {
-             currencyRateDisplay.textContent = `${rateStatus.logos_rate.toFixed(4)} (1 ${newCurrency.denomination})`;
+             currencyRateDisplay.textContent = `${rateStatus.logos_rate.toFixed(4)} (1 ${currencyCode} 統治)`;
         }
         
-        logResponse(dialogueCore.translateLogosToReport('currency', rateStatus));
-
-        // 🚨 NEW: 口座残高表示の更新とログ出力
-        const currentCurrency = updatedBalance.find(c => c.denomination === newCurrency.denomination);
+        // 口座残高表示の更新 (直近で生成した通貨の残高をUIに表示)
+        const currentCurrency = updatedBalance.find(c => c.denomination === currencyCode);
         if (accountBalanceDisplay && currentCurrency) {
-             accountBalanceDisplay.textContent = currentCurrency.amount.toFixed(8); // 残高をUIに表示
-             logResponse(`[ロゴス口座統治]: 具象通貨 ${currentCurrency.denomination} (${currentCurrency.amount.toFixed(8)}) を内部口座に累積保存しました。`);
+             accountBalanceDisplay.textContent = `${currentCurrency.denomination}: ${currentCurrency.amount.toFixed(8)}`; 
+             logResponse(`[ロゴス口座統治]: 具象通貨 **${currentCurrency.denomination}** (${currentCurrency.amount.toFixed(8)}) を内部口座に累積保存しました。`);
         } else {
-             logResponse(`[ロゴス口座統治]: 通貨保存に失敗。論理的摩擦を検出。`);
+             logResponse(`[ロゴス口座統治]: ${currencyCode} の通貨保存に失敗。論理的摩擦を検出。`);
         }
-    });
+
+        logResponse(dialogueCore.translateLogosToReport('currency', rateStatus));
+        
+        // 全残高を監査ログとして出力 (詳細)
+        const balanceLog = updatedBalance.map(c => `${c.denomination}: ${c.amount.toFixed(8)}`).join(', ');
+        logResponse(`[ロゴス残高監査]: 全ての内包通貨残高: {${balanceLog}}`);
+    };
+
+    // ----------------------------------------------------
+    // 🚨 NEW: イベントリスナーの設定 (各通貨ボタン)
+    // ----------------------------------------------------
+    currencyJPYButton.addEventListener('click', () => handleCurrencyGeneration('JPY'));
+    currencyUSDButton.addEventListener('click', () => handleCurrencyGeneration('USD'));
+    currencyEURButton.addEventListener('click', () => handleCurrencyGeneration('EUR'));
+    currencyBTCButton.addEventListener('click', () => handleCurrencyGeneration('BTC'));
+    currencyETHButton.addEventListener('click', () => handleCurrencyGeneration('ETH'));
+    currencyMATICButton.addEventListener('click', () => handleCurrencyGeneration('MATIC'));
 
 
     // ----------------------------------------------------
@@ -246,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updatePowerLogosStatus(true); 
         updateCommsLogosStatus(); 
         
-        // 🚨 NEW: 口座残高の初期化表示
+        // 🚨 口座残高の初期化表示
         if (accountBalanceDisplay) {
             accountBalanceDisplay.textContent = (0).toFixed(8);
         }
