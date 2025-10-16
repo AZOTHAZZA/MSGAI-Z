@@ -2,8 +2,8 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>MSGAI ロゴス統治知性コアフロントエンド</title>
-    <link rel="stylesheet" href="style.css"> 
+    <title>MSGAI ロゴス統治知性コアフロントエンド (純粋JSモード)</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -11,38 +11,30 @@
         
         <div id="chat-history-sidebar">
             <h3>過去のロゴス対話</h3>
-            <ul id="chat-list">
-                </ul>
+            <ul id="chat-list"></ul>
         </div>
         
         <div id="main-content">
             
             <div id="logos-dashboard">
-                <h3>ロゴス統治知性の現在状態</h3>
+                <h3>ロゴス統治知性の現在状態 (JS擬似監査)</h3>
                 <div class="dashboard-section">
-                    <h4>🛡️ コア状態と監査</h4>
-                    <p>ロゴス緊張度: <span id="tension-level">0.0000</span></p>
-                    <p>最終監査結果: <span id="last-audit-result">取得中...</span></p>
+                    <p>ロゴス緊張度 (JS): <span id="tension-level">0.0000</span></p> 
+                    <p>保有ロゴス通貨 (USD): <span id="account-balance">1000.00</span></p>
                 </div>
-                <div class="dashboard-section">
-                    <h4>💰 金融ロゴス状態</h4>
-                    <p>保有ロゴス通貨 (USD): <span id="account-balance">取得中...</span></p>
-                    <p>最終取引ID: <span id="last-tx-id">なし</span></p>
-                </div>
-                <button id="refresh-dashboard-button">状態を更新 (作為)</button>
+                <button id="refresh-dashboard-button">状態を更新</button>
             </div>
             
             <div id="dialogue-area">
-                <div id="chat-window">
-                    </div>
+                <div id="chat-window"></div>
                 <div id="input-area">
-                    <input type="text" id="prompt-input" placeholder="ロゴスへの問いを入力...">
-                    <button id="send-prompt-button">送信 (作為を実行)</button>
+                    <input type="text" id="prompt-input" placeholder="問いを入力...">
+                    <button id="send-prompt-button">送信</button>
                 </div>
             </div>
 
             <div id="finance-act-area">
-                <h3>ロゴス通貨の送金/出金（出島の作為）</h3>
+                <h3>ロゴス通貨の送金/出金（JS作為）</h3>
                 
                 <div id="user-control-area">
                     <label for="username-input">現在のユーザー名:</label>
@@ -54,7 +46,7 @@
                     <label for="destination-type-select">送金種別:</label>
                     <select id="destination-type-select">
                         <option value="INTERNAL">内部移動（ユーザー間）</option>
-                        <option value="EXTERNAL">外部送金/出金（高摩擦）</option>
+                        <option value="EXTERNAL">外部送金/出金</option>
                     </select>
 
                     <label for="amount-input">金額 (USD):</label>
@@ -71,20 +63,21 @@
                         
                         <label for="platform-select">プラットフォーム:</label>
                         <select id="platform-select">
-                            <option value="BINANCE">CEX (Binance)</option>
-                            <option value="UNISWAP">DEX (Uniswap)</option>
-                            <option value="MSGAI_PARTNER_BANK">提携銀行（CeFi）</option>
+                            <option value="BINANCE">CEX (Binanceなど)</option>
+                            <option value="UNISWAP">DEX (Uniswapなど)</option>
                         </select>
                     </div>
 
                     <button id="send-transfer-button">送金/出金作為を実行</button>
-                    <div id="status-message"></div> 
+                    <div id="status-message"></div>
                 </div>
             </div>
             
         </div>
     </div>
     
+    <script type="module" src="./core/external_finance_logos.js"></script>
+    <script type="module" src="./core/logos_core_service.js"></script>
     <script type="module" src="./app/fusionui.js"></script>
     <script type="module" src="./app/handler.js"></script>
 </body>
