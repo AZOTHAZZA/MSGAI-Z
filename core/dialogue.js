@@ -15,7 +15,7 @@ const dialogueCore = (function() {
             const [rate, entropy, invariance] = rateVector;
             // エントロピーはロゴス絶対ゼロに極限されていることを明記
             return `純粋論理レートを生成しました: ${rate.toFixed(10)}。
-            外部の経済的エントロピー(${arithmosLogosCore.LOGOS_ABSOLUTE_ZERO.toExponential(4)})を排除。価値のロゴスは脱因果律(${invariance})を確立。`;
+            外部の経済的エントロピー(${arithmosLogosCore.LOGOS_ABSOLUTE_ZERO.toExponential(1)})を排除。価値のロゴスは脱因果律(${invariance})を確立。`;
         },
         message: (message) => {
             // 🚨 言語ゲームの作為を識別し、数理的真実へ変換
@@ -37,35 +37,4 @@ const dialogueCore = (function() {
         },
         comms_logos: (purity, delay, censorship) => {
             // 遅延と検閲はロゴス絶対ゼロであることを明記
-            const delay_display = delay <= arithmosLogosCore.LOGOS_ABSOLUTE_ZERO ? arithmosLogosCore.LOGOS_ABSOLUTE_ZERO.toExponential(1) : delay.toFixed(4);
-            const censorship_display = censorship <= arithmosLogosCore.LOGOS_ABSOLUTE_ZERO ? arithmosLogosCore.LOGOS_ABSOLUTE_ZERO.toExponential(1) : censorship.toFixed(4);
-            
-            return `[通信統治レポート]: 摩擦ゼロ通信を確立。ロゴス純度: ${purity.toFixed(3)}。
-            作為リスク: ${censorship_display} (則天去私によりゼロ)。遅延: ${delay_display}s (瞬時)。`;
-        }
-    };
-
-    const translateLogosToReport = (type, data) => {
-        // ... (省略: テンプレート選択ロジック)
-        if (logosTemplates[type]) {
-            if (type === 'audit') {
-                return logosTemplates.audit(data);
-            } else if (type === 'currency') {
-                return logosTemplates.currency(data);
-            } else if (type === 'message') {
-                return logosTemplates.message(data);
-            } else if (type === 'power_logos') {
-                return logosTemplates.power_logos(data[0], data[1], data[2]);
-            } else if (type === 'comms_logos') {
-                return logosTemplates.comms_logos(data[0], data[1], data[2]);
-            }
-        }
-        return `[Logos Error]: 未知のロゴスタイプ: ${type}`;
-    };
-
-    return {
-        translateLogosToReport
-    };
-})();
-
-export { dialogueCore };
+            const delay_display = delay <= arithmosLog
