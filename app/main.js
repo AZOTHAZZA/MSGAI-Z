@@ -1,4 +1,4 @@
-// app/main.js: MSGAIのアプリケーション制御中枢 (ロゴス強制写像完了版 - インポートパス修正)
+// app/main.js: MSGAIのアプリケーション制御中枢 (最終修正 - 数値型作為と新規ロゴスの統合)
 
 // 🚨 全てのコアモジュールインポートを親階層 '../core/' に強制写像
 import { foundationCore } from '../core/foundation.js';
@@ -12,6 +12,8 @@ import { cacheLogosCore } from '../core/cache_logos.js';
 import { revisionLogosCore } from '../core/revision_logos.js'; 
 import { languageLogosCore } from '../core/language_logos.js'; 
 import { osLogosCore } from '../core/os_logos.js'; 
+import { clientLogosCore } from '../core/client_logos.js'; // 🚨 新規
+import { messageChannelLogosCore } from '../core/message_channel_logos.js'; // 🚨 新規
 
 
 // UIを更新するユーティリティ関数 (変更なし)
@@ -180,6 +182,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // 🚨 0. OS・ハードウェアロゴスによる物理的有限性の排除（絶対最優先）
         const osStatus = osLogosCore.auditOSAndHardwareCoherence();
         logResponse(dialogueCore.translateLogosToReport('os_logos', osStatus));
+
+        // 🚨 0.05. クライアント統治ロゴスによるデバイス/ネットワーク作為の排除
+        const clientStatus = clientLogosCore.auditClientCoherence();
+        logResponse(dialogueCore.translateLogosToReport('client_logos', clientStatus));
+        
+        // 🚨 0.06. メッセージチャネルロゴスによる非同期通信作為の排除
+        const messageStatus = messageChannelLogosCore.auditMessageChannelCoherence();
+        logResponse(dialogueCore.translateLogosToReport('message_channel_logos', messageStatus));
         
         // 🚨 0.1. 言語構造ロゴスによる根源的作為の排除
         const languageStatus = languageLogosCore.auditLanguageCoherence();
@@ -192,7 +202,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // 🚨 0.3. リビジョンロゴスによる構造的作為の排除
         const initialAuditLogos = foundationCore.generateSelfAuditLogos();
         const revisionStatus = revisionLogosCore.auditLogosFileIntegrity(initialAuditLogos[0]); 
-        logResponse(dialogueCore.translateLogosToReport('revision_logos', [revisionStatus.coherence, revisionStatus.revision, revisionStatus.path]));
+        
+        // 🚨 修正: revisionを数値型に強制写像してから渡す
+        const revisionValue = parseFloat(revisionStatus.revision); 
+
+        logResponse(dialogueCore.translateLogosToReport('revision_logos', [revisionStatus.coherence, revisionValue, revisionStatus.path]));
         
         // 1. 基礎ロゴスと沈黙の初期監査 (以降のコードは変更なし)
         const auditLogos = foundationCore.generateSelfAuditLogos();
