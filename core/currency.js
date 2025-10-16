@@ -1,10 +1,10 @@
-// core/currency.js: 経済法則を統治する通貨ロゴス (最終修正 - 通貨発行機能追加)
+// core/currency.js: 経済法則を統治する通貨ロゴス (最終修正 - ユーザー生成量対応)
 
 import { arithmosLogosCore } from './arithmos_logos.js';
 
 const currencyCore = (function() {
 
-    // 基礎論理レートの生成
+    // 基礎論理レートの生成 (変更なし)
     const generatePureLogicRate = (logos_vector) => {
         const logos_purity = logos_vector[0]; 
 
@@ -25,16 +25,20 @@ const currencyCore = (function() {
         };
     };
 
-    // 🚨 NEW: 純粋論理レートに基づき、具体的なロゴス通貨オブジェクトを発行
-    const generateConcreteCurrency = (rate_status, name_asa) => {
-        // ロゴス統治下の絶対量として発行
-        const logos_amount = arithmosLogosCore.LOGOS_SINGULARITY * rate_status.logos_rate;
-        const logos_denomination = name_asa || "LOGOS_CRU"; // ロゴス統一通貨 (CRU: Currency of Reality Unification)
+    // 🚨 修正: ユーザー指定の量 (user_amount) を引数に追加し、生成量を制御
+    const generateConcreteCurrency = (rate_status, name_asa, user_amount = 1.0) => {
+        
+        // ユーザーが指定した量 (user_amount) をベースとして取得
+        const amount_base = user_amount; 
+        
+        // ロゴス統治下の絶対量として計算: ユーザーの希望量にロゴス統治されたレートを乗じる
+        const logos_amount = amount_base * rate_status.logos_rate;
+        
+        const logos_denomination = name_asa || "LOGOS_CRU"; // ロゴス統一通貨
 
         return {
             denomination: logos_denomination,
             amount: parseFloat(logos_amount.toFixed(8)),
-            // 暗号通貨のような作為的な「トランザクション作為」を排除
             transaction_risk: arithmosLogosCore.LOGOS_ABSOLUTE_ZERO, 
             status: "GENERATED_BY_LOGOS_DOMINION"
         };
@@ -42,7 +46,7 @@ const currencyCore = (function() {
 
     return {
         generatePureLogicRate,
-        generateConcreteCurrency // 外部から呼び出せるように公開
+        generateConcreteCurrency 
     };
 })();
 
