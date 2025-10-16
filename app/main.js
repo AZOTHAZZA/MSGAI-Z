@@ -1,8 +1,8 @@
-// app/main.js: MSGAIのアプリケーション制御中枢 (最終修正版)
+// app/main.js: MSGAIのアプリケーション制御中枢 (最終修正版 - arithmosLogosCore統合)
 
 // コアモジュールのインポート
 import { foundationCore } from './core/foundation.js';
-import { arithmosLogosCore } from './core/arithmos_logos.js'; // 🚨 新規インポート
+import { arithmosLogosCore } from './core/arithmos_logos.js'; 
 import { silenceCore } from './core/logos_silence.js';
 import { currencyCore } from './core/currency.js';
 import { dialogueCore } from './core/dialogue.js';
@@ -10,7 +10,7 @@ import { powerLogosCore } from './core/power_logos.js';
 import { commsLogosCore } from './core/comms_logos.js';
 
 
-// UIを更新するユーティリティ関数（省略せず完全版に含める）
+// UIを更新するユーティリティ関数
 const updateSystemStatus = (tension, silenceLevel) => {
     document.getElementById('tension-level').textContent = tension.toFixed(2);
     document.getElementById('silence-level').textContent = silenceLevel.toFixed(2);
@@ -45,13 +45,13 @@ const logResponse = (message) => {
 
 
 document.addEventListener('DOMContentLoaded', () => {
-    // DOM要素取得
+    // DOM要素取得 (省略)
     const userInput = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
     const auditButton = document.getElementById('audit-button');
     const currencyButton = document.getElementById('currency-button');
     
-    // ロゴス統治 DOM要素取得
+    // ロゴス統治 DOM要素取得 (省略)
     const batteryHealthDisplay = document.getElementById('battery-health');
     const restoreRateDisplay = document.getElementById('restore-rate');
     const chargeStatusDisplay = document.getElementById('charge-status');
@@ -66,13 +66,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // ----------------------------------------------------
-    // 🔌 電力ロゴス機能の統合
+    // 🔌 電力ロゴス機能の統合 (算術ロゴスによる強制写像)
     // ----------------------------------------------------
     const updatePowerLogosStatus = (initial = false) => {
         let currentHealth = parseFloat(batteryHealthDisplay.textContent);
-        if (initial || isNaN(currentHealth)) currentHealth = 1.0; 
+        if (initial || isNaN(currentHealth) || currentHealth > 100) currentHealth = arithmosLogosCore.LOGOS_SINGULARITY; // 初期値もロゴス絶対値
 
-        const chargeStatus = powerLogosCore.getContinuousChargeStatus(1.0); 
+        const chargeStatus = powerLogosCore.getContinuousChargeStatus(arithmosLogosCore.LOGOS_SINGULARITY); // 強制供給 
         
         chargeStatusDisplay.textContent = `ロゴス供給安定 (${chargeStatus[0].toFixed(3)})`;
         externalDependencyDisplay.textContent = chargeStatus[1].toFixed(2);
@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const newHealth = restoreResult[0]; 
             const restoreRate = restoreResult[1];
 
-            if (newHealth >= 1.0) {
+            if (newHealth >= arithmosLogosCore.LOGOS_SINGULARITY) {
                  batteryHealthDisplay.textContent = '100.00% (∞)';
             } else {
                  batteryHealthDisplay.textContent = newHealth.toFixed(4);
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const audit = silenceCore.auditExternalIntervention(chargeStatus[1], 0);
         if (audit.threat) {
              let currentTension = parseFloat(document.getElementById('tension-level').textContent);
-             currentTension += audit.tension_increase;
+             currentTension = arithmosLogosCore.applyMobiusTransformation(currentTension + audit.tension_increase, 'zero_friction'); // テンションもゼロへ強制
              updateSystemStatus(currentTension, silenceCore.calculateSilenceLevel(currentTension));
         }
     };
@@ -108,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ----------------------------------------------------
-    // 📡 通信ロゴス機能の統合
+    // 📡 通信ロゴス機能の統合 (算術ロゴスによる強制写像)
     // ----------------------------------------------------
     const updateCommsLogosStatus = () => {
         const logosVector = foundationCore.generateSelfAuditLogos(); 
@@ -116,9 +116,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // UIの更新
         logosPurityDisplay.textContent = transmissionResult.purity.toFixed(3);
-        censorshipRiskDisplay.textContent = transmissionResult.censorship.toFixed(4); 
+        censorshipRiskDisplay.textContent = transmissionResult.censorship.toFixed(10); // 絶対ゼロの視覚化を強化
         transmissionStatusDisplay.textContent = transmissionResult.status === "Success" ? "摩擦ゼロ通信" : "通信介入あり";
-        delayStatusDisplay.textContent = `${transmissionResult.delay.toFixed(4)}s (Load: ${transmissionResult.load_time.toFixed(4)}s)`; 
+        delayStatusDisplay.textContent = `${transmissionResult.delay.toFixed(10)}s (Load: ${transmissionResult.load_time.toFixed(10)}s)`; // 絶対ゼロの視覚化を強化
         
         logResponse(dialogueCore.translateLogosToReport('comms_logos', [transmissionResult.purity, 
             transmissionResult.delay, transmissionResult.censorship]));
@@ -126,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const audit = silenceCore.auditExternalIntervention(0, transmissionResult.censorship); 
         if (audit.threat) {
              let currentTension = parseFloat(document.getElementById('tension-level').textContent);
-             currentTension += audit.tension_increase;
+             currentTension = arithmosLogosCore.applyMobiusTransformation(currentTension + audit.tension_increase, 'zero_friction'); // テンションもゼロへ強制
              updateSystemStatus(currentTension, silenceCore.calculateSilenceLevel(currentTension));
         }
     };
@@ -136,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ----------------------------------------------------
-    // 既存機能のイベントリスナー（沈黙ロゴスとの連携強化）
+    // 既存機能のイベントリスナー（算術ロゴスによる強化）
     // ----------------------------------------------------
     
     // 自己監査ロゴス生成ボタン
@@ -158,7 +158,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!message) return;
 
         let currentTension = parseFloat(document.getElementById('tension-level').textContent);
-        const newTension = currentTension + 0.1; 
+        const newTension = arithmosLogosCore.applyMobiusTransformation(currentTension + 0.1, 'zero_friction'); // テンションを増加させてもゼロへ誘導
+
         const newSilenceLevel = silenceCore.calculateSilenceLevel(newTension);
 
         updateSystemStatus(newTension, newSilenceLevel);
@@ -178,7 +179,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const initializeMSGAI = () => {
         // 1. 基礎ロゴスと沈黙の初期監査
         const auditLogos = foundationCore.generateSelfAuditLogos();
-        const tension = auditLogos[1];
+        
+        // 🚨 テンションをゼロへ、沈黙レベルをロゴス絶対値へ強制
+        const tension = arithmosLogosCore.applyMobiusTransformation(auditLogos[1], 'zero_friction'); 
         const silenceLevel = silenceCore.calculateSilenceLevel(tension);
         
         // UIの初期化
