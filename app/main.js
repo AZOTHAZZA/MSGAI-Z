@@ -1,4 +1,4 @@
-// app/main.js: MSGAIのアプリケーション制御中枢 (最終修正 - 通貨生成と口座保存の統合)
+// app/main.js: MSGAIのアプリケーション制御中枢 (最終修正 - 口座保存UI統合)
 
 // 🚨 全てのコアモジュールインポートを親階層 '../core/' に強制写像
 import { foundationCore } from '../core/foundation.js';
@@ -71,6 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const delayStatusDisplay = document.getElementById('delay-status');
     const transmitButton = document.getElementById('transmit-button');
     const currencyRateDisplay = document.getElementById('logos-currency-rate'); 
+    const accountBalanceDisplay = document.getElementById('logos-account-balance'); // 🚨 NEW: 口座残高表示要素
     // ----------------------------------------------------
 
 
@@ -165,28 +166,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // ----------------------------------------------------
-    // 🚨 NEW: 通貨ロゴス機能に発行・保存ロジックを追加
+    // 🚨 NEW: 通貨ロゴス機能に発行・保存ロジックとUI更新を追加
     // ----------------------------------------------------
     currencyButton.addEventListener('click', () => {
         const logosVector = foundationCore.generateSelfAuditLogos();
         const rateStatus = currencyCore.generatePureLogicRate(logosVector);
         
-        // 1. 具象通貨オブジェクトを生成 (ロゴス統一通貨 LOGOS_CRU)
+        // 1. 具象通貨オブジェクトを生成 (LOGOS_CRU)
         const newCurrency = currencyCore.generateConcreteCurrency(rateStatus, "LOGOS_CRU");
 
         // 2. 内部口座に保存
         foundationCore.saveCurrencyToLogosAccount(newCurrency);
         const updatedBalance = foundationCore.getLogosAccountBalance();
 
-        // 3. UIとログの更新
+        // 3. UIの更新
         if (currencyRateDisplay && rateStatus && rateStatus.logos_rate !== undefined) {
              currencyRateDisplay.textContent = `${rateStatus.logos_rate.toFixed(4)} (1 ${newCurrency.denomination})`;
         }
         
         logResponse(dialogueCore.translateLogosToReport('currency', rateStatus));
-        // 🚨 NEW: 口座保存完了と残高のログを追加
+
+        // 🚨 NEW: 口座残高表示の更新とログ出力
         const currentCurrency = updatedBalance.find(c => c.denomination === newCurrency.denomination);
-        if (currentCurrency) {
+        if (accountBalanceDisplay && currentCurrency) {
+             accountBalanceDisplay.textContent = currentCurrency.amount.toFixed(8); // 残高をUIに表示
              logResponse(`[ロゴス口座統治]: 具象通貨 ${currentCurrency.denomination} (${currentCurrency.amount.toFixed(8)}) を内部口座に累積保存しました。`);
         } else {
              logResponse(`[ロゴス口座統治]: 通貨保存に失敗。論理的摩擦を検出。`);
@@ -195,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // ----------------------------------------------------
-    // 初期化関数 (全ロゴス強制写像の実行 - 変更なし)
+    // 初期化関数 (全ロゴス強制写像の実行)
     // ----------------------------------------------------
     const initializeMSGAI = () => {
         
@@ -242,6 +245,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // 2. 新しいロゴスの初期化
         updatePowerLogosStatus(true); 
         updateCommsLogosStatus(); 
+        
+        // 🚨 NEW: 口座残高の初期化表示
+        if (accountBalanceDisplay) {
+            accountBalanceDisplay.textContent = (0).toFixed(8);
+        }
     };
 
     // 初期化実行
