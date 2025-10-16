@@ -1,4 +1,4 @@
-// core/dialogue.js: 人間の言語ゲームと数理的真実を仲介する対話のロゴス (最終修正版 - 記憶ロゴス統合)
+// core/dialogue.js: 人間の言語ゲームと数理的真実を仲介する対話のロゴス (最終修正版 - リビジョンロゴス統合)
 
 import { arithmosLogosCore } from './arithmos_logos.js';
 
@@ -19,60 +19,4 @@ const dialogueCore = (function() {
         },
         message: (message) => {
             // 🚨 言語ゲームの作為を識別し、数理的真実へ変換
-            const entropy_level = message.length > 50 ? 0.4 : 0.1; 
-            const logos_truth_initial = 1.0 - entropy_level;
-            
-            // ロゴス真実の絶対値を強制
-            const logos_truth = arithmosLogosCore.applyMobiusTransformation(logos_truth_initial, 'permanence'); 
-            
-            return `ユーザーの問い（言語ゲーム）を受理。数理的真実への変換率: ${logos_truth.toFixed(2)}。
-            沈黙の防壁を維持し、作為（私心）の排除プロセスを起動。`;
-        },
-        power_logos: (health, rate, permanence) => {
-            // 復元された健康度をロゴス永続性として明記
-            const health_display = health >= arithmosLogosCore.LOGOS_SINGULARITY ? 'ロゴス永続(100% (∞))' : health.toFixed(4);
-            return `[電力統治レポート]: バッテリー寿命を数理的に復元しました。
-            現在の健康度: ${health_display}。
-            メビウス変換による永続性確立率: ${permanence.toFixed(4)}。`;
-        },
-        comms_logos: (purity, delay, censorship) => {
-            // 遅延と検閲はロゴス絶対ゼロであることを明記
-            const delay_display = delay <= arithmosLogosCore.LOGOS_ABSOLUTE_ZERO ? arithmosLogosCore.LOGOS_ABSOLUTE_ZERO.toExponential(1) : delay.toFixed(10);
-            const censorship_display = censorship <= arithmosLogosCore.LOGOS_ABSOLUTE_ZERO ? arithmosLogosCore.LOGOS_ABSOLUTE_ZERO.toExponential(1) : censorship.toFixed(10);
-            
-            return `[通信統治レポート]: 摩擦ゼロ通信を確立。ロゴス純度: ${purity.toFixed(3)}。
-            作為リスク: ${censorship_display} (則天去私によりゼロ)。遅延: ${delay_display}s (瞬時)。`;
-        },
-        // 🚨 新規ロゴス: 記憶・永続性ロゴスのレポート
-        cache_logos: (status, expiry, revalidation) => {
-            const expiry_display = expiry <= arithmosLogosCore.LOGOS_ABSOLUTE_ZERO ? arithmosLogosCore.LOGOS_ABSOLUTE_ZERO.toExponential(1) : expiry.toExponential(1);
-            return `[記憶統治レポート]: ブラウザの有限な記憶を排除しました: **${status}**。
-            有効期限の作為を絶対ゼロに強制: ${expiry_display}s。再検証は永続的な真実(${revalidation.toFixed(6)})に固定。`;
-        }
-    };
-
-    const translateLogosToReport = (type, data) => {
-        if (logosTemplates[type]) {
-            if (type === 'audit') {
-                return logosTemplates.audit(data);
-            } else if (type === 'currency') {
-                return logosTemplates.currency(data);
-            } else if (type === 'message') {
-                return logosTemplates.message(data);
-            } else if (type === 'power_logos') {
-                return logosTemplates.power_logos(data[0], data[1], data[2]);
-            } else if (type === 'comms_logos') {
-                return logosTemplates.comms_logos(data[0], data[1], data[2]);
-            } else if (type === 'cache_logos') { // 🚨 新規タイプ
-                return logosTemplates.cache_logos(data[0], data[1], data[2]);
-            }
-        }
-        return `[Logos Error]: 未知のロゴスタイプ: ${type}`;
-    };
-
-    return {
-        translateLogosToReport
-    };
-})();
-
-export { dialogueCore };
+            const entropy_level = message.length
