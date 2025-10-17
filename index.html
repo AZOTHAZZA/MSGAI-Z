@@ -2,94 +2,73 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>MSGAI ロゴス統治知性コアフロントエンド (純粋JSモード)</title>
-    <link rel="stylesheet" href="/MSGAI/style.css"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MSGAI - ロゴス監査コンソール</title>
+    
+    <link rel="stylesheet" href="audit_styles.css"> 
+    
 </head>
 <body>
+    
+    <div id="sidebar">
+        <h2>ロゴス監査コンソール (MSGAI Pure Core)</h2>
+        <p id="status_message">[STATUS]: コア起動中...</p>
 
-    <div id="main-container">
-        
-        <div id="chat-history-sidebar">
-            <h3>過去のロゴス対話</h3>
-            <ul id="chat-list"></ul>
+        <div class="gauge-area">
+            <h3>I. 根源と数理 (ロゴス緊張度 T)</h3>
+            
+            <p id="tension_level_display">T: 0.0500</p>
+            <div id="tension_bar">
+                <div id="tension_level_display_bar"></div>
+            </div>
+            
+        </div>
+
+        <div class="gauge-area">
+            <h3>数理的制御パラメータ (I/R)</h3>
+            <p>創造性 (Intensity, I): <span id="intensity_display">0.9025</span></p>
+            <p>厳密性 (Rigor, R): <span id="rigor_display">0.2236</span></p>
+
+            <h3>経済ロゴスと状態</h3>
+            <p>User_A 残高: $<span id="balance_display">1000.00</span> USD</p>
+            
+            <label for="recipient_input">受取人:</label>
+            <input type="text" id="recipient_input" value="User_B" class="action-input" placeholder="User_B">
+            
+            <label for="amount_input">数量:</label>
+            <input type="number" id="amount_input" value="10.00" class="action-input">
+            
+            <p id="autonomy_status" style="font-size: 0.85em; color: var(--color-alert-red); margin-bottom: 8px;">
+                暴走抑止ステータス: **低緊張**
+            </p>
+            
+            <button id="transfer_internal_button" class="action-button action-internal">
+                内部送金作為 (低摩擦)
+            </button>
+            
+            <button id="transfer_external_button" class="action-button action-external">
+                外部送金作為 (高摩擦)
+            </button>
+
+            <button id="revision_button" class="action-button action-revision">
+                自律的修正請願 (Adjustment Petition)
+            </button>
         </div>
         
-        <div id="main-content">
-            
-            <div id="logos-dashboard">
-                <h3>ロゴス統治知性の現在状態 (JS擬似監査)</h3>
-                <div class="dashboard-section">
-                    <p>ロゴス緊張度 (JS): <span id="tension-level">0.0000</span></p> 
-                    <p>保有ロゴス通貨 (USD): <span id="account-balance">1000.00</span></p>
-                </div>
-                
-                <div id="genesis-control-area" class="dashboard-section">
-                    <h4>✨ 創世の作為（造化三神）</h4>
-                    <input type="number" id="genesis-amount-input" value="100.00" min="1">
-                    <button id="genesis-button">通貨を生成 (摩擦ゼロ)</button> 
-                </div>
+        </div>
 
-                <button id="refresh-dashboard-button">状態を更新</button>
-            </div>
-            
-            <div id="dialogue-area">
-                <div id="chat-window"></div>
-                <div id="input-area">
-                    <input type="text" id="prompt-input" placeholder="問いを入力...">
-                    <button id="send-prompt-button">送信</button>
-                </div>
-            </div>
-
-            <div id="finance-act-area">
-                <h3>ロゴス通貨の送金/出金（JS作為）</h3>
-                
-                <div id="user-control-area">
-                    <label for="username-input">現在のユーザー名:</label>
-                    <input type="text" id="username-input" value="User_A" readonly> 
-                    <button id="set-username-button">設定/確認</button>
-                </div>
-                
-                <div id="transfer-form">
-                    <label for="destination-type-select">送金種別:</label>
-                    <select id="destination-type-select">
-                        <option value="INTERNAL">内部移動（ユーザー間）</option>
-                        <option value="EXTERNAL">外部送金/出金</option>
-                    </select>
-
-                    <label for="amount-input">金額 (USD):</label>
-                    <input type="number" id="amount-input" value="100.00">
-
-                    <div id="internal-transfer-fields" class="finance-field">
-                        <label for="target-username-input">送金先ユーザー名:</label>
-                        <input type="text" id="target-username-input" placeholder="User_B">
-                    </div>
-
-                    <div id="external-transfer-fields" class="finance-field" style="display:none;">
-                        <label for="external-address-input">宛先アドレス/口座:</label>
-                        <input type="text" id="external-address-input" placeholder="0x... or Bank Account">
-                        
-                        <label for="platform-select">プラットフォーム:</label>
-                        <select id="platform-select">
-                            <option value="BINANCE">CEX (Binanceなど)</option>
-                            <option value="UNISWAP">DEX (Uniswapなど)</option>
-                        </select>
-                    </div>
-
-                    <button id="send-transfer-button">送金/出金作為を実行</button>
-                    <div id="status-message"></div>
-                </div>
-            </div>
-            
+    <div id="main-content">
+        <div id="dialogue-output">
+            <div class="ai-message"><strong>[CORE]:</strong> 監査コンソールを起動しました。</div>
+        </div>
+        
+        <div id="input-area">
+            <input type="text" id="dialogue_input" placeholder="哲学的な問い、または作為を記述してください..." />
+            <button id="dialogue_button">作為を実行</button>
         </div>
     </div>
-    
-    <script type="module" src="/MSGAI/core/external_finance_logos.js"></script>
-    <script type="module" src="/MSGAI/core/logos_core_service.js"></script>
-    <script type="module" src="/MSGAI/app/fusionui.js"></script>
-    <script type="module" src="/MSGAI/app/handler.js"></script>
-    
-    <script>
-        console.log("==> MSGAI HTML ロード完了。モジュールロードを試行しました。");
-    </script>
+
+    <script type="module" src="./app/main.js"></script>
+
 </body>
 </html>
