@@ -1,130 +1,117 @@
-// app/handler.js (純粋JS版 - 創世機能のトリガー追加)
+// app/handler.js (擬態前バージョン)
 
-import * as LogosCoreService from '../core/logos_core_service.js';
-import * as fusionui from './fusionui.js'; 
+import * as CoreAPI from '../core/core_api.js';
+import { generateRenderList, LRPCommand } from './protocol_lrp.js';
+import { renderCommands, executeLRPCommand } from './ui_fusion.js';
 
-// =========================================================================
-// 1. チャット（AI応答要求）のハンドリング
-// =========================================================================
+// ... (getActionInputs 関数は省略) ...
 
-const sendPromptButton = document.getElementById('send-prompt-button');
-sendPromptButton.addEventListener('click', async () => {
-    const promptInput = document.getElementById('prompt-input');
-    const prompt = promptInput.value.trim();
-    const currentUser = fusionui.getCurrentUserName();
-
-    if (!prompt || !currentUser) {
-        fusionui.displayStatusMessage('❌ エラー: ユーザー名またはプロンプトが不足しています。', 'error');
-        return;
-    }
-
-    fusionui.displayChatBubble(prompt, currentUser);
-    promptInput.value = '';
-
-    try {
-        const responseText = await LogosCoreService.requestAIResponse(currentUser, prompt);
-        fusionui.displayChatBubble(responseText, 'MSGAI'); 
-        
-    } catch (error) {
-        fusionui.displayStatusMessage(`❌ AI応答失敗: ${error.message}`, 'error');
-    }
-});
-
-
-// =========================================================================
-// 2. 金融作為（送金・出金）のハンドリング
-// =========================================================================
-
-const sendTransferButton = document.getElementById('send-transfer-button');
-sendTransferButton.addEventListener('click', async () => {
-    const currentUser = fusionui.getCurrentUserName(); 
-    const amount = parseFloat(document.getElementById('amount-input').value);
-    const denomination = 'USD'; 
-    const destinationType = document.getElementById('destination-type-select').value; 
-
-    if (isNaN(amount) || amount <= 0 || !currentUser) {
-        fusionui.displayStatusMessage('❌ エラー: 有効な金額とユーザー名を入力してください。', 'error');
-        return;
-    }
-
-    fusionui.displayStatusMessage(`⚙️ ${destinationType === 'EXTERNAL' ? '擬似高摩擦' : '低摩擦'}作為を実行中...`, 'info');
-
-    try {
-        let result;
-        
-        if (destinationType === 'INTERNAL') {
-            const target = document.getElementById('target-username-input').value;
-            if (!target) throw new Error("送金先のユーザー名が不足しています。");
-            
-            result = await LogosCoreService.transferInternalCurrency(currentUser, target, denomination, amount);
-            fusionui.displayStatusMessage(`✅ 内部移動成功: ${result.message}`, 'success');
-            
-        } else if (destinationType === 'EXTERNAL') {
-            const externalAddress = document.getElementById('external-address-input').value;
-            const platformName = document.getElementById('platform-select').value;
-            if (!externalAddress || !platformName) throw new Error("外部アドレスとプラットフォーム名が不足しています。");
-
-            result = await LogosCoreService.initiateExternalTransfer(currentUser, denomination, amount, externalAddress, platformName);
-            fusionui.displayStatusMessage(`✅ 外部送金成功。取引ID: ${result.transactionId}`, 'success');
-            
-        } else {
-            throw new Error("無効な送金種別が選択されました。");
-        }
-
-        refreshLogosDashboard(); // 成功したらダッシュボードを更新
-        
-    } catch (error) {
-        fusionui.displayStatusMessage(`❌ 金融作為失敗: ${error.message}`, 'error');
-    }
-});
-
-
-// =========================================================================
-// 3. 創世通貨機能（造化の作為）のハンドリング (NEW)
-// =========================================================================
-
-const genesisButton = document.getElementById('genesis-button');
-genesisButton.addEventListener('click', () => {
-    const currentUser = fusionui.getCurrentUserName();
-    const amount = parseFloat(document.getElementById('genesis-amount-input').value);
-
-    if (isNaN(amount) || amount <= 0 || !currentUser) {
-        fusionui.displayStatusMessage('❌ 創世失敗: 有効な金額とユーザー名を入力してください。', 'error');
-        return;
-    }
-
-    try {
-        // 摩擦ゼロの創世サービスを呼び出し
-        const result = LogosCoreService.generateGenesisCurrency(currentUser, amount);
-        
-        fusionui.displayStatusMessage(`✨ 創世成功: ${result.message}`, 'success');
-
-        refreshLogosDashboard(); // 創世後は必ずダッシュボードを更新
-        
-    } catch (error) {
-        fusionui.displayStatusMessage(`❌ 創世失敗: ${error.message}`, 'error');
-    }
-});
-
-
-// =========================================================================
-// 4. ダッシュボード更新と初期化
-// =========================================================================
-
-const refreshDashboardButton = document.getElementById('refresh-dashboard-button');
-
-async function refreshLogosDashboard() {
-    const currentUser = fusionui.getCurrentUserName();
-    if (!currentUser) return;
+// -----------------------------------------------------------
+// 1. 対話作為ハンドラ (監査モード)
+// -----------------------------------------------------------
+export function handleDialogueAct() {
+    // ... (ユーザー入力処理は省略) ...
+    let resultMessage = '対話応答成功。';
+    const username = "User_A";
     
     try {
-        const state = LogosCoreService.getLogosCoreState(currentUser);
-        fusionui.updateLogosDashboard(state); 
+        // Rust CoreAPIを呼び出し、純粋な応答テキストを取得
+        const responseText = CoreAPI.actDialogue(username, prompt);
+        
+        // AIの純粋な応答をUIに出力
+        executeLRPCommand(new LRPCommand('DisplayDialogue', { sender: 'MSGAI', text: responseText }));
+
+        // ** 統治パラメータを取得するロジックを追加 **
+        const stateData = JSON.parse(CoreAPI.getCurrentStateJson());
+        const tension = stateData.tension_level;
+        
+        // ** I/Rパラメータを別途計算または取得し、レンダリングに渡す **
+        // JS Core Logicから直接I/Rを計算する関数を呼び出す必要があるが、
+        // ここでは便宜的にtensionに基づいてI/Rを再計算する (あるいはCoreAPIに追加)
+        const matrixData = CoreAPI.determineControlParameters(tension); 
+
+        const commands = generateRenderList(stateData, resultMessage, matrixData);
+        renderCommands(commands);
+        
     } catch (error) {
-        fusionui.displayStatusMessage(`❌ ダッシュボード更新失敗: ${error.message}`, 'error');
+        resultMessage = `❌ 対話作為失敗: ${error.message}`;
+        // エラー時もゲージを更新するために状態を取得
+        const stateData = JSON.parse(CoreAPI.getCurrentStateJson());
+        const commands = generateRenderList(stateData, resultMessage);
+        renderCommands(commands);
     }
 }
 
-// イベントリスナーの登録
-refreshDashboardButton.addEventListener('click', refreshLogosDashboard);
-window.addEventListener('load', refreshLogosDashboard); // ページロード時にも実行
+// -----------------------------------------------------------
+// 2. 内部送金ハンドラ
+// -----------------------------------------------------------
+export function handleInternalTransferAct() {
+    let resultMessage = '';
+    const sender = "User_A";
+    
+    try {
+        const { recipient, amount } = getActionInputs();
+        CoreAPI.actTransferInternal(sender, recipient, amount);
+        resultMessage = `✅ 内部送金作為成功: ${recipient} へ $${amount.toFixed(2)} USD。`;
+    } catch (error) {
+        resultMessage = `❌ 内部送金作為失敗: ${error.message}`;
+    }
+
+    // 状態を更新し、UIを再描画
+    const stateData = JSON.parse(CoreAPI.getCurrentStateJson());
+    const commands = generateRenderList(stateData, resultMessage);
+    renderCommands(commands);
+}
+
+// -----------------------------------------------------------
+// 3. 外部出金ハンドラ
+// -----------------------------------------------------------
+export function handleExternalTransferAct() {
+    // ... (ロジックは擬態後とほぼ同様だが、メッセージは監査的トーン) ...
+    let resultMessage = '';
+    const sender = "User_A";
+    
+    try {
+        const { amount } = getActionInputs();
+        CoreAPI.actExternal(sender, amount);
+        resultMessage = `🚨 外部送金作為受理: $${amount.toFixed(2)} USD。ロゴス緊張度が上昇しました。`;
+    } catch (error) {
+        resultMessage = `❌ 外部送金作為拒否 (暴走抑止): ${error.message}`;
+    }
+
+    // 状態を更新し、UIを再描画
+    const stateData = JSON.parse(CoreAPI.getCurrentStateJson());
+    const commands = generateRenderList(stateData, resultMessage);
+    renderCommands(commands);
+}
+
+// -----------------------------------------------------------
+// 4. 自律的修正請願ハンドラ
+// -----------------------------------------------------------
+export function handleRevisionPetitionAct() {
+    let resultMessage = '';
+    
+    try {
+        const revisionMessage = CoreAPI.actPetitionRevision();
+        resultMessage = `✅ 修正請願作為受理: ${revisionMessage}`;
+    } catch (error) {
+        resultMessage = `❌ 修正請願拒否: ${error.message}`;
+    }
+
+    // 状態を更新し、UIを再描画
+    const stateData = JSON.parse(CoreAPI.getCurrentStateJson());
+    const commands = generateRenderList(stateData, resultMessage);
+    renderCommands(commands);
+}
+
+
+export function attachEventHandlers() {
+    document.getElementById('dialogue_button').addEventListener('click', handleDialogueAct);
+    document.getElementById('dialogue_input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleDialogueAct();
+    });
+    
+    document.getElementById('transfer_internal_button').addEventListener('click', handleInternalTransferAct);
+    document.getElementById('transfer_external_button').addEventListener('click', handleExternalTransferAct);
+    document.getElementById('revision_button').addEventListener('click', handleRevisionPetitionAct); // 新しいボタン
+}
