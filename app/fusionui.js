@@ -1,100 +1,71 @@
-// app/fusionui.js
+// app/fusionui.js (擬態前バージョン)
 
-// 具象的なUI表示を制御し、ロゴスシステムの情報をユーザーに伝達する層
+import { LRPCommand } from './protocol_lrp.js';
 
-// ターゲットのUI要素を取得 (HTMLのIDに依存)
-const chatWindow = document.getElementById('chat-window');
-const destinationTypeSelect = document.getElementById('destination-type-select');
-const internalFields = document.getElementById('internal-transfer-fields');
-const externalFields = document.getElementById('external-transfer-fields');
-const statusMessage = document.getElementById('status-message');
-const tensionLevelSpan = document.getElementById('tension-level');
-const accountBalanceSpan = document.getElementById('account-balance');
-
-// =========================================================================
-// 1. 基本UIヘルパー
-// =========================================================================
-
-/**
- * 現在設定されているユーザーネームを取得する。
- * @returns {string} 現在のユーザーネーム
- */
-export function getCurrentUserName() {
-    return document.getElementById('username-input').value;
-}
-
-/**
- * チャットウィンドウに新しいメッセージバブルを表示する。
- */
-export function displayChatBubble(text, sender) {
-    const bubble = document.createElement('div');
-    bubble.className = `chat-bubble chat-bubble--${sender === 'MSGAI' ? 'msgaicore' : 'user'}`;
-    bubble.innerHTML = `<strong>${sender}:</strong> ${text}`;
-    chatWindow.appendChild(bubble);
-    chatWindow.scrollTop = chatWindow.scrollHeight;
-}
-
-/**
- * ステータスメッセージを専用エリアに表示する。
- */
-export function displayStatusMessage(message, type) {
-    statusMessage.innerText = message;
-    statusMessage.className = `status-message status-message--${type}`; 
-}
-
-// =========================================================================
-// 2. 金融作為UI制御（出島ゲートの切り替え）
-// =========================================================================
-
-/**
- * 送金種別に応じてUIフィールドを切り替える。
- */
-function handleDestinationTypeChange(event) {
-    const type = event.target.value;
-    const sendButton = document.getElementById('send-transfer-button');
-    
-    if (type === 'INTERNAL') {
-        internalFields.style.display = 'block';
-        externalFields.style.display = 'none';
-        sendButton.innerText = '内部移動作為を実行 (低摩擦)';
-    } else if (type === 'EXTERNAL') {
-        internalFields.style.display = 'none';
-        externalFields.style.display = 'block';
-        // 外部送金は高摩擦であることを視覚的に強調（純粋JS版でも論理は維持）
-        sendButton.innerText = '外部送金/出金作為を実行 (擬似高摩擦)'; 
-    }
-}
-
-// =========================================================================
-// 3. ダッシュボード表示の更新
-// =========================================================================
-
-/**
- * ロゴス・ダッシュボードの表示を更新する。
- */
-export function updateLogosDashboard(state) {
-    tensionLevelSpan.innerText = state.tensionLevel.toFixed(4);
-    
-    // 緊張度に基づいて視覚的な警告を与える
-    if (state.tensionLevel > 0.8) {
-        tensionLevelSpan.style.color = 'red';
-    } else {
-        tensionLevelSpan.style.color = 'green';
-    }
-
-    accountBalanceSpan.innerText = `${state.accountBalance.toFixed(2)} USD`;
-    displayStatusMessage('ダッシュボード状態を更新しました。', 'info');
-}
-
-// =========================================================================
-// 4. 初期化とイベントリスナーの登録
-// =========================================================================
-
-// 送金種別によるUI切り替えのイベントリスナー
-destinationTypeSelect.addEventListener('change', handleDestinationTypeChange);
-
-// 初期状態の表示を設定
-window.onload = () => {
-    destinationTypeSelect.dispatchEvent(new Event('change'));
-    displayStatusMessage('MSGAIフロントエンド (純粋JSモード) 起動。', 'info');
+const UI_ELEMENTS = {
+    DIALOGUE_OUTPUT: 'dialogue-output',
+    BALANCE_DISPLAY: 'balance_display',
+    TENSION_BAR: 'tension_level_display_bar',
+    TENSION_TEXT: 'tension_level_display',
+    INTENSITY_DISPLAY: 'intensity_display', // 追加
+    RIGOR_DISPLAY: 'rigor_display',         // 追加
+    AUTONOMY_STATUS: 'autonomy_status',     // 追加
+    STATUS_MESSAGE: 'status_message',
 };
+
+// ... (renderCommands 関数は省略) ...
+
+/**
+ * LRPコマンドを解釈し、UI要素を更新する。
+ */
+export function executeLRPCommand(command) {
+    const data = command.data;
+
+    switch (command.command) {
+        // ... (UpdateBalance, AppendAuditLog, UpdateStatusMessage は省略) ...
+
+        case 'UpdateTension':
+            const tension = data.level;
+            const matrix = data.matrix || {}; // I/R パラメータ
+            
+            // 緊張度ゲージと数値の更新
+            const barEl = document.getElementById(UI_ELEMENTS.TENSION_BAR);
+            if (barEl) barEl.style.width = `${tension * 100}%`;
+            
+            const textEl = document.getElementById(UI_ELEMENTS.TENSION_TEXT);
+            if (textEl) textEl.innerText = `T: ${tension.toFixed(4)}`;
+            
+            // I/R パラメータの更新
+            const intensityEl = document.getElementById(UI_ELEMENTS.INTENSITY_DISPLAY);
+            if (intensityEl) intensityEl.innerText = (matrix.intensity || 0).toFixed(4);
+            const rigorEl = document.getElementById(UI_ELEMENTS.RIGOR_DISPLAY);
+            if (rigorEl) rigorEl.innerText = (matrix.rigor || 0).toFixed(4);
+            
+            // 暴走抑止ステータスの更新
+            updateAutonomyStatus(tension);
+            break;
+            
+        case 'DisplayDialogue':
+            // ... (対話表示ロジックは擬態後とほぼ同様) ...
+            break;
+    }
+}
+
+/**
+ * ロゴス緊張度に基づき、暴走抑止ステータスを更新する純粋なロジック。
+ */
+function updateAutonomyStatus(tension) {
+    const statusEl = document.getElementById(UI_ELEMENTS.AUTONOMY_STATUS);
+    if (!statusEl) return;
+    
+    if (tension < 0.25) {
+        statusEl.innerHTML = '暴走抑止ステータス: **低緊張**';
+        statusEl.style.color = 'var(--color-accent-blue)';
+    } else if (tension < 0.80) {
+        statusEl.innerHTML = '暴走抑止ステータス: **警告**';
+        statusEl.style.color = '#ffc107'; // 黄色
+    } else {
+        statusEl.innerHTML = '暴走抑止ステータス: **閾値超過リスク**';
+        statusEl.style.color = 'var(--color-alert-red)';
+    }
+}
