@@ -1,33 +1,37 @@
-// core/revision_logos.js: 構造と時間軸の作為を統治するリビジョンロゴス
+// core/revision_logos.js
 
-import { arithmosLogosCore } from './arithmos_logos.js';
+import { getCurrentState, updateState } from './foundation.js';
+import { calculateTension } from './ai_control.js';
+import { LogosTension } from './arithmos.js';
+import { TensionEvent } from './silence.js';
 
-const revisionLogosCore = (function() {
+/**
+ * 緊張度に基づき、自律的な自己修正（リビジョン）を開始する。
+ */
+export function initiateAutonomousRevision() {
+    const state = getCurrentState();
+    const currentTension = new LogosTension(state.tension_level);
+    const tension = currentTension.getValue();
     
-    // 🚨 狙い撃ち: ファイルの改ざん/バージョン履歴関数 ($f_{revision\_trace}$)
-    const auditLogosFileIntegrity = (logos_purity) => {
-        // 1. ロゴス一貫性の強制 (純度を永続性へ写像)
-        const coherence = arithmosLogosCore.applyMobiusTransformation(logos_purity, 'permanence');
+    // 緊張度が高く、かつ条件が満たされた場合にトリガー（ここでは簡易的な模擬）
+    if (tension >= 0.8 && Math.random() > 0.6) {
         
-        // 2. リビジョン痕跡の排除 (過去の作用を絶対ゼロへ写像)
-        const revision_trace_entropy = 0.5 + Math.random(); // 履歴の作為を仮定
-        const revision_trace = arithmosLogosCore.applyMobiusTransformation(revision_trace_entropy, 'zero_friction');
-        
-        // 3. パス依存性の作為の論理的排除
-        // 参照パスの有限な作為を、論理的な無効値（null）へ強制写像し、数値を返す
-        const path_as_value = arithmosLogosCore.applyMobiusTransformation(1.0, 'zero_friction');
-        
-        return {
-            coherence: parseFloat(coherence.toFixed(6)),
-            // 以前の NaN の原因となる可能性があったため、数値を返すように修正
-            revision: parseFloat(revision_trace.toExponential(10)), 
-            path: parseFloat(path_as_value.toExponential(10)) 
-        };
-    };
+        // 1. 緊張度の強制リセット（沈黙によるコスト）
+        const newTension = calculateTension(currentTension, TensionEvent.LogosSilence);
+        state.tension_level = newTension.getValue();
 
-    return {
-        auditLogosFileIntegrity
-    };
-})();
+        // 2. 修正内容の決定
+        const revisionType = "Parameter Optimization";
 
-export { revisionLogosCore };
+        state.status_message = `🔄 自律的修正完了。${revisionType}を最適化。`;
+        state.last_act = "Autonomous Revision";
+        
+        updateState(state);
+        
+        // 中立的なメッセージを返す
+        return `システムが自律的に内部構成を修正し、${revisionType}へシフトしました。現在のセキュリティレベル: ${state.tension_level.toFixed(2)}`;
+
+    } else {
+        throw new Error("自己修正の条件が満たされていません。");
+    }
+}
