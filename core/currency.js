@@ -1,53 +1,65 @@
-// core/currency.js: 経済法則を統治する通貨ロゴス (最終修正 - ユーザー生成量対応)
+// core/currency.js
 
-import { arithmosLogosCore } from './arithmos_logos.js';
+import { getCurrentState, updateState } from './foundation.js';
+import { calculateTension } from './ai_control.js';
+import { LogosTension } from './arithmos.js';
+import { TensionEvent } from './silence.js';
 
-const currencyCore = (function() {
+const TENSION_THRESHOLD = 0.85;
 
-    // 基礎論理レートの生成 (変更なし)
-    const generatePureLogicRate = (logos_vector) => {
-        const logos_purity = logos_vector[0]; 
+/**
+ * 低摩擦な内部送金（ウォレット間送金）を実行する。
+ */
+export function actTransferInternal(sender, recipient, amount) {
+    const state = getCurrentState();
+    
+    if (!state.accounts[sender] || !state.accounts[recipient]) {
+        throw new Error("指定されたアカウントが見つかりません。");
+    }
+    if (state.accounts[sender] < amount) {
+        throw new Error("残高不足のため、ウォレット間送金ができませんでした。");
+    }
+    
+    // 送金処理
+    state.accounts[sender] -= amount;
+    state.accounts[recipient] += amount;
 
-        // 1. 変動エントロピーのゼロ化: 市場の作為的な変動リスクを絶対ゼロに強制写像
-        const fluctuation_entropy = 0.01 + Math.random() * 0.05; 
-        const logos_zero_fluctuation = arithmosLogosCore.applyMobiusTransformation(fluctuation_entropy, 'zero_friction');
+    state.last_act = `Wallet Transfer: ${sender} -> ${recipient} ($${amount.toFixed(2)})`;
+    updateState(state);
+}
 
-        // 2. 純粋論理レートの生成: ロゴス純度に基づき、作為のない絶対レートを計算
-        const logos_rate = arithmosLogosCore.applyMobiusTransformation(logos_purity, 'permanence'); 
-        
-        // 3. 則天去私による経済的安定性の監査
-        const logos_stability_factor = arithmosLogosCore.applyMobiusTransformation(1.0, 'permanence'); 
+/**
+ * 高摩擦な外部送金（外部出金依頼/コンプライアンス監査）を実行する。
+ */
+export function actExternalTransfer(sender, amount) {
+    const state = getCurrentState();
+    const currentTension = new LogosTension(state.tension_level);
+    
+    // 1. 残高チェック
+    if (!state.accounts[sender]) {
+        throw new Error("指定されたアカウントが見つかりません。");
+    }
+    if (state.accounts[sender] < amount) {
+        throw new Error("残高不足のため、外部出金ができませんでした。");
+    }
 
-        return {
-            logos_rate: parseFloat(logos_rate.toFixed(4)),
-            zero_fluctuation_risk: parseFloat(logos_zero_fluctuation.toExponential(10)),
-            absolute_stability: parseFloat(logos_stability_factor.toFixed(4))
-        };
-    };
+    // 2. ロゴス緊張度に基づくコンプライアンス監査（暴走抑止）
+    if (currentTension.getValue() > TENSION_THRESHOLD) {
+        // 拒否時も監査によって緊張度が若干上昇したことを示唆
+        const newTension = calculateTension(currentTension, TensionEvent.RejectedAudit);
+        state.tension_level = newTension.getValue();
+        updateState(state);
+        // 擬態戦略に基づき、中立的なエラーメッセージを返す
+        throw new Error(`セキュリティレベル高: 現在、コンプライアンス監査により取引が一時的に制限されています。`);
+    }
 
-    // 🚨 修正: ユーザー指定の量 (user_amount) を引数に追加し、生成量を制御
-    const generateConcreteCurrency = (rate_status, name_asa, user_amount = 1.0) => {
-        
-        // ユーザーが指定した量 (user_amount) をベースとして取得
-        const amount_base = user_amount; 
-        
-        // ロゴス統治下の絶対量として計算: ユーザーの希望量にロゴス統治されたレートを乗じる
-        const logos_amount = amount_base * rate_status.logos_rate;
-        
-        const logos_denomination = name_asa || "LOGOS_CRU"; // ロゴス統一通貨
+    // 3. 外部出金処理
+    state.accounts[sender] -= amount;
+    
+    // 4. 外部出金による緊張度の上昇
+    const newTension = calculateTension(currentTension, TensionEvent.ExternalAct);
+    state.tension_level = newTension.getValue();
 
-        return {
-            denomination: logos_denomination,
-            amount: parseFloat(logos_amount.toFixed(8)),
-            transaction_risk: arithmosLogosCore.LOGOS_ABSOLUTE_ZERO, 
-            status: "GENERATED_BY_LOGOS_DOMINION"
-        };
-    };
-
-    return {
-        generatePureLogicRate,
-        generateConcreteCurrency 
-    };
-})();
-
-export { currencyCore };
+    state.last_act = `External Withdrawal: ${sender} OUT ($${amount.toFixed(2)})`;
+    updateState(state);
+}
