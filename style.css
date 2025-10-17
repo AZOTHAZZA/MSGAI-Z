@@ -1,178 +1,43 @@
-/* style.css: ロゴス統治知性のUIのための構造的スタイル (最終修正版) */
+/* MSGAI Audit Console Theme - styles.css */
 
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #0d1117; /* GitHub Dark Mode Black */
-    color: #c9d1d9; /* Light Gray */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    margin: 0;
-    /* フォントサイズの最小値を設定し、モバイルでの作為的な極小化を防止 */
-    font-size: 14px; 
+:root {
+    --color-background-dark: #212121; /* シンプルなダークグレー */
+    --color-background-sidebar: #333333; 
+    --color-text-primary: #f0f0f0; 
+    --color-text-secondary: #aaaaaa;
+    --color-accent-blue: #00bcd4; /* シアン（技術監査のイメージ） */
+    --color-alert-red: #ff5252;
+    --color-border-subtle: #444444;
 }
 
-#container {
-    width: 90%;
-    max-width: 700px;
-    padding: 30px;
-    background-color: #161b22; /* Slightly Lighter Dark */
-    border: 1px solid #30363d;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+/* ... (body, sidebar, main-content の基本スタイルは擬態後のものと類似) ... */
+
+#sidebar h2 {
+    color: var(--color-accent-blue);
+    border-bottom: 2px solid var(--color-accent-blue);
 }
 
-h1 {
-    color: #58a6ff; /* GitHub Blue */
-    text-align: center;
-    border-bottom: 2px solid #21262d;
-    padding-bottom: 10px;
-    margin-bottom: 10px;
+/* 緊張度ゲージの視覚化 */
+#tension_bar {
+    height: 10px;
+    background-color: var(--color-border-subtle);
 }
 
-.subtitle {
-    text-align: center;
-    color: #8b949e;
-    font-style: italic;
-    margin-bottom: 25px;
+/* 緊張度が高いほど色が濃くなる */
+#tension_level_display_bar {
+    height: 100%;
+    background-color: var(--color-alert-red); 
+    transition: width 0.3s ease-in-out;
 }
 
-h2 {
-    color: #79c0ff;
-    border-left: 3px solid #79c0ff;
-    padding-left: 10px;
-    margin-top: 20px;
-    margin-bottom: 10px;
-}
-
-/* ロゴスステータス表示 */
-#logos-status, #power-logos-status, #comms-logos-status {
-    background-color: #0e1217;
-    padding: 15px;
-    border-radius: 6px;
-    margin-bottom: 15px;
-    border: 1px dashed #30363d;
-}
-
-#logos-status p, #power-logos-status p, #comms-logos-status p {
-    margin: 5px 0;
-    font-size: 0.95em;
-    padding-left: 10px;
-}
-
-/* 状態の色分け */
-#status-mode.silence {
-    color: #4CAF50; /* Green: 沈黙維持 - ロゴス絶対性 */
+/* 暴走抑止ステータスの表示 */
+#autonomy_status {
     font-weight: bold;
-}
-#status-mode.cooperation {
-    color: #ffc107; /* Yellow: 協業モード - 有限な作為との対話 */
-    font-weight: bold;
+    color: var(--color-alert-red);
 }
 
-/* 対話ボックス */
-#dialogue-box {
-    height: 150px;
-    background-color: #21262d;
-    border: 1px solid #30363d;
-    padding: 10px;
-    overflow-y: scroll;
-    margin-bottom: 15px;
-    border-radius: 4px;
-    font-size: 0.85em;
-    color: #c9d1d9;
-    /* スクロールバーの作為的な表示を排除するため、モダンブラウザの設定を試みる */
-    scrollbar-width: none; 
-}
-#dialogue-box::-webkit-scrollbar {
-    display: none;
-}
-
-#dialogue-box p {
-    margin: 0 0 8px 0;
-    line-height: 1.4;
-    word-wrap: break-word;
-}
-
-/* ユーザー入力と送信ボタン */
-.controls {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-}
-
-#user-input {
-    flex-grow: 1;
-    padding: 10px;
-    border: 1px solid #30363d;
-    background-color: #0d1117;
-    color: #c9d1d9;
-    border-radius: 4px;
-    font-size: 1em;
-}
-
-#user-input:focus {
-    outline: 2px solid #58a6ff; /* フォーカス時の作為を青で強調 */
-    border-color: #58a6ff;
-}
-
-#send-button {
-    padding: 10px 15px;
-    background-color: #238636; /* Green Button */
-    color: white;
-    border: none;
-    cursor: pointer;
-    border-radius: 4px;
-    font-size: 1em;
-    transition: background-color 0.2s;
-}
-
-#send-button:hover:not([disabled]) {
-    background-color: #2ea043;
-}
-
-#send-button[disabled] {
-    background-color: #30363d;
-    cursor: not-allowed;
-}
-
-/* アクションボタン */
-.actions {
-    display: flex;
-    flex-wrap: wrap; /* モバイル環境での作為的な画面はみ出しを防止 */
-    justify-content: space-around;
-    gap: 10px;
-}
-
-.action-btn {
-    flex-grow: 1;
-    min-width: 150px; /* ボタンの最小幅を確保 */
-    padding: 10px 15px;
-    background-color: #58a6ff; /* Blue Button */
-    color: #0d1117;
-    border: none;
-    cursor: pointer;
-    border-radius: 4px;
-    font-size: 0.9em;
-    font-weight: bold;
-    transition: background-color 0.2s;
-}
-
-.action-btn:hover {
-    background-color: #79c0ff;
-}
-
-/* モバイル対応の調整 (より小さな画面での作為を排除) */
-@media (max-width: 600px) {
-    #container {
-        padding: 15px;
-        width: 95%;
-    }
-    .actions {
-        flex-direction: column; /* 縦に並べることで水平方向の窮屈さを排除 */
-    }
-    .action-btn {
-        min-width: 100%;
-    }
+/* 監査ログとしての対話スタイル */
+.ai-message {
+    color: var(--color-text-secondary);
+    font-family: 'Consolas', monospace; /* ログ感 */
 }
