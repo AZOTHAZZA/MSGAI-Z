@@ -9,11 +9,16 @@
         /* 🌟 UI全体の色と基本レイアウトの最終復元 🌟 */
         body { 
             display: flex; 
-            font-family: sans-serif; 
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif; 
             margin: 0; 
             /* 全体の背景色 */
             background-color: #f0f0f0; 
         }
+        
+        /* 💡 修正: ヘッダーのマージンとボーダーを調整し、見栄えを整える */
+        h2 { margin-top: 0; padding-top: 5px; border-bottom: 2px solid #ddd; padding-bottom: 5px; }
+        h3 { margin-top: 0; margin-bottom: 10px; font-size: 1.1em; }
+
         #sidebar { 
             width: 350px; 
             /* サイドバーの背景色を白に復元 */
@@ -143,6 +148,10 @@
             
             <button id="delete_accounts_button" class="action-button">
                 口座情報削除 (監査用リセット)
+            </button>
+            
+            <button id="css_reset_button" class="action-button action-internal" style="background-color: #6c757d; margin-top: 15px;">
+                UI配色リセット (CSS Hard Reset)
             </button>
         </div>
 
