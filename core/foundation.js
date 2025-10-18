@@ -1,4 +1,4 @@
-// core/foundation.js (最終修正版 - 全文)
+// core/foundation.js (最終堅牢版 - 全文)
 
 import { LogosTension } from './arithmos.js'; 
 
@@ -27,10 +27,8 @@ function loadPersistedAccounts() {
             console.log("[Logos Foundation]: 口座情報が見つかりません。初期値を適用します。");
             return JSON.parse(JSON.stringify(INITIAL_ACCOUNTS));
         }
-        
         const accounts = JSON.parse(persisted);
         if (typeof accounts === 'object' && accounts !== null && Object.keys(accounts).length > 0) {
-             console.log("[Logos Foundation]: 永続化されたマルチカレンシー口座情報を読み込みました。");
              return accounts;
         }
     } catch (e) {
@@ -47,7 +45,6 @@ function loadPersistedTension() {
         
         const t = parseFloat(persisted);
         if (!isNaN(t) && t >= 0 && t <= 1.0) {
-            console.log(`[Logos Foundation]: 永続化されたTension (${t.toFixed(4)}) を読み込みました。`);
             return t;
         }
     } catch (e) {
@@ -73,7 +70,6 @@ function loadPersistedActiveUser() {
 // LogosState の定義と遅延初期化ロジック
 // =========================================================================
 
-// LogosState を let で定義し、最初は null にしておく
 let LogosState = null;
 
 /**
@@ -84,7 +80,6 @@ function ensureLogosStateInitialized() {
     if (LogosState === null) {
         console.log("[Foundation]: LogosStateを初期化中...");
         LogosState = { 
-            // LogosTensionクラスを利用してインスタンス化
             tension_level: new LogosTension(loadPersistedTension()),
             accounts: loadPersistedAccounts(),
             active_user: loadPersistedActiveUser(),
@@ -104,7 +99,7 @@ function ensureLogosStateInitialized() {
  * 状態の更新と永続化を行う関数
  */
 export function updateState(newState) {
-    const state = ensureLogosStateInitialized(); // 呼び出し前に初期化を保証
+    const state = ensureLogosStateInitialized();
 
     // LogosStateのプロパティを更新
     state.accounts = newState.accounts;
@@ -112,7 +107,7 @@ export function updateState(newState) {
     state.status_message = newState.status_message;
     state.last_act = newState.last_act;
     
-    // Tensionインスタンスの完全性を維持しつつ置き換え
+    // 🌟 Tensionインスタンスの復元と更新
     if (newState.tension_level instanceof LogosTension) {
         state.tension_level = newState.tension_level;
     } else if (newState.tension_level && typeof newState.tension_level.getValue === 'function') {
@@ -135,7 +130,7 @@ export function updateState(newState) {
 
 /** 最新の状態オブジェクトの参照を返す。 */
 export function getCurrentState() { 
-    return ensureLogosStateInitialized(); // 初期化を保証
+    return ensureLogosStateInitialized();
 }
 
 /** 状態オブジェクトのディープコピー（JSON形式）を返す。 */
@@ -143,9 +138,26 @@ export function getCurrentStateJson() {
     return JSON.parse(JSON.stringify(ensureLogosStateInitialized())); 
 }
 
-/** LogosTensionインスタンスの参照を返す。 */
+/** * 🌟 修正: LogosTensionインスタンスの参照を返し、壊れていたら自己修復を試みる。
+ */
 export function getTensionInstance() { 
-    return ensureLogosStateInitialized().tension_level; 
+    const state = ensureLogosStateInitialized();
+    
+    // 🌟 強化ロジック
+    if (typeof state.tension_level.add !== 'function') {
+        console.warn("[Logos Foundation WARNING]: Tensionインスタンスが破損していました。再インスタンス化します。");
+        
+        // 壊れたオブジェクトから値を取り出し、新しいインスタンスを生成
+        let value = INITIAL_TENSION;
+        if (typeof state.tension_level.value === 'number') {
+            value = state.tension_level.value;
+        } else if (typeof state.tension_level === 'number') {
+            value = state.tension_level;
+        }
+        state.tension_level = new LogosTension(value);
+    }
+    
+    return state.tension_level; 
 }
 
 
@@ -154,24 +166,22 @@ export function getTensionInstance() {
 // =========================================================================
 
 /**
- * 必須: 常に最新かつ操作可能なLogosStateのオブジェクト参照を返す (currency.jsで使用)
+ * 必須: 常に最新かつ操作可能なLogosStateのオブジェクト参照を返す
  */
 export function getMutableState() {
-    return ensureLogosStateInitialized(); // 初期化を保証
+    return ensureLogosStateInitialized();
 }
 
 /**
  * コアシステムをリセットし、口座情報を削除する。
- * @returns {string} ステータスメッセージ
  */
 export function deleteAccounts() { 
-    // localStorageをクリア
     localStorage.removeItem(PERSISTENCE_KEY_ACCOUNTS);
     localStorage.removeItem(PERSISTENCE_KEY_TENSION);
     localStorage.removeItem(PERSISTENCE_KEY_ACTIVE_USER);
 
-    LogosState = null; // 状態を強制的にnullに戻すことで、次回呼び出し時に再初期化される
-    const state = ensureLogosStateInitialized(); // 初期値を読み込み直す
+    LogosState = null; 
+    const state = ensureLogosStateInitialized(); 
     state.status_message = "全口座情報とTensionレベルをリセットしました。";
     updateState(state);
     return state.status_message; 
