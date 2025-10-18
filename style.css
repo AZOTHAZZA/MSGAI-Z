@@ -1,34 +1,211 @@
-/* MSGAI Standard Theme - style.css */
+/* style.css */
 
 :root {
-    --color-background-dark: #212121;
-    --color-background-sidebar: #333333; 
-    --color-text-primary: #f0f0f0; 
-    --color-text-secondary: #aaaaaa;
-    --color-accent-blue: #00bcd4;
-    --color-alert-red: #ff5252;
-    --color-border-subtle: #444444;
+    --color-background: #1e1e1e;
+    --color-sidebar: #252526;
+    --color-text: #cccccc;
+    --color-log-ai: #d4eaf7; /* 明るい青 */
+    --color-log-user: #f7d4e4; /* 明るいピンク */
+    --color-log-core: #b7e3b7; /* 明るい緑 */
+    --color-alert-red: #ff4136;
+    --color-gauge-bg: #333;
+    --color-gauge-low: #3d9970; /* 緑 */
+    --color-gauge-high: #ff851b; /* オレンジ */
+    --color-gauge-critical: #ff4136; /* 赤 */
+
+    /* アクションボタンカラーパレット */
+    --color-button-default: #555;
+    --color-button-internal: #0074d9; /* 内部送金 (青) */
+    --color-button-external: #ff4136; /* 外部送金 (赤) */
+    --color-button-revision: #7fdbff; /* 修正請願 (水色) */
+
+    /* 🌟 法定通貨生成ボタンの色を追加 */
+    --color-mint-fiat: #2ECC40; /* 法定通貨 (緑系) */
 }
 
-/* ... (body, sidebar, main-content の基本スタイルは前回の監査CSSから継承) ... */
+body {
+    display: flex;
+    font-family: 'Consolas', 'Monaco', monospace;
+    background-color: var(--color-background);
+    color: var(--color-text);
+    margin: 0;
+    height: 100vh;
+    overflow: hidden; /* メインスクロールは各エリアで行う */
+    font-size: 14px;
+}
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--color-background-dark); color: var(--color-text-primary); display: flex; height: 100vh; overflow: hidden; }
-#sidebar { width: 280px; background-color: var(--color-background-sidebar); padding: 20px; border-right: 1px solid var(--color-border-subtle); overflow-y: auto; flex-shrink: 0; }
-#sidebar h2 { color: var(--color-accent-blue); font-size: 1.3em; margin-bottom: 15px; border-bottom: 2px solid var(--color-accent-blue); padding-bottom: 5px; }
-.gauge-area { margin-bottom: 25px; padding-top: 10px; border-top: 1px dashed var(--color-border-subtle); }
-.action-input { width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 10px; border: 1px solid var(--color-border-subtle); border-radius: 4px; background-color: var(--color-background-dark); color: var(--color-text-primary); font-family: 'Consolas', 'Courier New', monospace; font-size: 0.9em; }
-#tension_bar { height: 10px; background-color: var(--color-border-subtle); border-radius: 5px; overflow: hidden; margin-top: 5px; }
-#tension_level_display_bar { height: 100%; background-color: var(--color-alert-red); transition: width 0.3s ease-in-out; }
-#autonomy_status { font-weight: bold; }
-#main-content { flex-grow: 1; display: flex; flex-direction: column; }
-#dialogue-output { flex-grow: 1; padding: 30px; overflow-y: auto; background-color: var(--color-background-dark); line-height: 1.7; }
-.user-message { color: var(--color-text-primary); font-weight: 500; }
-.ai-message { color: var(--color-text-secondary); font-family: 'Consolas', monospace; }
-#input-area { padding: 15px 30px; border-top: 1px solid var(--color-border-subtle); display: flex; flex-shrink: 0; }
-#dialogue_input { flex-grow: 1; padding: 10px; border: 1px solid var(--color-border-subtle); border-radius: 4px; background-color: var(--color-background-sidebar); color: var(--color-text-primary); margin-right: 10px; }
-.action-button { padding: 8px 12px; margin-top: 5px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: #fff; width: 100%; }
-.action-internal { background-color: #4CAF50; }
-.action-external { background-color: #FF9800; }
-.action-revision { background-color: #2196F3; }
-#dialogue_button { background-color: var(--color-accent-blue); color: var(--color-background-dark); padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+#sidebar {
+    width: 350px;
+    background-color: var(--color-sidebar);
+    padding: 20px;
+    box-sizing: border-box;
+    overflow-y: auto; /* サイドバーは縦スクロール可能 */
+    flex-shrink: 0;
+}
+
+#main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    overflow: hidden;
+}
+
+/* --- ゲージと入力エリア --- */
+.gauge-area {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #444;
+    border-radius: 5px;
+}
+
+#tension_bar {
+    width: 100%;
+    height: 10px;
+    background-color: var(--color-gauge-bg);
+    border-radius: 5px;
+    margin-top: 5px;
+}
+
+#tension_level_display_bar {
+    height: 100%;
+    width: 5%; /* 初期値 */
+    background-color: var(--color-gauge-low);
+    border-radius: 5px;
+    transition: width 0.3s ease-in-out, background-color 0.3s ease-in-out;
+}
+
+/* --- アクションボタンと入力 --- */
+.action-input {
+    width: calc(100% - 10px);
+    padding: 8px;
+    margin-bottom: 10px;
+    background-color: #444;
+    border: 1px solid #555;
+    color: var(--color-text);
+    border-radius: 3px;
+}
+
+.action-button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    border: none;
+    border-radius: 3px;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-weight: bold;
+}
+
+.action-button:hover {
+    opacity: 0.8;
+}
+
+/* 既存のボタンカラー適用 */
+#transfer_internal_button { background-color: var(--color-button-internal); }
+#transfer_external_button { background-color: var(--color-button-external); }
+#revision_button { background-color: var(--color-button-revision); }
+
+/* 🌟 法定通貨生成ボタンへの色適用 */
+.action-mint { 
+    background-color: var(--color-mint-fiat); 
+    margin-bottom: 5px;
+}
+
+/* BTC/ETH/MATICの高摩擦通貨にはインラインスタイルで色を適用しているため、ここではデフォルトの.action-mintに法定通貨の色を適用しています */
+
+
+/* --- メインログエリア --- */
+#dialogue-output {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding-right: 10px;
+    /* 🌟 ログエリアの背景と境界を調整 */
+    background-color: #111;
+    border: 1px solid #333;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+.message {
+    padding: 8px 10px;
+    margin-bottom: 5px;
+    border-radius: 3px;
+    line-height: 1.5;
+}
+
+.ai-message {
+    background-color: #333;
+    color: var(--color-log-core);
+}
+
+.user-message {
+    background-color: #444;
+    color: var(--color-log-user);
+    text-align: right;
+}
+
+.core-status-message {
+    background-color: #2a3a2a;
+    color: var(--color-log-core);
+}
+
+/* --- 入力エリア --- */
+#input-area {
+    display: flex;
+    padding-top: 10px;
+    border-top: 1px solid #444;
+}
+
+#dialogue_input {
+    flex-grow: 1;
+    padding: 10px;
+    background-color: #444;
+    border: 1px solid #555;
+    color: var(--color-text);
+    border-radius: 3px;
+    margin-right: 10px;
+}
+
+#dialogue_button {
+    padding: 10px 15px;
+    background-color: #0074d9;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+
+/* --- 🌟 モバイルフレンドリーな修正 (レスポンシブデザイン) --- */
+@media (max-width: 900px) {
+    body {
+        flex-direction: column;
+        overflow-y: auto; /* 全体スクロールを許可 */
+        height: auto;
+    }
+
+    #sidebar {
+        width: 100%;
+        max-height: 80vh; /* スマホでログを見るためにサイドバーの高さを制限 */
+        padding: 10px;
+    }
+
+    #main-content {
+        padding: 10px;
+        /* 🌟 ログエリアを画面の30%以上表示するために高さを強制 */
+        min-height: 300px; 
+    }
+    
+    #dialogue-output {
+        height: 100%; /* 親要素(main-content)の残りの高さを占有 */
+        min-height: 150px; /* ログの可読性を確保 */
+        margin-bottom: 10px;
+    }
+
+    /* ボタンと入力のレイアウト調整 */
+    .action-button, .action-input {
+        font-size: 14px;
+    }
+}
