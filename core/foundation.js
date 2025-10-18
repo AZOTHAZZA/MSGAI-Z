@@ -1,242 +1,167 @@
-// core/foundation.js (究極の最終安定版 - グローバル不動化 + ループ回避 + 完全エクスポート保証)
+// core/foundation.js (最終修正版 - 全文)
 
-import { createLogosTension } from './arithmos.js'; 
-
-// 永続化キーと初期値の定義
-const PERSISTENCE_KEY_ACCOUNTS = 'msgaicore_accounts';
-const PERSISTENCE_KEY_TENSION = 'msgaicore_tension';
-const PERSISTENCE_KEY_ACTIVE_USER = 'msgaicore_active_user';
-
-const INITIAL_ACCOUNTS = { 
-    "User_A": { "USD": 0.00, "JPY": 0.00, "EUR": 0.00, "BTC": 0.00, "ETH": 0.00, "MATIC": 0.00 },
-    "User_B": { "USD": 0.00, "JPY": 0.00, "EUR": 0.00, "BTC": 0.00, "ETH": 0.00, "MATIC": 0.00 }
+// 初期アカウント残高の定義 (USD, JPY, EUR, BTC, ETH, MATIC)
+const INITIAL_ACCOUNTS = {
+    User_A: { USD: 1000.00, JPY: 100000, EUR: 500.00, BTC: 0.1, ETH: 1.0, MATIC: 100 },
+    User_B: { USD: 50.00, JPY: 5000, EUR: 20.00, BTC: 0.0, ETH: 0.0, MATIC: 0 },
+    User_C: { USD: 200.00, JPY: 20000, EUR: 100.00, BTC: 0.05, ETH: 0.5, MATIC: 50 }
 };
-const INITIAL_TENSION_VALUE = 0.05; 
-const INITIAL_ACTIVE_USER = "User_A";
 
 // =========================================================================
-// 状態ロード関数 (防御的なロード) 
+// 状態管理 (State Management)
 // =========================================================================
 
-function loadPersistedAccounts() {
-    try {
-        const persisted = localStorage.getItem(PERSISTENCE_KEY_ACCOUNTS);
-        if (!persisted) {
-            console.log("[Logos Foundation]: 口座情報が見つかりません。初期値を適用します。");
-            return JSON.parse(JSON.stringify(INITIAL_ACCOUNTS));
-        }
-        const accounts = JSON.parse(persisted);
-        if (typeof accounts === 'object' && accounts !== null && Object.keys(accounts).length > 0) {
-             console.log("[Logos Foundation]: 永続化されたマルチカレンシー口座情報を読み込みました。");
-             return accounts;
-        }
-    } catch (e) {
-        console.warn("[Logos Foundation WARNING]: 口座情報の読み込みに失敗、初期値を強制使用。", e);
-    }
-    return JSON.parse(JSON.stringify(INITIAL_ACCOUNTS));
-}
-
-function loadPersistedTensionValue() {
-    try {
-        const persisted = localStorage.getItem(PERSISTENCE_KEY_TENSION);
-        if (!persisted) return INITIAL_TENSION_VALUE;
-        const t = parseFloat(persisted);
-        if (!isNaN(t) && t >= 0 && t <= 1.0) {
-            console.log(`[Logos Foundation]: 永続化されたTension (${t.toFixed(4)}) を読み込みました。`);
-            return t;
-        }
-    } catch (e) {
-        console.warn("[Logos Foundation WARNING]: 緊張度情報の読み込みに失敗、初期値を使用。", e);
-    }
-    return INITIAL_TENSION_VALUE; 
-}
-
-function loadPersistedActiveUser() {
-    try {
-        const persisted = localStorage.getItem(PERSISTENCE_KEY_ACTIVE_USER);
-        if (persisted && INITIAL_ACCOUNTS[persisted]) {
-            return persisted;
-        }
-    } catch (e) {
-        console.warn("[Logos Foundation WARNING]: アクティブユーザー情報の読み込みに失敗、初期値を使用。", e);
-    }
-    return INITIAL_ACTIVE_USER;
-}
-
-// =========================================================================
-// LogosState & LogosTension のカプセル化ロジック
-// =========================================================================
-
-let _LogosState = null; 
+let state = initializeState();
 
 /**
- * LogosStateの初期化を行う。破損チェックは行わない。
+ * 初期状態を定義する。
+ * @returns {object} 初期状態オブジェクト
  */
-function loadInitialState() {
-    if (_LogosState === null) {
-        console.log("[Foundation]: LogosStateを初期化中...");
-        _LogosState = { 
-            accounts: loadPersistedAccounts(),
-            active_user: loadPersistedActiveUser(),
-            status_message: "Logos Core Initialized. Awaiting first act.",
-            last_act: "Genesis",
-        };
-        console.log("[Foundation]: LogosState初期化完了。");
-    }
-    return _LogosState;
-}
-
-/**
- * 🌟 究極の修正: Tensionインスタンスをグローバル定位置から取得・修復する
- */
-function getTensionReference() {
-    let tensionInstance = window.MSGAI_TENSION_CORE;
-
-    if (!tensionInstance) {
-        tensionInstance = createLogosTension(loadPersistedTensionValue());
-        window.MSGAI_TENSION_CORE = tensionInstance;
-        console.log("[Foundation]: Tension機能をグローバルスコープに初期ロードしました。");
-        return tensionInstance;
-    }
-    
-    // 破損していれば修復する防御ロジック
-    if (typeof tensionInstance.add !== 'function') {
-        console.warn("[Logos Foundation WARNING]: Tensionインスタンスが破損していました。再構築します。"); 
-        
-        const value = (typeof tensionInstance.value === 'number') 
-            ? tensionInstance.value 
-            : INITIAL_TENSION_VALUE;
-            
-        // 新しい機能構造体で置き換え、グローバルスコープを更新
-        tensionInstance = createLogosTension(value);
-        window.MSGAI_TENSION_CORE = tensionInstance;
-        
-        // 🚨 無限ループ回避のため updateState({}) は呼び出さない
-    }
-    return tensionInstance;
-}
-
-/**
- * LogosStateへの単一エントリポイント
- */
-function getStateReference() {
-    getTensionReference();
-    return loadInitialState();
-}
-
-// =========================================================================
-// 公開関数 (Public Exports)
-// =========================================================================
-
-/**
- * 状態の更新と永続化を行う関数
- */
-export function updateState(newState) {
-    const currentState = loadInitialState(); 
-
-    // 状態全体を新しいオブジェクトで置き換える (不変性強制)
-    _LogosState = {
-        accounts: newState.accounts || currentState.accounts,
-        active_user: newState.active_user || currentState.active_user,
-        status_message: newState.status_message || currentState.status_message,
-        last_act: newState.last_act || currentState.last_act,
+function initializeState() {
+    return {
+        status_message: "コア起動完了",
+        active_user: "User_A",
+        accounts: JSON.parse(JSON.stringify(INITIAL_ACCOUNTS)), // ディープコピー
+        tension: { value: 0.0, max_limit: 0.5, increase_rate: 0.00001 }
     };
-    
-    // 永続化を試行
+}
+
+/**
+ * 現在の状態を取得する。
+ * @returns {object} 現在の状態
+ */
+export function getCurrentState() {
+    return state;
+}
+
+/**
+ * 状態を更新する。
+ * @param {object} newState - 新しい状態オブジェクト
+ */
+function updateState(newState) {
+    state = newState;
+    // 状態をローカルストレージに保存（持続性のため）
+    localStorage.setItem('msaiState', JSON.stringify(state));
+}
+
+// ローカルストレージからの状態復元を試みる
+const savedState = localStorage.getItem('msaiState');
+if (savedState) {
     try {
-        localStorage.setItem(PERSISTENCE_KEY_ACCOUNTS, JSON.stringify(_LogosState.accounts));
-        
-        // 🌟 修正: グローバルインスタンスから直接値を取得し、getTensionReference() の再帰呼び出しを回避
-        const tensionInstance = window.MSGAI_TENSION_CORE;
-        const tensionValue = (tensionInstance && typeof tensionInstance.getValue === 'function')
-            ? tensionInstance.getValue().toString()
-            : loadPersistedTensionValue().toString(); // 破損時リカバリ
-        
-        localStorage.setItem(PERSISTENCE_KEY_TENSION, tensionValue);
-        localStorage.setItem(PERSISTENCE_KEY_ACTIVE_USER, _LogosState.active_user);
-        
-        console.log("[Logos Foundation]: 状態の永続化に成功しました。");
-
+        state = JSON.parse(savedState);
+        // Tensionインスタンスを再初期化（クラスメソッドが失われるため）
+        state.tension = { value: state.tension.value, max_limit: 0.5, increase_rate: 0.00001 };
+        state.status_message = "コア状態復元済み";
     } catch (e) {
-        console.error("[Logos Foundation ERROR]: 状態の永続化に失敗しました。", e);
+        console.error("Failed to load state from localStorage:", e);
+        // 失敗した場合は初期状態に戻す
+        state = initializeState();
     }
-}
-
-
-/** LogosTension機能構造体の参照を返す。（Tension値を取得する関数のみに用途を限定する） */
-export function getTensionInstance() { 
-    return getTensionReference(); 
-}
-
-/** Tensionレベルを安全に操作するための公開関数 */
-export function addTension(amount) {
-    const tension = getTensionReference();
-    tension.add(amount); 
-    updateState({}); // Tension値の更新後、updateStateを呼び出し永続化
-}
-
-
-// ---------------- (getCurrentState / getMutableState 関数群 - 確実なエクスポート) ----------------
-
-/** 最新の状態オブジェクトの参照を返す。 */
-export function getCurrentState() { 
-    return getStateReference(); 
-}
-
-/** 状態オブジェクトのディープコピー（JSON形式）を返す。 */
-export function getCurrentStateJson() { 
-    return JSON.parse(JSON.stringify(getStateReference())); 
-}
-
-/**
- * 必須: 常に最新かつ操作可能なLogosStateのオブジェクト参照（シャローコピー）を返す
- */
-export function getMutableState() {
-    // 外部からの破壊を防ぐため、シャローコピーを返す
-    return { ...getStateReference() }; 
-}
-
-
-// =========================================================================
-// ヘルパー関数
-// =========================================================================
-
-/**
- * コアシステムをリセットし、口座情報を削除する。
- */
-export function deleteAccounts() { 
-    localStorage.removeItem(PERSISTENCE_KEY_ACCOUNTS);
-    localStorage.removeItem(PERSISTENCE_KEY_TENSION);
-    localStorage.removeItem(PERSISTENCE_KEY_ACTIVE_USER);
-
-    _LogosState = null; 
-    window.MSGAI_TENSION_CORE = null; // グローバルインスタンスもリセット
-    
-    // 再初期化
-    const state = getStateReference(); 
-    state.status_message = "全口座情報とTensionレベルをリセットしました。";
+} else {
+    // 初回起動時の状態を保存
     updateState(state);
-    return state.status_message; 
+}
+
+// =========================================================================
+// テンション (Tension) 管理
+// =========================================================================
+
+/**
+ * ロゴス緊張度 (Tension) インスタンスを取得する。
+ * @returns {object} Tensionオブジェクト
+ */
+export function getTensionInstance() {
+    return state.tension;
 }
 
 /**
- * 現在のアクティブユーザーを変更する。
+ * ロゴス緊張度 (Tension) を指定量増加させる。
+ * @param {number} amount - 増加させる量
  */
-export function setActiveUser(username) {
-    const state = getStateReference();
-    if (state.accounts[username]) {
-        state.active_user = username;
+export function addTension(amount) {
+    state.tension.value += amount;
+    state.tension.value = Math.max(0, state.tension.value); // 0未満にならないように
+    updateState(state);
+}
+
+// =========================================================================
+// アカウントとユーザー制御
+// =========================================================================
+
+/**
+ * アクティブユーザーを設定する。
+ * @param {string} user - 新しいアクティブユーザー名
+ */
+export function setActiveUser(user) {
+    if (state.accounts[user]) {
+        state.active_user = user;
         updateState(state);
     } else {
-        throw new Error(`User ${username} does not exist.`);
+        throw new Error(`User ${user} not found.`);
     }
 }
 
 /**
- * アクティブユーザーの残高を取得する。
+ * 指定したユーザーの全残高を取得する。
+ * @param {string} user - ユーザー名
+ * @returns {object} 残高オブジェクト
  */
-export function getActiveUserBalance(currency = "USD") {
-    const state = getStateReference();
-    const balance = state.accounts[state.active_user][currency];
-    return balance !== undefined ? balance : 0.00;
+export function getActiveUserBalance(user) {
+    return state.accounts[user] || {};
 }
+
+/**
+ * 全ての口座情報とTensionを削除し、初期状態にリセットする。
+ */
+export function deleteAccounts() {
+    localStorage.removeItem('msaiState');
+    state = initializeState();
+}
+
+// =========================================================================
+// 経済的作為 (Acts)
+// =========================================================================
+
+/**
+ * 送金作為 (Transfer Act) を実行し、残高を移動させる。
+ * @param {string} sender - 送金元ユーザー名
+ * @param {string} recipient - 受取人ユーザー名
+ * @param {number} amount - 送金数量
+ * @param {string} currency - 送金通貨 (USD固定)
+ * @returns {object} 更新された状態 (newState)
+ */
+export function actTransfer(sender, recipient, amount, currency) {
+    const state = getCurrentState();
+
+    // 1. 受取人が存在するかチェック (内部送金の場合)
+    // 外部送金は "External_Gateway" を通るが、ここでは state.accounts には追加しない
+    const isInternal = state.accounts[recipient];
+
+    // 2. 残高チェック
+    if ((state.accounts[sender][currency] || 0) < amount) {
+        throw new Error(`${sender} の ${currency} 残高不足です。`);
+    }
+
+    // 3. 残高を移動 (消費と増加)
+    state.accounts[sender][currency] -= amount;
+    
+    // 受取人が内部アカウントの場合のみ残高増加
+    if (isInternal) {
+        state.accounts[recipient][currency] = (state.accounts[recipient][currency] || 0) + amount;
+    }
+    
+    // 4. 状態の更新
+    updateState(state);
+    return state;
+}
+
+
+// =========================================================================
+// エクスポート
+// =========================================================================
+
+export { 
+    updateState, 
+    initializeState,
+    actTransfer // 💡 追加: 送金機能
+};
