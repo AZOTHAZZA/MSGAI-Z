@@ -1,57 +1,52 @@
-// app/main.js (最終確認版 - 全文)
+// app/main.js (最終修正版 - Tension安定化対応)
 
-import * as Foundation from '../core/foundation.js';
-import * as Arithmos from '../core/arithmos.js';
-import * as Currency from '../core/currency.js';
-import * as UI from './fusionui.js';
-// 必要な関数を個別にインポート
-import { connectEventHandlers } from './handler.js'; 
+import { getCurrentState, actMintCurrency } from './foundation.js'; 
+// 🚨 修正: Arithmosモジュールへの直接依存を削除しました。
 
 /**
- * アプリケーションのコア処理とUI処理を連携させるメイン関数
+ * アプリケーションの初期化を行う。
+ * 状態をロードし、初期UIの構築やイベントリスナーの設定を行う。
  */
 function initializeApp() {
-    console.log("main.js: アプリケーション初期化開始。");
-
     try {
-        // 1. コア状態の取得（UI表示用のデータ）
-        // Foundation.getCurrentState() が ensureLogosStateInitialized() を通じて初めてLogosStateを初期化する
-        const stateData = Foundation.getCurrentState(); 
-        const tensionInstance = Foundation.getTensionInstance();
+        console.log("MSGAI Core System Initializing...");
+
+        // 🌟 修正: getCurrentStateを呼び出すことで、
+        // Foundation内部でTensionの健全性チェックとロードが完了する
+        const initialState = getCurrentState(); // L23: Foundationの初期化をトリガー
+
+        console.log("Initial state loaded successfully:", initialState);
+
+        // 致命的なエラーの原因となっていたコードを削除
+        // ❌ let controlMatrix = new Arithmos.ControlMatrix(); 
+        // ❌ console.log("ControlMatrix initialized:", controlMatrix);
+
+        // 例: 初期UI表示のロジック
+        document.getElementById('status-message').textContent = initialState.status_message;
+        document.getElementById('user-a-balance').textContent = 
+            `User A Balance (USD): ${initialState.accounts["User_A"]["USD"].toFixed(2)}`;
         
-        // 2. I/Rパラメータの計算
-        const matrix = new Arithmos.ControlMatrix(tensionInstance);
-        const matrixData = { 
-            intensity: matrix.intensity, 
-            rigor: matrix.rigor 
-        };
-        
-        // 3. UIの初期描画
-        // main.js:29:12 に対応する行
-        UI.updateUI(stateData, "システム監査コンソールが起動しました。", matrixData);
-        
-        // 4. イベントハンドラの接続
-        // 修正: インポートした関数を直接呼び出す
-        connectEventHandlers(Foundation, Currency, UI, Arithmos); 
+        // テスト用のイベントリスナー設定（例としてactMintCurrencyを呼び出す）
+        document.getElementById('mint-button').addEventListener('click', () => {
+            try {
+                const newState = actMintCurrency("User_A", "USD", 1.0);
+                alert(`Mint successful! New USD: ${newState.accounts["User_A"]["USD"].toFixed(2)}`);
+                document.getElementById('user-a-balance').textContent = 
+                    `User A Balance (USD): ${newState.accounts["User_A"]["USD"].toFixed(2)}`;
+            } catch (error) {
+                console.error("Mint operation failed:", error);
+                alert("Mint failed. See console for details.");
+            }
+        });
+
+        console.log("MSGAI Initialization complete.");
 
     } catch (error) {
-        // 致命的なエラーが発生した場合の処理
-        console.error("致命的な初期化エラー:", error);
-        
-        // UIへのエラー表示
-        const statusElement = document.getElementById('autonomy_status');
-        if (statusElement) {
-             statusElement.textContent = '暴走抑止ステータス: **FATAL ERROR**';
-             statusElement.style.color = 'var(--color-alert-red)';
-        }
-        
-        if (UI.displayDialogue) {
-            UI.displayDialogue('CORE_STATUS', `❌ 致命的な初期化エラーが発生しました: ${error.message}`);
-        }
+        // L39: 致命的な初期化エラー
+        console.error("致命的な初期化エラー:", error); 
+        document.body.innerHTML = '<h1>システム起動エラー</h1><p>コア初期化に失敗しました。コンソールを確認してください。</p>';
     }
-    
-    console.log("main.js: アプリケーション初期化完了。");
 }
 
-// 🌟 必須: DOMコンテンツが完全に読み込まれた後にinitializeAppを実行
+// ドキュメントが完全にロードされた後に初期化関数を呼び出す
 document.addEventListener('DOMContentLoaded', initializeApp);
