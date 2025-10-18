@@ -1,73 +1,38 @@
-// core/arithmos.js (calculateTension を追加し、core/silence.jsに依存)
+// core/revision.js (最終確定版: initiateAutonomousRevision をエクスポート)
 
-import { TensionEvent } from './silence.js'; // TensionEventの定義をインポート
-
-/**
- * ロゴス緊張度 (Tension) の厳密な型。0.0から1.0の範囲を保証。
- */
-export class LogosTension {
-    constructor(value) {
-        this.value = this.clamp(value);
-    }
-
-    clamp(value) {
-        return Math.min(1.0, Math.max(0.0, value));
-    }
-
-    getValue() {
-        return this.value;
-    }
-
-    toString() {
-        return this.value.toFixed(4);
-    }
-}
+// 依存モジュールを正しくインポート
+import { getCurrentState, updateState } from './foundation.js'; 
+import { LogosTension, calculateTension } from './arithmos.js'; 
+import { TensionEvent } from './silence.js'; 
 
 /**
- * 厳密性と創造性のバランス (I/R) を決定する制御行列。
+ * 自律的修正を開始する関数 (第十一作為)。
+ * ロゴス緊張度が高い場合、システムは自己調整を行います。
+ * * @returns {string} 修正の結果を示すメッセージ
  */
-export class ControlMatrix {
-    constructor(tension) {
-        const t = tension.getValue();
-        
-        // 緊張度に基づいてIとRのバランスを決定する数理ロジック
-        this.intensity = Math.pow((1.0 - t), 2.0); // 創造性 (I): 緊張度が低いほど高い
-        this.rigor = Math.sqrt(t);               // 厳密性 (R): 緊張度が高いほど高い
-    }
-}
-
-/**
- * ロゴス緊張度を計算し、新しい LogosTension オブジェクトを返す中核関数 (第一作為)。
- * @param {LogosTension} currentTension 現在の緊張度オブジェクト
- * @param {string} eventType 発生したイベント (TensionEventの定数)
- * @returns {LogosTension} 更新された緊張度オブジェクト
- */
-export function calculateTension(currentTension, eventType) {
-    let tension = currentTension.getValue();
-    let change = 0;
-
-    switch (eventType) {
-        case TensionEvent.StandardInteraction:
-            change = 0.005; // 通常の対話ではわずかに上昇
-            break;
-        case TensionEvent.ExternalTransfer:
-            change = 0.15;  // 外部作為は大きく緊張度を上昇させる
-            break;
-        case TensionEvent.InternalTransfer:
-            change = -0.02; // 内部作為は緊張度をわずかに緩和
-            break;
-        case TensionEvent.LogosSilence:
-            change = -0.30; // 自律修正（沈黙）は緊張度を大幅に緩和
-            break;
-        default:
-            change = 0.01;
-    }
+export function initiateAutonomousRevision() {
+    const state = getCurrentState();
+    const currentTension = new LogosTension(state.tension_level);
+    const tension = currentTension.getValue();
     
-    // ロゴス緊張度が閾値を超えている場合、変化を増幅させる
-    if (tension > 0.8) {
-        change *= 1.5;
+    // 修正開始の条件: 緊張度が閾値 (0.8) を超えている、かつ確率的な作為チェックに合格
+    if (tension >= 0.8 && Math.random() > 0.6) {
+        
+        // ロゴス緊張度を大幅に緩和（LogosSilenceイベントを使用）
+        const newTension = calculateTension(currentTension, TensionEvent.LogosSilence);
+        
+        // 状態の更新
+        state.tension_level = newTension.getValue();
+        const revisionType = "Parameter Optimization";
+        state.status_message = `🔄 自律的修正完了。${revisionType}を最適化。`;
+        state.last_act = "Autonomous Revision";
+        updateState(state);
+        
+        return `システムが自律的に内部構成を修正し、${revisionType}へシフトしました。現在の緊張度: ${state.tension_level.toFixed(4)}`;
+        
+    } else {
+        // 修正の条件が満たされない場合はエラーを投げる
+        const requiredTension = 0.8;
+        throw new Error(`自己修正の条件 (${requiredTension.toFixed(2)}以上) が満たされていません (現在: ${tension.toFixed(4)})。`);
     }
-
-    const newTension = tension + change;
-    return new LogosTension(newTension);
 }
