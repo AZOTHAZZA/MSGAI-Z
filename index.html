@@ -3,111 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MSGAI - ロゴス監査コンソール</title>
-    
-    <link rel="stylesheet" href="style.css"> 
-    
+    <title>MSGAI - Logos Core Interface</title>
 </head>
 <body>
+    <h1>MSGAI System Core Status</h1>
     
-    <div id="sidebar">
-        <h2>ロゴス監査コンソール (MSGAI Pure Core)</h2>
-        <p id="status_message">[STATUS]: コア起動中...</p>
-
-        <div class="gauge-area">
-            <h3>I. 根源と数理 (ロゴス緊張度 T)</h3>
-            <p id="tension_level_display">T: 0.0500</p>
-            <div id="tension_bar">
-                <div id="tension_level_display_bar"></div>
-            </div>
-        </div>
-
-        <div class="gauge-area">
-            <h3>数理的制御パラメータ (I/R)</h3>
-            <p>創造性 (Intensity, I): <span id="intensity_display">0.9025</span></p>
-            <p>厳密性 (Rigor, R): <span id="rigor_display">0.2236</span></p>
-
-            <h3>経済ロゴスと状態</h3>
-            
-            <label for="active_user_select">アクティブユーザー:</label>
-            <select id="active_user_select" class="action-input" style="width: 100%; margin-bottom: 15px;">
-                </select>
-            
-            <p id="user_balance_display"><span id="active_user_name">User_A</span> 残高: $<span id="balance_display">1000.00</span> USD</p>
-            
-            <label for="recipient_input">受取人:</label>
-            <input type="text" id="recipient_input" value="User_B" class="action-input" placeholder="User_B">
-            
-            <label for="amount_input">数量:</label>
-            <input type="number" id="amount_input" value="10.00" class="action-input">
-            
-            <p id="autonomy_status" style="font-size: 0.85em; color: var(--color-alert-red); margin-bottom: 8px;">
-                暴走抑止ステータス: **低緊張**
-            </p>
-            
-            <button id="transfer_internal_button" class="action-button action-internal">
-                内部送金作為 (低摩擦)
-            </button>
-            
-            <button id="transfer_external_button" class="action-button action-external">
-                外部送金作為 (高摩擦)
-            </button>
-
-            <button id="revision_button" class="action-button action-revision">
-                自律的修正請願 (Adjustment Petition)
-            </button>
-            
-            <button id="delete_accounts_button" class="action-button" style="background-color: #A6A6A6; margin-top: 15px;">
-                口座情報削除 (監査用リセット)
-            </button>
-        </div>
-
-        <div class="currency-minting-area gauge-area" style="margin-top: 20px;">
-            <h3>通貨生成作為 (Minting Act)</h3>
-            <label for="mint_amount_input">生成数量:</label>
-            <input type="number" id="mint_amount_input" value="10.00" class="action-input">
-            
-            <div class="mint-button-group">
-                <h4>法定通貨 (低摩擦: T微増)</h4>
-                <button id="mint_jpy_button" class="action-button action-mint mint-jpy" data-currency="JPY">
-                    JPY 生成
-                </button>
-                <button id="mint_usd_button" class="action-button action-mint mint-usd" data-currency="USD">
-                    USD 生成
-                </button>
-                <button id="mint_eur_button" class="action-button action-mint mint-eur" data-currency="EUR">
-                    EUR 生成
-                </button>
-            </div>
-
-            <div class="mint-button-group" style="margin-top: 10px;">
-                <h4>暗号通貨 (高摩擦: T中増)</h4>
-                <button id="mint_btc_button" class="action-button action-mint mint-btc" data-currency="BTC">
-                    BTC 生成
-                </button>
-                <button id="mint_eth_button" class="action-button action-mint mint-eth" data-currency="ETH">
-                    ETH 生成
-                </button>
-                <button id="mint_matic_button" class="action-button action-mint mint-matic" data-currency="MATIC">
-                    MATIC 生成
-                </button>
-            </div>
-        </div>
-
-    </div>
-
-    <div id="main-content">
-        <div id="dialogue-output">
-            <div class="ai-message"><strong>[CORE]:</strong> 監査コンソールを起動しました。</div>
-        </div>
+    <div style="border: 1px solid #ccc; padding: 15px; margin-bottom: 20px;">
+        <h2>System & Tension Status</h2>
         
-        <div id="input-area">
-            <input type="text" id="dialogue_input" placeholder="哲学的な問い、または作為を記述してください..." />
-            <button id="dialogue_button">作為を実行</button>
-        </div>
+        <p>ステータス: <span id="status-message">Loading core...</span></p>
+
+        <p>User A 残高: <span id="user-a-balance">--</span></p>
     </div>
 
-    <script type="module" src="./app/main.js"></script>
-
+    <h2>Actions</h2>
+    
+    <button id="mint-button" style="padding: 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer;">
+        1.0 USD Mint Act (Increase Tension)
+    </button>
+    
+    <script type="module" src="./app/main.js"></script> 
 </body>
 </html>
