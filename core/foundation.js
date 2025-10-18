@@ -1,4 +1,4 @@
-// core/foundation.js (修復ロジック分離版 - 全文)
+// core/foundation.js (不変性強化版 - 全文)
 
 import { LogosTension } from './arithmos.js'; 
 
@@ -101,8 +101,8 @@ function ensureTensionInstanceIntegrity(state) {
             ? state.tension_level.value 
             : INITIAL_TENSION;
             
+        // 🌟 修正: 新しいTensionインスタンスで置き換え、updateStateで状態全体を新しい参照で置き換える。
         state.tension_level = new LogosTension(value);
-        // 修復後は状態全体を永続化し、新しいインスタンス参照を安定させる
         updateState(state); 
     }
 }
@@ -110,22 +110,28 @@ function ensureTensionInstanceIntegrity(state) {
 
 /**
  * 状態の更新と永続化を行う関数
- * ⚠️ 主に永続化を実行します。Tensionインスタンスの完全な代入は行いません。
+ * 🌟 修正: LogosState変数自体を新しいオブジェクトで置き換え、参照の不変性を強制する。
  */
 export function updateState(newState) {
-    const state = ensureLogosStateInitialized();
+    const currentState = ensureLogosStateInitialized();
 
-    // newStateから渡されたプロパティのみを内部状態に安全にコピー
-    if (newState.accounts) state.accounts = newState.accounts;
-    if (newState.active_user) state.active_user = newState.active_user;
-    if (newState.status_message) state.status_message = newState.status_message;
-    if (newState.last_act) state.last_act = newState.last_act;
+    // 🌟 状態全体を新しいオブジェクトで置き換える (不変性強化)
+    LogosState = {
+        // tension_levelは、常にcurrentState（addTensionで既に値が更新されている）から取得する
+        tension_level: currentState.tension_level, 
+        
+        // 他のプロパティはnewState（currency.jsから渡された最新の状態）から取得
+        accounts: newState.accounts || currentState.accounts,
+        active_user: newState.active_user || currentState.active_user,
+        status_message: newState.status_message || currentState.status_message,
+        last_act: newState.last_act || currentState.last_act,
+    };
     
-    // 永続化を試行
+    // 永続化を試行 (LogosStateを参照)
     try {
-        localStorage.setItem(PERSISTENCE_KEY_ACCOUNTS, JSON.stringify(state.accounts));
-        localStorage.setItem(PERSISTENCE_KEY_TENSION, state.tension_level.getValue().toString());
-        localStorage.setItem(PERSISTENCE_KEY_ACTIVE_USER, state.active_user);
+        localStorage.setItem(PERSISTENCE_KEY_ACCOUNTS, JSON.stringify(LogosState.accounts));
+        localStorage.setItem(PERSISTENCE_KEY_TENSION, LogosState.tension_level.getValue().toString());
+        localStorage.setItem(PERSISTENCE_KEY_ACTIVE_USER, LogosState.active_user);
         
         console.log("[Logos Foundation]: 状態の永続化に成功しました。");
 
@@ -138,7 +144,6 @@ export function updateState(newState) {
 /** LogosTensionインスタンスの参照を返す。（Tension値を取得する関数のみに用途を限定する） */
 export function getTensionInstance() { 
     const state = ensureLogosStateInitialized();
-    // 🌟 修正: 修復ロジックを分離したため、ここではインスタンスをそのまま返す
     return state.tension_level; 
 }
 
@@ -146,7 +151,7 @@ export function getTensionInstance() {
 export function addTension(amount) {
     const state = ensureLogosStateInitialized();
     
-    // 🌟 修正: Tensionインスタンスの完全性チェックを操作の開始時に行う
+    // Tensionインスタンスの完全性チェックを操作の開始時に行う
     ensureTensionInstanceIntegrity(state); 
     
     // 修復された/正常なインスタンスのaddメソッドを呼び出す
