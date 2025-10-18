@@ -8,8 +8,8 @@ const PERSISTENCE_KEY_TENSION = 'msgaicore_tension';
 const PERSISTENCE_KEY_ACTIVE_USER = 'msgaicore_active_user';
 
 const INITIAL_ACCOUNTS = { 
-    "User_A": { "USD": 1000.00, "JPY": 0.00, "EUR": 0.00, "BTC": 0.00, "ETH": 0.00, "MATIC": 0.00 },
-    "User_B": { "USD": 500.00, "JPY": 0.00, "EUR": 0.00, "BTC": 0.00, "ETH": 0.00, "MATIC": 0.00 }
+    "User_A": { "USD": 0.00, "JPY": 0.00, "EUR": 0.00, "BTC": 0.00, "ETH": 0.00, "MATIC": 0.00 },
+    "User_B": { "USD": 0.00, "JPY": 0.00, "EUR": 0.00, "BTC": 0.00, "ETH": 0.00, "MATIC": 0.00 }
 };
 const INITIAL_TENSION_VALUE = 0.05; 
 const INITIAL_ACTIVE_USER = "User_A";
