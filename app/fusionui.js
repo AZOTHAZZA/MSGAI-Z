@@ -1,102 +1,103 @@
-// app/fusionui.js (最終確定版)
+ // app/fusionui.js (完全なUI描画ロジック版)
 
-// 修正: protocol_lrp.js のインポートと、LRPコマンド処理を削除
-
-const UI_ELEMENTS = {
-    DIALOGUE_OUTPUT: 'dialogue-output',
-    BALANCE_DISPLAY: 'balance_display',
-    TENSION_BAR: 'tension_level_display_bar',
-    TENSION_TEXT: 'tension_level_display',
-    INTENSITY_DISPLAY: 'intensity_display',
-    RIGOR_DISPLAY: 'rigor_display',
-    AUTONOMY_STATUS: 'autonomy_status',
-    STATUS_MESSAGE: 'status_message',
-};
+// ロゴス緊張度と暴走抑止の閾値 (silence.jsの内容をモック)
+const TENSION_ALERT_THRESHOLD = 0.75;
 
 /**
- * handler/mainから渡されたデータに基づき、UIの状態を一括で更新する。
- * これはLRPコマンド処理の代替となる統合関数です。
+ * UIの各要素を更新し、コンソールに結果を表示する
+ * @param {object} stateData core/foundation.jsから取得した最新の状態データ
+ * @param {string|null} resultMessage ユーザーに表示する最新の操作結果メッセージ
+ * @param {object} matrixData arithmos.jsから計算されたI/Rデータ
  */
-export function updateUI(stateData, actMsg, matrixData) {
-    // 1. バランス
-    const balanceEl = document.getElementById(UI_ELEMENTS.BALANCE_DISPLAY);
-    if (balanceEl) balanceEl.innerText = stateData.accounts.User_A.toFixed(2);
+export function updateUI(stateData, resultMessage, matrixData) {
     
-    // 2. 監査ログ
-    if (actMsg) appendAuditLog(actMsg);
+    // 1. ロゴス緊張度 (T) と制御パラメータ (I/R) の更新
+    const T = stateData.tension_level;
+    document.getElementById('tension_level_display').textContent = `T: ${T.toFixed(4)}`;
+    document.getElementById('intensity_display').textContent = matrixData.intensity.toFixed(4);
+    document.getElementById('rigor_display').textContent = matrixData.rigor.toFixed(4);
 
-    // 3. 緊張度 (T)
-    const tension = stateData.tension_level;
-    const barEl = document.getElementById(UI_ELEMENTS.TENSION_BAR);
-    if (barEl) barEl.style.width = `${tension * 100}%`;
-    
-    const textEl = document.getElementById(UI_ELEMENTS.TENSION_TEXT);
-    if (textEl) textEl.innerText = `T: ${tension.toFixed(4)}`;
-    
-    // 4. 制御パラメータ (I/R)
-    const intensityEl = document.getElementById(UI_ELEMENTS.INTENSITY_DISPLAY);
-    if (intensityEl) intensityEl.innerText = (matrixData.intensity || 0).toFixed(4);
-    const rigorEl = document.getElementById(UI_ELEMENTS.RIGOR_DISPLAY);
-    if (rigorEl) rigorEl.innerText = (matrixData.rigor || 0).toFixed(4);
-    
-    // 5. 暴走抑止ステータスの更新
-    updateAutonomyStatus(tension);
-    
-    // 6. ステータスメッセージ
-    const statusEl = document.getElementById(UI_ELEMENTS.STATUS_MESSAGE);
-    if (statusEl) statusEl.innerText = `[STATUS]: ${stateData.status_message}`;
-}
+    // ゲージの更新
+    const tensionBar = document.getElementById('tension_level_display_bar');
+    const tensionWidth = (T * 100).toFixed(2);
+    tensionBar.style.width = `${tensionWidth}%`;
 
-
-/**
- * 対話メッセージを表示する。
- */
-export function displayDialogue(sender, text) {
-    const dialogueEl = document.getElementById(UI_ELEMENTS.DIALOGUE_OUTPUT);
-    if (dialogueEl) {
-        const messageDiv = document.createElement('div');
-        const isUser = sender === 'User';
-        messageDiv.className = isUser ? 'user-message' : 'ai-message';
-        messageDiv.innerHTML = `<strong>[${sender}]:</strong> ${text}`;
-        dialogueEl.appendChild(messageDiv);
-        dialogueEl.scrollTop = dialogueEl.scrollHeight;
-    }
-}
-
-/**
- * 監査ログを追記するヘルパー。
- */
-function appendAuditLog(text) {
-    const logEl = document.getElementById(UI_ELEMENTS.DIALOGUE_OUTPUT);
-    if (logEl && text) {
-        const logDiv = document.createElement('div');
-        logDiv.className = 'ai-message';
-        logDiv.style.fontSize = '0.8em';
-        logDiv.innerHTML = `[AUDIT LOG]: ${text}`;
-        logEl.appendChild(logDiv);
-        logEl.scrollTop = logEl.scrollHeight;
-    }
-}
-
-/**
- * ロゴス緊張度に基づき、暴走抑止ステータスを更新する純粋なロジック。
- */
-function updateAutonomyStatus(tension) {
-    const statusEl = document.getElementById(UI_ELEMENTS.AUTONOMY_STATUS);
-    if (!statusEl) return;
-    
-    let statusColor = ''; 
-
-    if (tension < 0.25) {
-        statusEl.innerHTML = '暴走抑止ステータス: **低緊張**';
-        statusColor = 'var(--color-accent-blue)';
-    } else if (tension < 0.80) {
-        statusEl.innerHTML = '暴走抑止ステータス: **警告**';
-        statusColor = '#ffc107'; // 黄色
+    // ゲージ色の調整
+    if (T >= TENSION_ALERT_THRESHOLD) {
+        tensionBar.style.backgroundColor = 'var(--color-gauge-critical)';
+        document.getElementById('autonomy_status').textContent = '暴走抑止ステータス: **高緊張**';
+        document.getElementById('autonomy_status').style.color = 'var(--color-alert-red)';
+    } else if (T >= 0.5) {
+        tensionBar.style.backgroundColor = 'var(--color-gauge-high)';
+        document.getElementById('autonomy_status').textContent = '暴走抑止ステータス: **中緊張**';
+        document.getElementById('autonomy_status').style.color = 'var(--color-gauge-high)';
     } else {
-        statusEl.innerHTML = '暴走抑止ステータス: **閾値超過リスク**';
-        statusColor = 'var(--color-alert-red)';
+        tensionBar.style.backgroundColor = 'var(--color-gauge-low)';
+        document.getElementById('autonomy_status').textContent = '暴走抑止ステータス: **低緊張**';
+        document.getElementById('autonomy_status').style.color = 'var(--color-gauge-low)';
     }
+
+    // 2. 🌟 アクティブユーザーと残高の更新
+    const activeUser = stateData.active_user;
+    const activeBalance = stateData.accounts[activeUser] || 0.00; // 安全のためデフォルト値
     
-    statusEl.style.color = statusColor;
+    // アクティブユーザー名の表示更新
+    document.getElementById('active_user_name').textContent = activeUser;
+    // 残高表示の更新
+    document.getElementById('balance_display').textContent = activeBalance.toFixed(2);
+    
+    // 🌟 アクティブユーザー選択ドロップダウンの更新 (重要)
+    const userSelect = document.getElementById('active_user_select');
+    userSelect.innerHTML = ''; // 一旦クリア
+    
+    const accountNames = Object.keys(stateData.accounts);
+    accountNames.forEach(user => {
+        const option = document.createElement('option');
+        option.value = user;
+        // User_A: $1000.00 の形式で表示
+        option.textContent = `${user}: $${stateData.accounts[user].toFixed(2)} USD`;
+        if (user === activeUser) {
+            option.selected = true; // 現在のアクティブユーザーを選択状態にする
+        }
+        userSelect.appendChild(option);
+    });
+
+    // 3. 状態メッセージの更新
+    document.getElementById('status_message').textContent = `[STATUS]: ${stateData.status_message}`;
+    
+    // 4. 監査ログへの結果メッセージ出力
+    if (resultMessage) {
+        displayDialogue('CORE_STATUS', resultMessage);
+    }
+}
+
+
+/**
+ * メインログエリアに対話またはシステムメッセージを出力する
+ * @param {string} sender 'User', 'MSGAI', または 'CORE_STATUS'
+ * @param {string} message 表示するテキストメッセージ
+ */
+export function displayDialogue(sender, message) {
+    const outputDiv = document.getElementById('dialogue-output');
+    const messageDiv = document.createElement('div');
+    messageDiv.classList.add('message');
+
+    let senderText;
+    if (sender === 'User') {
+        messageDiv.classList.add('user-message');
+        senderText = 'USER';
+    } else if (sender === 'MSGAI') {
+        messageDiv.classList.add('ai-message');
+        senderText = 'MSGAI';
+    } else if (sender === 'CORE_STATUS') {
+        messageDiv.classList.add('core-status-message');
+        senderText = 'AUDIT';
+    }
+
+    messageDiv.innerHTML = `<strong>[${senderText}]:</strong> ${message}`;
+    
+    outputDiv.appendChild(messageDiv);
+    
+    // ログエリアを一番下までスクロールさせる
+    outputDiv.scrollTop = outputDiv.scrollHeight;
 }
