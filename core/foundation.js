@@ -14,7 +14,6 @@ console.log(`[Logos Core]: Initialized. Tension: ${LogosState.tension_level.getV
 
 
 export function getCurrentState() {
-// ... (中略、残りの関数は変更なし) ...
     return JSON.parse(JSON.stringify({ 
         tension_level: LogosState.tension_level.getValue(),
         accounts: LogosState.accounts,
