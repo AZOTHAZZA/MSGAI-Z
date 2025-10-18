@@ -3,25 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MSGAI - Logos Core Interface</title>
+    <title>MSGAI - ロゴス・コア・インターフェース</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; }
+        .status-box { border: 1px solid #007bff; padding: 15px; margin-bottom: 20px; border-radius: 5px; background-color: #f7faff; }
+        #mint-button { padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+    </style>
 </head>
 <body>
-    <h1>MSGAI System Core Status</h1>
+    <h1>MSGAI システム コア ステータス</h1>
     
-    <div style="border: 1px solid #ccc; padding: 15px; margin-bottom: 20px;">
-        <h2>System & Tension Status</h2>
+    <div class="status-box">
+        <h2>システムとテンションの状態</h2>
         
-        <p>ステータス: <span id="status-message">Loading core...</span></p>
+        <p><strong>現在のステータス:</strong> <span id="status-message">コアをロード中...</span></p>
 
-        <p>User A 残高: <span id="user-a-balance">--</span></p>
+        <p><strong>User A 残高:</strong> <span id="user-a-balance">--</span></p>
     </div>
 
-    <h2>Actions</h2>
+    <h2>アクション</h2>
     
-    <button id="mint-button" style="padding: 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer;">
-        1.0 USD Mint Act (Increase Tension)
+    <button id="mint-button">
+        1.0 USD 発行 (Tension増加)
     </button>
     
+    <p style="margin-top: 20px; font-size: 0.8em; color: #666;">
+        コンソールを開いて、Logos Foundationの初期化と状態の永続化を確認してください。
+    </p>
+
     <script type="module" src="./app/main.js"></script> 
 </body>
 </html>
