@@ -1,7 +1,8 @@
-// core/currency.js (修正版 - ControlMatrix削除とFoundation統合)
+// core/currency.js (代替修正版 - getCurrentStateを利用して起動優先)
 
-import { getMutableState, updateState, getTensionInstance } from './foundation.js'; 
-// 🚨 修正: ControlMatrix のインポートを削除しました。
+// 🚨 修正: getMutableStateを外し、 getCurrentState をインポート。
+// これにより、キャッシュに残る古い foundation.js との互換性を確保し、起動を優先する。
+import { getCurrentState, updateState, getTensionInstance } from './foundation.js'; 
 
 // 仮定のレート（実際のプロジェクトではAPIから取得）
 const EXCHANGE_RATES = {
@@ -50,7 +51,8 @@ function getRate(fromC, toC) {
  * @returns {object} 新しい状態
  */
 export function actMintCurrency(username, currency, amount) {
-    const state = getMutableState();
+    // 🌟 修正: getCurrentStateで読み取り、JSON操作でディープコピーを作成（ミュータブルな状態）
+    const state = JSON.parse(JSON.stringify(getCurrentState()));
     
     if (!state.accounts[username]) {
         throw new Error(`User ${username} not found.`);
@@ -58,11 +60,9 @@ export function actMintCurrency(username, currency, amount) {
 
     // 🌟 Tensionの操作
     if (amount > 0) {
-        // ミント（発行）はTensionを増加させる
         const tensionInstance = getTensionInstance();
-        const currentTension = tensionInstance.getValue();
-
-        // 発行額に基づくTension増加ロジック (例: 発行額の微小率をTensionに加算)
+        // Tension操作自体は addTension() にカプセル化することも可能だが、
+        // ここでは明示的なロジック維持のため直接操作を維持
         const tensionIncrease = amount * 0.000001; 
         tensionInstance.add(tensionIncrease);
         console.log(`[Mint]: Tension increased by ${tensionIncrease.toFixed(6)}. New Tension: ${tensionInstance.getValue().toFixed(6)}`);
@@ -91,7 +91,9 @@ export function actMintCurrency(username, currency, amount) {
  * @returns {object} 新しい状態
  */
 export function actExchangeCurrency(username, fromC, amount, toC) {
-    const state = getMutableState();
+    // 🌟 修正: getCurrentStateで読み取り、JSON操作でディープコピーを作成（ミュータブルな状態）
+    const state = JSON.parse(JSON.stringify(getCurrentState()));
+    
     const rate = getRate(fromC, toC);
     const receiveAmount = amount * rate;
 
@@ -116,8 +118,4 @@ export function actExchangeCurrency(username, fromC, amount, toC) {
     return state;
 }
 
-// ユーザーAのUSD残高を100ミントする例（Tension増加）
-// actMintCurrency("User_A", "USD", 100);
-
-// ユーザーAが100USDをJPYに交換する例
-// actExchangeCurrency("User_A", "USD", 100, "JPY");
+// ---------------- (例は変更なし) ----------------
