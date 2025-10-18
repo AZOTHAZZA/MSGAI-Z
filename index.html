@@ -5,31 +5,54 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MSGAI - ロゴス・コア・インターフェース</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; }
-        .status-box { border: 1px solid #007bff; padding: 15px; margin-bottom: 20px; border-radius: 5px; background-color: #f7faff; }
-        #mint-button { padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f4f7f9; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
+        h1, h2 { color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .status-box { border: 1px solid #007bff; padding: 15px; margin-bottom: 20px; border-radius: 5px; background-color: #e7f0ff; }
+        .tension-level { font-weight: bold; color: #dc3545; font-size: 1.2em; }
+        .info-row { display: flex; justify-content: space-between; padding: 5px 0; }
+        #mint-button { padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 10px; }
+        .log-info { font-size: 0.8em; color: #666; margin-top: 20px; }
     </style>
 </head>
 <body>
-    <h1>MSGAI システム コア ステータス</h1>
-    
-    <div class="status-box">
-        <h2>システムとテンションの状態</h2>
+    <div class="container">
+        <h1>MSGAI システム コア インターフェース</h1>
         
-        <p><strong>現在のステータス:</strong> <span id="status-message">コアをロード中...</span></p>
+        <div class="status-box">
+            <h2>システムとテンションの状態</h2>
+            
+            <div class="info-row">
+                <span><strong>現在のステータス:</strong></span>
+                <span id="status-message">コアをロード中...</span>
+            </div>
 
-        <p><strong>User A 残高:</strong> <span id="user-a-balance">--</span></p>
+            <div class="info-row">
+                <span><strong>Tension レベル:</strong></span>
+                <span id="tension-level" class="tension-level">0.00%</span>
+            </div>
+            
+            <div class="info-row">
+                <span><strong>最終実行Act:</strong></span>
+                <span id="last-act">--</span>
+            </div>
+        </div>
+
+        <h2>User A 残高</h2>
+        <div id="user-a-balances">
+            <p><strong>USD:</strong> <span id="balance-USD">0.00</span></p>
+            <p><strong>JPY:</strong> <span id="balance-JPY">0</span></p>
+            </div>
+
+        <h2>アクション</h2>
+        <button id="mint-button">
+            1.0 USD 発行 (Tension増加)
+        </button>
+        
+        <p class="log-info">
+            Tensionはシステムの発行行為により増加します。詳細はコンソールを確認してください。
+        </p>
     </div>
-
-    <h2>アクション</h2>
-    
-    <button id="mint-button">
-        1.0 USD 発行 (Tension増加)
-    </button>
-    
-    <p style="margin-top: 20px; font-size: 0.8em; color: #666;">
-        コンソールを開いて、Logos Foundationの初期化と状態の永続化を確認してください。
-    </p>
 
     <script type="module" src="./app/main.js"></script> 
 </body>
