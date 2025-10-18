@@ -1,7 +1,7 @@
 // core/currency.js (代替修正版 - getCurrentStateを利用して起動優先)
 
 // 🚨 修正: getMutableStateを外し、 getCurrentState をインポート。
-// これにより、キャッシュに残る古い foundation.js との互換性を確保し、起動を優先する。
+// これにより、古い foundation.js との互換性を確保。
 import { getCurrentState, updateState, getTensionInstance } from './foundation.js'; 
 
 // 仮定のレート（実際のプロジェクトではAPIから取得）
@@ -51,18 +51,16 @@ function getRate(fromC, toC) {
  * @returns {object} 新しい状態
  */
 export function actMintCurrency(username, currency, amount) {
-    // 🌟 修正: getCurrentStateで読み取り、JSON操作でディープコピーを作成（ミュータブルな状態）
+    // 🌟 修正: getCurrentStateで読み取り、JSON操作でミュータブルなディープコピーを作成
     const state = JSON.parse(JSON.stringify(getCurrentState()));
     
     if (!state.accounts[username]) {
         throw new Error(`User ${username} not found.`);
     }
 
-    // 🌟 Tensionの操作
+    // Tensionの操作
     if (amount > 0) {
         const tensionInstance = getTensionInstance();
-        // Tension操作自体は addTension() にカプセル化することも可能だが、
-        // ここでは明示的なロジック維持のため直接操作を維持
         const tensionIncrease = amount * 0.000001; 
         tensionInstance.add(tensionIncrease);
         console.log(`[Mint]: Tension increased by ${tensionIncrease.toFixed(6)}. New Tension: ${tensionInstance.getValue().toFixed(6)}`);
@@ -91,7 +89,7 @@ export function actMintCurrency(username, currency, amount) {
  * @returns {object} 新しい状態
  */
 export function actExchangeCurrency(username, fromC, amount, toC) {
-    // 🌟 修正: getCurrentStateで読み取り、JSON操作でディープコピーを作成（ミュータブルな状態）
+    // 🌟 修正: getCurrentStateで読み取り、JSON操作でミュータブルなディープコピーを作成
     const state = JSON.parse(JSON.stringify(getCurrentState()));
     
     const rate = getRate(fromC, toC);
@@ -117,5 +115,3 @@ export function actExchangeCurrency(username, fromC, amount, toC) {
 
     return state;
 }
-
-// ---------------- (例は変更なし) ----------------
