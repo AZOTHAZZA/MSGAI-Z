@@ -1,4 +1,4 @@
-// core/foundation.js (updateState役割限定版 - 全文)
+// core/foundation.js (getMutableState保護版 - 全文)
 
 import { LogosTension } from './arithmos.js'; 
 
@@ -19,7 +19,6 @@ const INITIAL_ACTIVE_USER = "User_A";
 // 状態ロード関数 (防御的なロード)
 // =========================================================================
 
-/** 永続化された口座情報を読み込む関数。失敗時は初期値を返す。 */
 function loadPersistedAccounts() {
     try {
         const persisted = localStorage.getItem(PERSISTENCE_KEY_ACCOUNTS);
@@ -27,7 +26,6 @@ function loadPersistedAccounts() {
             console.log("[Logos Foundation]: 口座情報が見つかりません。初期値を適用します。");
             return JSON.parse(JSON.stringify(INITIAL_ACCOUNTS));
         }
-        
         const accounts = JSON.parse(persisted);
         if (typeof accounts === 'object' && accounts !== null && Object.keys(accounts).length > 0) {
              console.log("[Logos Foundation]: 永続化されたマルチカレンシー口座情報を読み込みました。");
@@ -39,12 +37,10 @@ function loadPersistedAccounts() {
     return JSON.parse(JSON.stringify(INITIAL_ACCOUNTS));
 }
 
-/** 永続化された緊張度を読み込む関数。失敗時は初期値を返す。 */
 function loadPersistedTension() {
     try {
         const persisted = localStorage.getItem(PERSISTENCE_KEY_TENSION);
         if (!persisted) return INITIAL_TENSION;
-        
         const t = parseFloat(persisted);
         if (!isNaN(t) && t >= 0 && t <= 1.0) {
             console.log(`[Logos Foundation]: 永続化されたTension (${t.toFixed(4)}) を読み込みました。`);
@@ -56,7 +52,6 @@ function loadPersistedTension() {
     return INITIAL_TENSION; 
 }
 
-/** 永続化されたアクティブユーザーを読み込む関数。失敗時は初期値を返す。 */
 function loadPersistedActiveUser() {
     try {
         const persisted = localStorage.getItem(PERSISTENCE_KEY_ACTIVE_USER);
@@ -75,14 +70,10 @@ function loadPersistedActiveUser() {
 
 let LogosState = null;
 
-/**
- * LogosStateが初期化されていることを保証し、まだ初期化されていなければ初期化する。
- */
 function ensureLogosStateInitialized() {
     if (LogosState === null) {
         console.log("[Foundation]: LogosStateを初期化中...");
         LogosState = { 
-            // LogosTensionクラスを利用してインスタンス化
             tension_level: new LogosTension(loadPersistedTension()),
             accounts: loadPersistedAccounts(),
             active_user: loadPersistedActiveUser(),
@@ -100,16 +91,16 @@ function ensureLogosStateInitialized() {
 
 /**
  * 状態の更新と永続化を行う関数
- * ⚠️ 主に永続化を実行します。LogosTensionインスタンスの操作はaddTension()経由で行うことが推奨されます。
  */
 export function updateState(newState) {
-    const state = ensureLogosStateInitialized(); // 初期化を保証
+    const state = ensureLogosStateInitialized();
 
-    // Tensionインスタンスは addTension() で操作されるため、ここでは他のプロパティのみを更新し永続化に備える。
-    state.accounts = newState.accounts;
-    state.active_user = newState.active_user;
-    state.status_message = newState.status_message;
-    state.last_act = newState.last_act;
+    // newStateから渡されたプロパティのみを内部状態に安全にコピー
+    if (newState.accounts) state.accounts = newState.accounts;
+    if (newState.active_user) state.active_user = newState.active_user;
+    if (newState.status_message) state.status_message = newState.status_message;
+    if (newState.last_act) state.last_act = newState.last_act;
+    // Tensionインスタンスは addTension() 経由で操作されるため、ここではコピーしない。
     
     // 永続化を試行
     try {
@@ -120,13 +111,11 @@ export function updateState(newState) {
         console.log("[Logos Foundation]: 状態の永続化に成功しました。");
 
     } catch (e) {
-        // 永続化に失敗しても、LogosStateの内部インスタンスは維持される。
         console.error("[Logos Foundation ERROR]: 状態の永続化に失敗しました。", e);
     }
 }
 
 
-/** LogosTensionインスタンスの参照を返す。（Tension値を取得する関数のみに用途を限定する） */
 export function getTensionInstance() { 
     const state = ensureLogosStateInitialized();
 
@@ -140,11 +129,9 @@ export function getTensionInstance() {
     return state.tension_level; 
 }
 
-/** * 🌟 新規追加: Tensionレベルを安全に操作するための公開関数
- * currency.js はこの関数のみを使用してTensionを増減させる。
- */
+/** Tensionレベルを安全に操作するための公開関数 */
 export function addTension(amount) {
-    const tensionInstance = getTensionInstance(); // 常に最新で修復済みのインスタンスを取得
+    const tensionInstance = getTensionInstance(); 
     tensionInstance.add(amount);
     
     // 永続化のために、LogosState全体を updateState に渡す
@@ -154,12 +141,10 @@ export function addTension(amount) {
 
 // ---------------- (getCurrentState 関数群) ----------------
 
-/** 最新の状態オブジェクトの参照を返す。 */
 export function getCurrentState() { 
     return ensureLogosStateInitialized(); 
 }
 
-/** 状態オブジェクトのディープコピー（JSON形式）を返す。 */
 export function getCurrentStateJson() { 
     return JSON.parse(JSON.stringify(ensureLogosStateInitialized())); 
 }
@@ -170,10 +155,11 @@ export function getCurrentStateJson() {
 // =========================================================================
 
 /**
- * 必須: 常に最新かつ操作可能なLogosStateのオブジェクト参照を返す (currency.jsで使用)
+ * 必須: 常に最新かつ操作可能なLogosStateのオブジェクト参照を返す
+ * 🌟 修正: 外部からの破壊を防ぐため、シャローコピーを返すように変更
  */
 export function getMutableState() {
-    return ensureLogosStateInitialized(); 
+    return { ...ensureLogosStateInitialized() }; 
 }
 
 /**
@@ -185,7 +171,7 @@ export function deleteAccounts() {
     localStorage.removeItem(PERSISTENCE_KEY_ACTIVE_USER);
 
     LogosState = null; 
-    const state = ensureLogosStateInitialized(); // 初期値を読み込み直す
+    const state = ensureLogosStateInitialized(); 
     state.status_message = "全口座情報とTensionレベルをリセットしました。";
     updateState(state);
     return state.status_message; 
