@@ -1,31 +1,31 @@
-// app/main.js (擬態前・純粋JSバージョン)
+// app/main.js
 
-import { attachEventHandlers } from './event_handler.js';
-import * as CoreAPI from '../core/core_api.js';
-import { executeLRPCommand } from './ui_fusion.js';
-import { LRPCommand } from './protocol_lrp.js';
+import { attachEventHandlers } from './handler.js';
+import * as UI from './fusionui.js';
+
+// 修正: core_api.jsではなく、foundationとarithmosを直接インポート
+import { getCurrentStateJson } from '../core/foundation.js'; 
+import { LogosTension, ControlMatrix } from '../core/arithmos.js';
 
 function initializeApp() {
     try {
-        // 1. Rust側のコア初期化関数は不要。JS Coreの初期状態を取得
-        const initialStateJson = CoreAPI.getCurrentStateJson();
+        // JS Coreの初期状態を取得
+        const initialStateJson = getCurrentStateJson();
         const initialState = JSON.parse(initialStateJson);
         
-        console.log("JS Pure Core State:", initialState);
+        // 制御パラメータ (I/R) の計算ロジックをmain.js内で実行
+        const tension = new LogosTension(initialState.tension_level);
+        const matrix = new ControlMatrix(tension);
         
-        // 2. 制御パラメータ (I/R) の取得
-        const matrixData = CoreAPI.getControlParameters(initialState.tension_level);
+        const matrixData = {
+            intensity: matrix.intensity,
+            rigor: matrix.rigor
+        };
 
-        // 3. 初期UIの描画 (監査UX)
-        executeLRPCommand(new LRPCommand('UpdateTension', { 
-            level: initialState.tension_level,
-            matrix: matrixData 
-        }));
-        executeLRPCommand(new LRPCommand('UpdateBalance', { balance: initialState.accounts.User_A }));
-        executeLRPCommand(new LRPCommand('UpdateStatusMessage', { message: initialState.status_message }));
+        // 初期UIの描画
+        UI.updateUI(initialState, null, matrixData);
 
-
-        // 4. イベントハンドラのアタッチ
+        // イベントハンドラのアタッチ
         attachEventHandlers();
         
     } catch (e) {
