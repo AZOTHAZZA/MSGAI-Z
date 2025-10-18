@@ -1,6 +1,13 @@
 // app/main.js (最終修正版 - 全文)
 
-import { getCurrentState, getTensionInstance, addTension, setActiveUser, getActiveUserBalance, deleteAccounts } from '../core/foundation.js'; 
+import { 
+    getCurrentState, 
+    getTensionInstance, 
+    addTension, 
+    setActiveUser, 
+    actTransfer, // 💡 追加: actTransfer
+    deleteAccounts 
+} from '../core/foundation.js'; 
 import { actMintCurrency, actExchangeCurrency } from '../core/currency.js'; 
 
 // =========================================================================
@@ -25,7 +32,7 @@ function cacheUIElements() {
         'mint_amount_input', 'dialogue-output', 'dialogue_input', 'dialogue_button',
         'exchange_amount_input', 'exchange_from_select', 'exchange_to_select', 
         'exchange_button',
-        'mint_currency_select', 'mint_execute_button', 'css_reset_button' // 💡 css_reset_button を追加
+        'mint_currency_select', 'mint_execute_button', 'css_reset_button'
     ];
     
     SUPPORTED_CURRENCIES.forEach(c => {
@@ -63,7 +70,7 @@ function logToConsole(message, type = 'ai-message') {
  */
 function updateUI(state) {
     const tension = getTensionInstance();
-    const tensionValue = tension.getValue();
+    const tensionValue = tension.getValue ? tension.getValue() : tension.value; // tension.getValue()が未定義の場合を考慮
     const activeUserName = state.active_user;
     
     if (UI_ELEMENTS['status_message']) {
@@ -196,24 +203,46 @@ function handleExchangeAct() {
 }
 
 /**
- * 送金 (Transfer Act) ハンドラー - 残高消費ロジックはTension計算のみで、会計処理は未実装
+ * 送金 (Transfer Act) ハンドラー - 残高消費ロジックを実装
  */
 function handleTransfer(isExternal) {
+    const CURRENCY = 'USD'; // 通貨はUSD固定
+    
     try {
-        const recipient = UI_ELEMENTS['recipient_input'].value;
+        let recipient = UI_ELEMENTS['recipient_input'].value;
         const amount = parseFloat(UI_ELEMENTS['amount_input'].value);
-        if (!recipient || recipient === getCurrentState().active_user || isNaN(amount) || amount <= 0) { 
-             logToConsole("有効な受取人/数量を指定してください。", 'user-message'); return; 
-        }
         const state = getCurrentState();
+
+        if (isNaN(amount) || amount <= 0) { 
+             logToConsole("有効な数量を指定してください。", 'user-message'); return; 
+        }
         
-        // 🚨 会計上の残高変更は省略し、Tension計算のみ実行
+        // 外部送金の場合、受取人を "External_Gateway" に強制設定（監査のため）
+        if (isExternal) {
+            if (!recipient || recipient === 'User_B' || recipient === 'User_C') {
+                 recipient = 'External_Gateway'; 
+            } else {
+                 recipient = 'External_Gateway (' + recipient + ')'; 
+            }
+        }
+        
+        if (!recipient || recipient === state.active_user) { 
+             logToConsole("有効な受取人を指定してください。", 'user-message'); return; 
+        }
+        
+        // 1. 残高消費と移動の実行 (actTransferを使用)
+        const newState = actTransfer(state.active_user, recipient, amount, CURRENCY);
+        
+        // Tensionの計算と増加
         const tensionAmount = isExternal ? amount * 0.0001 : amount * 0.00001;
         addTension(tensionAmount); 
         
-        const actType = isExternal ? '外部送金' : '内部送金';
-        logToConsole(`${state.active_user} が ${recipient} へ $${amount.toFixed(2)} ${actType} を実行しました。(残高変更なし) 摩擦によりTensionが${tensionAmount.toFixed(6)}増加。`, 'ai-message');
-        updateUI(getCurrentState());
+        const actType = isExternal ? '外部送金（高摩擦）' : '内部送金（低摩擦）';
+        
+        // ログ表示
+        logToConsole(`${state.active_user} が ${recipient} へ **$${amount.toFixed(2)} ${CURRENCY}** を ${actType} しました。Tensionが${tensionAmount.toFixed(6)}増加。`, 'ai-message');
+        updateUI(newState);
+        
     } catch (error) {
         logToConsole(`Transfer Act 失敗: ${error.message}`, 'error-message');
         console.error(error);
@@ -241,7 +270,7 @@ function handleDeleteAccounts() {
 // UI配色リセット機能
 // =========================================================================
 
-// 復元したい安全なCSSの全文を文字列として定義
+// 復元したい安全なCSSの全文を文字列として定義 (index.htmlの<style>タグの内容と同期)
 const CSS_DEFAULT_STATE = `
     /* 🌟 UI全体の色と基本レイアウトの最終復元 🌟 */
     body { 
@@ -318,20 +347,21 @@ const CSS_DEFAULT_STATE = `
 `;
 
 /**
- * UI配色を既定の安全な状態にリセットする
+ * UI配色を既定の安全な状態にリセットする (キャッシュ破壊込み)
  */
 function resetCSS() {
     const styleElement = document.querySelector('style');
     const output = document.getElementById('dialogue-output');
 
     if (styleElement) {
-        // 既存の<style>タグの内容を、安全なデフォルトCSSで上書き
+        // 1. <style>タグの内容を、安全なデフォルトCSSで上書き
         styleElement.textContent = CSS_DEFAULT_STATE;
         
         output.innerHTML += `<div class="ai-message"><strong>[AUDIT]:</strong> UI配色を既定の安全な状態にリセットしました。</div>`;
 
-        // ユーザーにキャッシュクリアを促す警告
-        alert('UI配色をリセットしました。変更を完全に適用するため、ブラウザのキャッシュをクリアしてページを再読み込み (スーパーリロード) してください。\n\n[Windows/Linux: Ctrl+Shift+R, macOS: Cmd+Shift+R]');
+        // 2. 🚨 キャッシュを無視した強制リロードを実行
+        alert('UI配色をリセットします。OKを押すと、キャッシュを無視してページを強制再読み込みします。');
+        window.location.reload(true); 
 
     } else {
         output.innerHTML += `<div class="error-message"><strong>[AUDIT ERROR]:</strong> CSSリセットに失敗しました。<style>タグが見つかりません。</div>`;
@@ -366,7 +396,7 @@ function initializeCurrencySelectors() {
         toSelect.appendChild(option(currency).cloneNode(true));
     });
     
-    // 💡 修正: デフォルト値の設定 (JPY起点、USD終点)
+    // デフォルト値の設定
     mintSelect.value = "JPY"; 
     fromSelect.value = "JPY"; 
     toSelect.value = "USD"; 
@@ -386,7 +416,7 @@ function initializeApp() {
 
         initializeCurrencySelectors();
 
-        // 💡 イベントリスナーの追加
+        // イベントリスナーの追加
         if (UI_ELEMENTS['mint_execute_button']) {
             UI_ELEMENTS['mint_execute_button'].addEventListener('click', handleMintingExecuteAct);
         }
@@ -405,7 +435,7 @@ function initializeApp() {
         if (UI_ELEMENTS['delete_accounts_button']) { 
             UI_ELEMENTS['delete_accounts_button'].addEventListener('click', handleDeleteAccounts); 
         }
-        // 💡 UI配色リセットボタン
+        // UI配色リセットボタン
         if (UI_ELEMENTS['css_reset_button']) {
              UI_ELEMENTS['css_reset_button'].addEventListener('click', resetCSS);
         }
