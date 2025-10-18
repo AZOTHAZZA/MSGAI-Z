@@ -1,43 +1,34 @@
-/* MSGAI Audit Console Theme - styles.css */
+/* MSGAI Standard Theme - styles.css */
 
 :root {
-    --color-background-dark: #212121; /* シンプルなダークグレー */
+    --color-background-dark: #212121;
     --color-background-sidebar: #333333; 
     --color-text-primary: #f0f0f0; 
     --color-text-secondary: #aaaaaa;
-    --color-accent-blue: #00bcd4; /* シアン（技術監査のイメージ） */
+    --color-accent-blue: #00bcd4;
     --color-alert-red: #ff5252;
     --color-border-subtle: #444444;
 }
 
-/* ... (body, sidebar, main-content の基本スタイルは擬態後のものと類似) ... */
+/* ... (body, sidebar, main-content の基本スタイルは前回の監査CSSから継承) ... */
 
-#sidebar h2 {
-    color: var(--color-accent-blue);
-    border-bottom: 2px solid var(--color-accent-blue);
-}
-
-/* 緊張度ゲージの視覚化 */
-#tension_bar {
-    height: 10px;
-    background-color: var(--color-border-subtle);
-}
-
-/* 緊張度が高いほど色が濃くなる */
-#tension_level_display_bar {
-    height: 100%;
-    background-color: var(--color-alert-red); 
-    transition: width 0.3s ease-in-out;
-}
-
-/* 暴走抑止ステータスの表示 */
-#autonomy_status {
-    font-weight: bold;
-    color: var(--color-alert-red);
-}
-
-/* 監査ログとしての対話スタイル */
-.ai-message {
-    color: var(--color-text-secondary);
-    font-family: 'Consolas', monospace; /* ログ感 */
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--color-background-dark); color: var(--color-text-primary); display: flex; height: 100vh; overflow: hidden; }
+#sidebar { width: 280px; background-color: var(--color-background-sidebar); padding: 20px; border-right: 1px solid var(--color-border-subtle); overflow-y: auto; flex-shrink: 0; }
+#sidebar h2 { color: var(--color-accent-blue); font-size: 1.3em; margin-bottom: 15px; border-bottom: 2px solid var(--color-accent-blue); padding-bottom: 5px; }
+.gauge-area { margin-bottom: 25px; padding-top: 10px; border-top: 1px dashed var(--color-border-subtle); }
+.action-input { width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 10px; border: 1px solid var(--color-border-subtle); border-radius: 4px; background-color: var(--color-background-dark); color: var(--color-text-primary); font-family: 'Consolas', 'Courier New', monospace; font-size: 0.9em; }
+#tension_bar { height: 10px; background-color: var(--color-border-subtle); border-radius: 5px; overflow: hidden; margin-top: 5px; }
+#tension_level_display_bar { height: 100%; background-color: var(--color-alert-red); transition: width 0.3s ease-in-out; }
+#autonomy_status { font-weight: bold; }
+#main-content { flex-grow: 1; display: flex; flex-direction: column; }
+#dialogue-output { flex-grow: 1; padding: 30px; overflow-y: auto; background-color: var(--color-background-dark); line-height: 1.7; }
+.user-message { color: var(--color-text-primary); font-weight: 500; }
+.ai-message { color: var(--color-text-secondary); font-family: 'Consolas', monospace; }
+#input-area { padding: 15px 30px; border-top: 1px solid var(--color-border-subtle); display: flex; flex-shrink: 0; }
+#dialogue_input { flex-grow: 1; padding: 10px; border: 1px solid var(--color-border-subtle); border-radius: 4px; background-color: var(--color-background-sidebar); color: var(--color-text-primary); margin-right: 10px; }
+.action-button { padding: 8px 12px; margin-top: 5px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: #fff; width: 100%; }
+.action-internal { background-color: #4CAF50; }
+.action-external { background-color: #FF9800; }
+.action-revision { background-color: #2196F3; }
+#dialogue_button { background-color: var(--color-accent-blue); color: var(--color-background-dark); padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
