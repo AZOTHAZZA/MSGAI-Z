@@ -2,9 +2,9 @@
 
 // 初期アカウント残高の定義 (USD, JPY, EUR, BTC, ETH, MATIC)
 const INITIAL_ACCOUNTS = {
-    User_A: { USD: 1000.00, JPY: 100000, EUR: 500.00, BTC: 0.1, ETH: 1.0, MATIC: 100 },
-    User_B: { USD: 50.00, JPY: 5000, EUR: 20.00, BTC: 0.0, ETH: 0.0, MATIC: 0 },
-    User_C: { USD: 200.00, JPY: 20000, EUR: 100.00, BTC: 0.05, ETH: 0.5, MATIC: 50 }
+    User_A: { USD: 0.00, JPY: 0.00, EUR: 0.00, BTC: 0.00, ETH: 0.00, MATIC: 0.00 },
+    User_B: { USD: 0.00, JPY: 0.00, EUR: 0.00, BTC: 0.00, ETH: 0.00, MATIC: 0.00 },
+    User_C: { USD: 0.00, JPY: 0.00, EUR: 0.00, BTC: 0.00, ETH: 0.00, MATIC: 0.00 }
 };
 
 // =========================================================================
