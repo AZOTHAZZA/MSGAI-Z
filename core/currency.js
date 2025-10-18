@@ -1,105 +1,123 @@
-// core/currency.js (getMutableState対応版 - 全文)
+// core/currency.js (修正版 - ControlMatrix削除とFoundation統合)
 
-import { updateState, getMutableState, addTension, getCurrentState } from './foundation.js'; 
-import { ControlMatrix } from './arithmos.js';
+import { getMutableState, updateState, getTensionInstance } from './foundation.js'; 
+// 🚨 修正: ControlMatrix のインポートを削除しました。
 
-// 各通貨の摩擦度
-const CURRENCY_FRICTION = {
-    "USD": 0.005, "JPY": 0.005, "EUR": 0.005, 
-    "BTC": 0.03, "ETH": 0.02, "MATIC": 0.015 
+// 仮定のレート（実際のプロジェクトではAPIから取得）
+const EXCHANGE_RATES = {
+    "USD/JPY": 150.00,
+    "EUR/USD": 1.08,
+    "BTC/USD": 60000.00,
+    "ETH/USD": 3000.00,
+    "MATIC/USD": 0.75,
 };
-const MIN_EXTERNAL_TRANSFER_AMOUNT = 100.00; 
-const TENSION_THRESHOLD_EXTERNAL_TRANSFER = 0.70; 
-
-// =========================================================================
-// ヘルパー関数
-// =========================================================================
 
 /**
- * 状態を永続化するために渡すオブジェクトから tension_level を除外するヘルパー関数
+ * 通貨間の交換レートを取得する。
+ * @param {string} fromC - 売り通貨
+ * @param {string} toC - 買い通貨
+ * @returns {number} 交換レート
  */
-function createStateToPersist(state) {
-    // シャローコピーだが、Tensionインスタンスは削除してFoundation側で上書きされないように保護
-    const stateToPersist = { 
-        accounts: state.accounts,
-        active_user: state.active_user,
-        status_message: state.status_message,
-        last_act: state.last_act
-    };
-    return stateToPersist;
+function getRate(fromC, toC) {
+    if (fromC === toC) return 1.0;
+    
+    const key = `${fromC}/${toC}`;
+    const inverseKey = `${toC}/${fromC}`;
+
+    if (EXCHANGE_RATES[key]) {
+        return EXCHANGE_RATES[key];
+    }
+    if (EXCHANGE_RATES[inverseKey]) {
+        return 1.0 / EXCHANGE_RATES[inverseKey];
+    }
+
+    // クロスレート計算 (全てUSDを介す簡略化)
+    if (fromC !== "USD" && toC !== "USD") {
+        const rateFrom = getRate(fromC, "USD");
+        const rateTo = getRate("USD", toC);
+        return rateFrom * rateTo;
+    }
+
+    throw new Error(`Unsupported exchange pair: ${fromC}/${toC}`);
 }
 
-
-// =========================================================================
-// 経済ロゴスの作為 (Acts of Economic Logos)
-// =========================================================================
-
 /**
- * 第1作為: 内部送金 (低摩擦)
+ * ユーザーの口座間で通貨のミント（発行）またはバーン（償却）を行う。
+ * ミント行為はTensionを増加させる。
+ * @param {string} username - ユーザー名
+ * @param {string} currency - 通貨コード
+ * @param {number} amount - ミント/バーンする量 (正の値でミント、負の値でバーン)
+ * @returns {object} 新しい状態
  */
-export function actTransferInternal(sender, recipient, amount, currency = "USD") {
-    // getMutableStateがコピーを返すため、安全に操作できる
-    const state = getMutableState(); 
+export function actMintCurrency(username, currency, amount) {
+    const state = getMutableState();
     
-    if (sender === recipient) throw new Error("自己宛の送金は認められません。");
-    if (state.accounts[sender][currency] < amount) throw new Error("残高が不足しています。");
+    if (!state.accounts[username]) {
+        throw new Error(`User ${username} not found.`);
+    }
 
-    state.accounts[sender][currency] -= amount;
-    state.accounts[recipient][currency] = (state.accounts[recipient][currency] || 0) + amount;
+    // 🌟 Tensionの操作
+    if (amount > 0) {
+        // ミント（発行）はTensionを増加させる
+        const tensionInstance = getTensionInstance();
+        const currentTension = tensionInstance.getValue();
 
-    state.last_act = `Internal Transfer (${currency})`;
-    state.status_message = `${sender} から ${recipient} へ ${currency} $${amount.toFixed(2)} 送金完了。`;
+        // 発行額に基づくTension増加ロジック (例: 発行額の微小率をTensionに加算)
+        const tensionIncrease = amount * 0.000001; 
+        tensionInstance.add(tensionIncrease);
+        console.log(`[Mint]: Tension increased by ${tensionIncrease.toFixed(6)}. New Tension: ${tensionInstance.getValue().toFixed(6)}`);
+    }
+
+    // 口座残高の更新
+    state.accounts[username][currency] = 
+        (state.accounts[username][currency] || 0) + amount;
     
-    // Tensionを除外した状態を永続化
-    updateState(createStateToPersist(state));
-}
+    state.status_message = `${username} minted ${amount.toFixed(2)} ${currency}.`;
+    state.last_act = "MintCurrency";
 
+    // 最終的な状態の永続化と更新
+    updateState(state);
 
-/**
- * 第2作為: 外部送金 (高摩擦)
- */
-export function actExternalTransfer(sender, amount, currency = "USD") {
-    const state = getMutableState(); 
-    
-    if (state.accounts[sender][currency] < amount) throw new Error("残高が不足しています。");
-
-    const balance = state.accounts[sender][currency];
-    const matrix = new ControlMatrix(getCurrentState().tension_level); // Tension値は常に最新のものを取得
-    
-    state.accounts[sender][currency] -= amount;
-
-    const friction = CURRENCY_FRICTION[currency];
-    const tensionChange = friction * (1 + (amount / balance) * 0.1);
-
-    // Foundationの安全な関数を使用して Tension を操作
-    addTension(tensionChange); 
-    
-    state.last_act = `External Transfer (${currency})`;
-    state.status_message = `${sender} から ${currency} $${amount.toFixed(2)} 外部送金。Tension +${tensionChange.toFixed(4)}。`;
-    
-    // Tensionを除外した状態を永続化
-    updateState(createStateToPersist(state));
+    return state;
 }
 
 
 /**
- * 第3作為: 通貨生成 (Minting Act)
+ * ユーザー間で通貨を交換する（取引手数料はゼロとする）。
+ * @param {string} username - 取引を行うユーザー名
+ * @param {string} fromC - 売り通貨
+ * @param {number} amount - 売り通貨の量
+ * @param {string} toC - 買い通貨
+ * @returns {object} 新しい状態
  */
-export function actMintCurrency(currency, amount) {
-    const state = getMutableState(); 
-    const sender = state.active_user;
-    
-    state.accounts[sender][currency] = (state.accounts[sender][currency] || 0) + amount;
-    
-    const friction = CURRENCY_FRICTION[currency];
-    const tensionChange = friction * 0.5;
+export function actExchangeCurrency(username, fromC, amount, toC) {
+    const state = getMutableState();
+    const rate = getRate(fromC, toC);
+    const receiveAmount = amount * rate;
 
-    // Foundationの安全な関数を使用して Tension を操作
-    addTension(tensionChange); 
-    
-    state.last_act = `Minting Act (${currency})`;
-    state.status_message = `${sender} に ${currency} $${amount.toFixed(2)} 生成。Tension +${tensionChange.toFixed(4)}。`;
-    
-    // Tensionを除外した状態を永続化
-    updateState(createStateToPersist(state));
+    if (!state.accounts[username]) {
+        throw new Error(`User ${username} not found.`);
+    }
+    if ((state.accounts[username][fromC] || 0) < amount) {
+        throw new Error(`Insufficient balance in ${fromC} for ${username}.`);
+    }
+
+    // 残高の更新
+    state.accounts[username][fromC] -= amount;
+    state.accounts[username][toC] = 
+        (state.accounts[username][toC] || 0) + receiveAmount;
+
+    state.status_message = `${username} exchanged ${amount.toFixed(2)} ${fromC} for ${receiveAmount.toFixed(2)} ${toC} at rate ${rate.toFixed(4)}.`;
+    state.last_act = "ExchangeCurrency";
+
+    // 最終的な状態の永続化と更新
+    updateState(state);
+
+    return state;
 }
+
+// ユーザーAのUSD残高を100ミントする例（Tension増加）
+// actMintCurrency("User_A", "USD", 100);
+
+// ユーザーAが100USDをJPYに交換する例
+// actExchangeCurrency("User_A", "USD", 100, "JPY");
