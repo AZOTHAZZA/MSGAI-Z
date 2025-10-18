@@ -1,4 +1,4 @@
-// core/revision_logos.js
+// core/revision.js
 
 import { getCurrentState, updateState } from './foundation.js';
 import { calculateTension } from './ai_control.js';
