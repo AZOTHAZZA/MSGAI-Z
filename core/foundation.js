@@ -1,6 +1,7 @@
-// core/foundation.js (LogosState非export版)
+// core/foundation.js (LogosTension import修正版)
 
-import { LogosTension } from './arithmos.js';
+// 🌟 修正: LogosTensionのみをarithmos.jsからインポート
+import { LogosTension } from './arithmos.js'; 
 
 // 永続化キー（変更なし）
 const PERSISTENCE_KEY_ACCOUNTS = 'msgaicore_accounts';
@@ -25,8 +26,9 @@ function loadPersistedActiveUser() { /* ... */ return INITIAL_ACTIVE_USER; }
 // LogosState 初期化と更新
 // =========================================================================
 
-// 🌟 修正: LogosStateからexportキーワードを削除し、内部変数にする
+// 🌟 LogosStateからexportキーワードを削除し、内部変数にする（変更なし）
 const LogosState = { 
+    // LogosTensionクラスを利用
     tension_level: new LogosTension(loadPersistedTension()),
     accounts: loadPersistedAccounts(),
     active_user: loadPersistedActiveUser(),
@@ -77,7 +79,7 @@ export function getTensionInstance() { return LogosState.tension_level; }
 // =========================================================================
 
 /**
- * 🌟 必須: 常に最新かつ操作可能なLogosStateのオブジェクト参照を返す
+ * 必須: 常に最新かつ操作可能なLogosStateのオブジェクト参照を返す
  */
 export function getMutableState() {
     return LogosState;
