@@ -28,7 +28,12 @@
             <p>厳密性 (Rigor, R): <span id="rigor_display">0.2236</span></p>
 
             <h3>経済ロゴスと状態</h3>
-            <p>User_A 残高: $<span id="balance_display">1000.00</span> USD</p>
+            
+            <label for="active_user_select">アクティブユーザー:</label>
+            <select id="active_user_select" class="action-input" style="width: 100%; margin-bottom: 15px;">
+                </select>
+            
+            <p id="user_balance_display"><span id="active_user_name">User_A</span> 残高: $<span id="balance_display">1000.00</span> USD</p>
             
             <label for="recipient_input">受取人:</label>
             <input type="text" id="recipient_input" value="User_B" class="action-input" placeholder="User_B">
