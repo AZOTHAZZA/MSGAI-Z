@@ -1,10 +1,11 @@
-// app/main.js (ControlMatrix引数修正版)
+// app/main.js (インポート最適化版)
 
 import * as Foundation from '../core/foundation.js';
 import * as Arithmos from '../core/arithmos.js';
 import * as Currency from '../core/currency.js';
 import * as UI from './fusionui.js';
-import * as Handler from './handler.js';
+// 🌟 修正: Handlerオブジェクト全体ではなく、必要な関数を個別にインポート
+import { connectEventHandlers } from './handler.js'; 
 
 /**
  * アプリケーションのコア処理とUI処理を連携させるメイン関数
@@ -13,28 +14,23 @@ function initializeApp() {
     console.log("main.js: アプリケーション初期化開始。");
 
     try {
-        // 1. キャッシュ/ストレージの初期化と監査ログを出力 (ここは省略)
-
-        // 2. コア状態の取得
-        // UI表示用のデータとして取得 (tension_levelは数値)
+        // 1. コア状態の取得（UI表示用のデータ）
         const stateData = Foundation.getCurrentState(); 
-
-        // 🌟 修正: ControlMatrixのためにTensionインスタンスを直接取得
         const tensionInstance = Foundation.getTensionInstance();
         
-        // 3. I/Rパラメータの計算
-        // 🌟 修正: ControlMatrixにTensionインスタンスを渡す
+        // 2. I/Rパラメータの計算
         const matrix = new Arithmos.ControlMatrix(tensionInstance);
         const matrixData = { 
             intensity: matrix.intensity, 
             rigor: matrix.rigor 
         };
         
-        // 4. UIの初期描画
+        // 3. UIの初期描画
         UI.updateUI(stateData, "システム監査コンソールが起動しました。", matrixData);
         
-        // 5. イベントハンドラの接続
-        Handler.connectEventHandlers(Foundation, Currency, UI, Arithmos);
+        // 4. イベントハンドラの接続
+        // 🌟 修正: インポートした関数を直接呼び出す
+        connectEventHandlers(Foundation, Currency, UI, Arithmos); 
 
     } catch (error) {
         // 致命的なエラーが発生した場合の処理
