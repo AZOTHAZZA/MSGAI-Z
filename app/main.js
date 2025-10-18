@@ -1,15 +1,17 @@
-// app/main.js (修正版: 適切な初期化シーケンスを保証)
+// app/main.js (最終修正版: インポートパスを修正)
+
+// 🌟 修正: パスの二重指定を解消し、正しい相対パスを指定
 
 // core/foundation.jsから状態取得関数をインポート
-import { getCurrentStateJson } from './core/foundation.js';
+import { getCurrentStateJson } from '../core/foundation.js'; // 修正: ./core -> ../core
 // app/handler.jsからイベントハンドラ接続関数をインポート
-import { attachEventHandlers } from './app/handler.js';
+import { attachEventHandlers } from './handler.js'; // 修正: ./app/handler.js -> ./handler.js
 // app/fusionui.jsからUI更新関数をインポート
-import * as UI from './app/fusionui.js';
+import * as UI from './fusionui.js'; // 修正: ./app/fusionui.js -> ./fusionui.js
 // core/cache_logos.jsから初期化関数をインポート
-import { initializeCacheLogos } from './core/cache_logos.js'; 
+import { initializeCacheLogos } from '../core/cache_logos.js'; // 修正: ./core -> ../core
 
-import { LogosTension, ControlMatrix } from './core/arithmos.js';
+import { LogosTension, ControlMatrix } from '../core/arithmos.js'; // 修正: ./core -> ../core
 
 
 /**
@@ -20,10 +22,9 @@ function initializeApp() {
 
     try {
         // 1. キャッシュ/ストレージの初期化と監査ログを出力
-        // LocalStorageの強制クリアとログの出力を行う
         initializeCacheLogos(); 
         
-        // 2. コア状態の取得 (この時点でLogosStateは永続化データからロードされている)
+        // 2. コア状態の取得
         const initialStateJson = getCurrentStateJson();
         const initialState = JSON.parse(initialStateJson);
 
@@ -36,13 +37,10 @@ function initializeApp() {
         };
 
         // 4. UIの初期描画
-        // 🌟 この呼び出しが非常に重要。DOM要素に値を設定し、ユーザーリストを生成します。
-        // これにより、後続のイベントハンドラが要素を見つけられるようになります。
         UI.updateUI(initialState, "コア状態のロードとUI初期化を完了しました。", matrixData);
 
 
         // 5. イベントハンドラの接続
-        // 🌟 DOMが完全に描画された後でなければ、この処理は機能しません。
         attachEventHandlers(); 
 
     } catch (error) {
@@ -55,5 +53,5 @@ function initializeApp() {
     console.log("main.js: アプリケーション初期化完了。");
 }
 
-// 🌟 エントリポイント: HTMLのDOMが完全に読み込まれた後に実行を保証
+// エントリポイント: HTMLのDOMが完全に読み込まれた後に実行を保証
 document.addEventListener('DOMContentLoaded', initializeApp);
