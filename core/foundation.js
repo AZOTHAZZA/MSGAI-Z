@@ -1,15 +1,73 @@
-// core/foundation.js (究極の最終安定版 - グローバル不動化 + ループ回避)
+// core/foundation.js (究極の最終安定版 - グローバル不動化 + ループ回避 + 完全エクスポート保証)
 
 import { createLogosTension } from './arithmos.js'; 
 
-// ... (定数、ロード関数は変更なし) ...
+// 永続化キーと初期値の定義
+const PERSISTENCE_KEY_ACCOUNTS = 'msgaicore_accounts';
+const PERSISTENCE_KEY_TENSION = 'msgaicore_tension';
+const PERSISTENCE_KEY_ACTIVE_USER = 'msgaicore_active_user';
+
+const INITIAL_ACCOUNTS = { 
+    "User_A": { "USD": 1000.00, "JPY": 0.00, "EUR": 0.00, "BTC": 0.00, "ETH": 0.00, "MATIC": 0.00 },
+    "User_B": { "USD": 500.00, "JPY": 0.00, "EUR": 0.00, "BTC": 0.00, "ETH": 0.00, "MATIC": 0.00 }
+};
+const INITIAL_TENSION_VALUE = 0.05; 
+const INITIAL_ACTIVE_USER = "User_A";
+
+// =========================================================================
+// 状態ロード関数 (防御的なロード) 
+// =========================================================================
+
+function loadPersistedAccounts() {
+    try {
+        const persisted = localStorage.getItem(PERSISTENCE_KEY_ACCOUNTS);
+        if (!persisted) {
+            console.log("[Logos Foundation]: 口座情報が見つかりません。初期値を適用します。");
+            return JSON.parse(JSON.stringify(INITIAL_ACCOUNTS));
+        }
+        const accounts = JSON.parse(persisted);
+        if (typeof accounts === 'object' && accounts !== null && Object.keys(accounts).length > 0) {
+             console.log("[Logos Foundation]: 永続化されたマルチカレンシー口座情報を読み込みました。");
+             return accounts;
+        }
+    } catch (e) {
+        console.warn("[Logos Foundation WARNING]: 口座情報の読み込みに失敗、初期値を強制使用。", e);
+    }
+    return JSON.parse(JSON.stringify(INITIAL_ACCOUNTS));
+}
+
+function loadPersistedTensionValue() {
+    try {
+        const persisted = localStorage.getItem(PERSISTENCE_KEY_TENSION);
+        if (!persisted) return INITIAL_TENSION_VALUE;
+        const t = parseFloat(persisted);
+        if (!isNaN(t) && t >= 0 && t <= 1.0) {
+            console.log(`[Logos Foundation]: 永続化されたTension (${t.toFixed(4)}) を読み込みました。`);
+            return t;
+        }
+    } catch (e) {
+        console.warn("[Logos Foundation WARNING]: 緊張度情報の読み込みに失敗、初期値を使用。", e);
+    }
+    return INITIAL_TENSION_VALUE; 
+}
+
+function loadPersistedActiveUser() {
+    try {
+        const persisted = localStorage.getItem(PERSISTENCE_KEY_ACTIVE_USER);
+        if (persisted && INITIAL_ACCOUNTS[persisted]) {
+            return persisted;
+        }
+    } catch (e) {
+        console.warn("[Logos Foundation WARNING]: アクティブユーザー情報の読み込みに失敗、初期値を使用。", e);
+    }
+    return INITIAL_ACTIVE_USER;
+}
 
 // =========================================================================
 // LogosState & LogosTension のカプセル化ロジック
 // =========================================================================
 
 let _LogosState = null; 
-// _LogosTensionInstance はグローバル (window.MSGAI_TENSION_CORE) に固定されるため、ここでは不要
 
 /**
  * LogosStateの初期化を行う。破損チェックは行わない。
@@ -30,7 +88,6 @@ function loadInitialState() {
 
 /**
  * 🌟 究極の修正: Tensionインスタンスをグローバル定位置から取得・修復する
- * 🚨 updateState の呼び出しを削除
  */
 function getTensionReference() {
     let tensionInstance = window.MSGAI_TENSION_CORE;
@@ -54,7 +111,7 @@ function getTensionReference() {
         tensionInstance = createLogosTension(value);
         window.MSGAI_TENSION_CORE = tensionInstance;
         
-        // 🚨 修正: 無限ループ回避のため updateState({}) を削除！
+        // 🚨 無限ループ回避のため updateState({}) は呼び出さない
     }
     return tensionInstance;
 }
@@ -118,4 +175,68 @@ export function addTension(amount) {
     updateState({}); // Tension値の更新後、updateStateを呼び出し永続化
 }
 
-// ... (getCurrentState, getMutableState, deleteAccounts, setActiveUser, getActiveUserBalance は変更なし) ...
+
+// ---------------- (getCurrentState / getMutableState 関数群 - 確実なエクスポート) ----------------
+
+/** 最新の状態オブジェクトの参照を返す。 */
+export function getCurrentState() { 
+    return getStateReference(); 
+}
+
+/** 状態オブジェクトのディープコピー（JSON形式）を返す。 */
+export function getCurrentStateJson() { 
+    return JSON.parse(JSON.stringify(getStateReference())); 
+}
+
+/**
+ * 必須: 常に最新かつ操作可能なLogosStateのオブジェクト参照（シャローコピー）を返す
+ */
+export function getMutableState() {
+    // 外部からの破壊を防ぐため、シャローコピーを返す
+    return { ...getStateReference() }; 
+}
+
+
+// =========================================================================
+// ヘルパー関数
+// =========================================================================
+
+/**
+ * コアシステムをリセットし、口座情報を削除する。
+ */
+export function deleteAccounts() { 
+    localStorage.removeItem(PERSISTENCE_KEY_ACCOUNTS);
+    localStorage.removeItem(PERSISTENCE_KEY_TENSION);
+    localStorage.removeItem(PERSISTENCE_KEY_ACTIVE_USER);
+
+    _LogosState = null; 
+    window.MSGAI_TENSION_CORE = null; // グローバルインスタンスもリセット
+    
+    // 再初期化
+    const state = getStateReference(); 
+    state.status_message = "全口座情報とTensionレベルをリセットしました。";
+    updateState(state);
+    return state.status_message; 
+}
+
+/**
+ * 現在のアクティブユーザーを変更する。
+ */
+export function setActiveUser(username) {
+    const state = getStateReference();
+    if (state.accounts[username]) {
+        state.active_user = username;
+        updateState(state);
+    } else {
+        throw new Error(`User ${username} does not exist.`);
+    }
+}
+
+/**
+ * アクティブユーザーの残高を取得する。
+ */
+export function getActiveUserBalance(currency = "USD") {
+    const state = getStateReference();
+    const balance = state.accounts[state.active_user][currency];
+    return balance !== undefined ? balance : 0.00;
+}
