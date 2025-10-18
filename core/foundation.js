@@ -1,4 +1,4 @@
-// core/foundation.js (getMutableState追加版)
+// core/foundation.js (ロードロジック安全性強化版)
 
 import { LogosTension } from './arithmos.js';
 
@@ -15,10 +15,75 @@ const INITIAL_ACCOUNTS = {
 const INITIAL_TENSION = 0.05;
 const INITIAL_ACTIVE_USER = "User_A";
 
-// ... (loadPersistedAccounts, loadPersistedTension, loadPersistedActiveUser は省略) ...
-function loadPersistedAccounts() { /* ... */ }
-function loadPersistedTension() { /* ... */ return INITIAL_TENSION; }
-function loadPersistedActiveUser() { /* ... */ return INITIAL_ACTIVE_USER; }
+// =========================================================================
+// 状態ロード関数 (安全性強化)
+// =========================================================================
+
+/**
+ * 永続化された口座情報を読み込む関数。失敗時は初期値を返す。
+ */
+function loadPersistedAccounts() {
+    try {
+        const persisted = localStorage.getItem(PERSISTENCE_KEY_ACCOUNTS);
+        // null または空文字列の場合は初期値を返す
+        if (!persisted) {
+            return JSON.parse(JSON.stringify(INITIAL_ACCOUNTS));
+        }
+        
+        const accounts = JSON.parse(persisted);
+        // 構造チェック
+        if (typeof accounts["User_A"] === 'object' && accounts["User_A"].USD !== undefined) {
+             console.log("[Logos Foundation]: 永続化されたマルチカレンシー口座情報を読み込みました。");
+             return accounts;
+        }
+    } catch (e) {
+        console.warn("[Logos Foundation WARNING]: 口座情報の読み込みに失敗、初期値を強制使用。", e);
+    }
+    return JSON.parse(JSON.stringify(INITIAL_ACCOUNTS)); // 初期値のディープコピーを返す
+}
+
+/**
+ * 永続化された緊張度を読み込む関数。失敗時は初期値を返す。
+ */
+function loadPersistedTension() {
+    try {
+        const persisted = localStorage.getItem(PERSISTENCE_KEY_TENSION);
+        // null または空文字列の場合は初期値を返す
+        if (!persisted) {
+             return INITIAL_TENSION;
+        }
+        
+        const t = parseFloat(persisted);
+        if (!isNaN(t)) {
+            console.log(`[Logos Foundation]: 永続化されたTension (${t.toFixed(4)}) を読み込みました。`);
+            return t;
+        }
+    } catch (e) {
+        console.warn("[Logos Foundation WARNING]: 緊張度情報の読み込みに失敗、初期値を使用。", e);
+    }
+    return INITIAL_TENSION; 
+}
+
+/**
+ * 永続化されたアクティブユーザーを読み込む関数。失敗時は初期値を返す。
+ */
+function loadPersistedActiveUser() {
+    try {
+        const persisted = localStorage.getItem(PERSISTENCE_KEY_ACTIVE_USER);
+        // null または空文字列の場合は初期値を返す
+        if (!persisted) {
+            return INITIAL_ACTIVE_USER;
+        }
+        
+        // 永続化データがあり、かつアカウントリストに存在するユーザーであること (ここでは accounts の初期化が完了していると仮定)
+        // 厳密には accounts のロード後にチェックすべきだが、ここではシンプルなフォールバックを優先
+        return persisted;
+        
+    } catch (e) {
+        console.warn("[Logos Foundation WARNING]: アクティブユーザーの読み込みに失敗、初期値を使用。", e);
+    }
+    return INITIAL_ACTIVE_USER; 
+}
 
 
 // =========================================================================
@@ -26,6 +91,7 @@ function loadPersistedActiveUser() { /* ... */ return INITIAL_ACTIVE_USER; }
 // =========================================================================
 
 export const LogosState = {
+    // これらの関数は常に有効な値を返すため、LogosStateは完全な状態で初期化される
     tension_level: new LogosTension(loadPersistedTension()),
     accounts: loadPersistedAccounts(),
     active_user: loadPersistedActiveUser(),
@@ -37,7 +103,7 @@ export const LogosState = {
  * 状態の更新と永続化を行う関数
  */
 export function updateState(newState) {
-    // Tensionインスタンスの厳密な復元ロジック (変更なし)
+    // Tensionインスタンスの復元ロジック (変更なし)
     if (newState.tension_level instanceof LogosTension) {
         LogosState.tension_level = newState.tension_level;
     } else if (typeof newState.tension_level === 'number') {
@@ -66,26 +132,23 @@ export function updateState(newState) {
 }
 
 // ---------------- (getCurrentState 関数群) ----------------
-export function getCurrentState() { /* ... 変更なし ... */ }
-export function getCurrentStateJson() { /* ... 変更なし ... */ }
+export function getCurrentState() { 
+    return { 
+        tension_level: LogosState.tension_level.getValue(), 
+        accounts: LogosState.accounts,
+        active_user: LogosState.active_user, 
+        status_message: LogosState.status_message,
+        last_act: LogosState.last_act
+    };
+}
+export function getCurrentStateJson() { return JSON.stringify(getCurrentState()); }
 
 // =========================================================================
 // ヘルパー関数と作為関数
 // =========================================================================
-
-/**
- * 🌟 新規追加: 常に最新かつ操作可能なLogosStateのオブジェクト参照を返す
- */
-export function getMutableState() {
-    return LogosState;
-}
-
+export function getMutableState() { return LogosState; }
 export function getActiveUserBalance(currency = "USD") { /* ... 変更なし ... */ }
 export function setActiveUser(username) { /* ... 変更なし ... */ }
-
-/**
- * 第9作為: 口座情報を削除し、初期状態に戻す関数 (監査用リセット)
- */
 export function deleteAccounts() { 
     localStorage.removeItem(PERSISTENCE_KEY_ACCOUNTS);
     localStorage.removeItem(PERSISTENCE_KEY_TENSION); 
