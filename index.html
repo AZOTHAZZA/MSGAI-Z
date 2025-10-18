@@ -9,11 +9,9 @@
     
     <style>
         /* (前回のインラインスタイルは省略。style.cssで定義されている前提) */
-        /* ボタンの色定義を追加/上書き */
+        
         .action-button { width: 100%; padding: 10px; margin-top: 5px; border: none; border-radius: 4px; color: white; cursor: pointer; }
-        /* 🎨 生成実行 (Mint): 暖色系 */
         #mint_execute_button { background-color: #FFA500; } /* オレンジ */
-        /* 🎨 交換実行 (Exchange): 寒色系 */
         #exchange_button { background-color: #007bff; } /* 青 */
         
         .gauge-area input, .gauge-area select {
@@ -22,7 +20,22 @@
             padding: 8px; 
             border: 1px solid #ccc; 
             border-radius: 3px; 
-            box-sizing: border-box; /* 親要素の幅に合わせて調整 */
+            box-sizing: border-box; 
+        }
+
+        /* 🌟 修正: ラベルのレイアウト修正 🌟 */
+        .gauge-area label {
+            /* ラベルをブロック要素にし、必ず新しい行から表示させる */
+            display: block; 
+            /* 上部にわずかなマージンを追加して、前の要素から分離 */
+            margin-top: 10px; 
+            margin-bottom: 3px; 
+            font-weight: bold; /* 視認性向上のため */
+        }
+        /* 数量入力欄がくっつかないように、既存の input, select のマージンも再確認 */
+        .gauge-area input.action-input, .gauge-area select.action-input {
+            margin-top: 0;
+            margin-bottom: 15px; /* 下にマージンを設けて次のラベルと分離 */
         }
     </style>
 </head>
@@ -63,7 +76,7 @@
                 <p style="margin: 3px 0;">MATIC: <span id="balance_MATIC">0.00000000</span></p>
             </div>
             
-            <label for="recipient_input" style="margin-top: 15px; display: block;">受取人:</label>
+            <label for="recipient_input" style="margin-top: 15px;">受取人:</label> 
             <input type="text" id="recipient_input" value="User_B" class="action-input" placeholder="User_B">
             
             <label for="amount_input">数量:</label>
@@ -98,7 +111,7 @@
             
             <label for="mint_currency_select">生成通貨:</label>
             <select id="mint_currency_select" class="action-input">
-                </select>
+            </select>
             
             <button id="mint_execute_button" class="action-button">
                 生成実行
@@ -107,6 +120,7 @@
 
         <div class="currency-exchange-area gauge-area" style="margin-top: 20px;">
             <h3>通貨交換作為 (Exchange Act)</h3>
+            
             <label for="exchange_amount_input">交換数量:</label>
             <input type="number" id="exchange_amount_input" value="1.00" class="action-input">
             
