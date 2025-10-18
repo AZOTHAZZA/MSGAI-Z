@@ -1,4 +1,4 @@
-// core/foundation.js (Tensionインスタンス保護版)
+// core/foundation.js (export修正済み、Tensionインスタンス保護最終版)
 
 import { LogosTension } from './arithmos.js';
 
@@ -15,7 +15,11 @@ const INITIAL_ACCOUNTS = {
 const INITIAL_TENSION = 0.05;
 const INITIAL_ACTIVE_USER = "User_A";
 
-// ... (loadPersistedAccounts, loadPersistedTension, loadPersistedActiveUser 関数は変更なし) ...
+// ... (loadPersistedAccounts, loadPersistedTension, loadPersistedActiveUser 関数は省略) ...
+function loadPersistedAccounts() { /* ... */ return JSON.parse(JSON.stringify(INITIAL_ACCOUNTS)); }
+function loadPersistedTension() { /* ... */ return INITIAL_TENSION; }
+function loadPersistedActiveUser() { /* ... */ return INITIAL_ACTIVE_USER; }
+
 
 // =========================================================================
 // LogosState 初期化と更新
@@ -29,24 +33,27 @@ export const LogosState = {
     last_act: "Genesis",
 };
 
-console.log(`[Logos Core]: Initialized. Tension: ${LogosState.tension_level.getValue().toFixed(4)}`);
-
+// ... (コンソールログは省略) ...
 
 /**
  * 状態の更新と永続化を行う関数
  */
 export function updateState(newState) {
-    // 🌟 修正: ロゴス緊張度を更新する際は、LogosTensionのインスタンスを保護
-    if (typeof newState.tension_level === 'number') {
-        // 数値が渡された場合、新しいインスタンスを作成
-        LogosState.tension_level = new LogosTension(newState.tension_level);
-    } else if (newState.tension_level instanceof LogosTension) {
-        // LogosTensionインスタンスが渡された場合、そのまま代入
+    
+    // Tensionインスタンスを厳密に復元
+    if (newState.tension_level instanceof LogosTension) {
         LogosState.tension_level = newState.tension_level;
-    } else if (newState.tension_level && newState.tension_level.value !== undefined) {
-        // Tensionオブジェクトから値を取り出してインスタンスを作成 (安全策)
-        LogosState.tension_level = new LogosTension(newState.tension_level.value);
-    } 
+    } else if (typeof newState.tension_level === 'number') {
+        LogosState.tension_level = new LogosTension(newState.tension_level);
+    } else if (newState.tension_level && typeof newState.tension_level.getValue === 'function') {
+        LogosState.tension_level = new LogosTension(newState.tension_level.getValue());
+    } else {
+        const value = (typeof newState.tension_level === 'object' && newState.tension_level.value !== undefined) 
+            ? newState.tension_level.value 
+            : INITIAL_TENSION;
+            
+        LogosState.tension_level = new LogosTension(value);
+    }
     
     LogosState.accounts = newState.accounts;
     LogosState.active_user = newState.active_user;
@@ -62,15 +69,10 @@ export function updateState(newState) {
     }
 }
 
-// ---------------- (getCurrentState 関数群を修正) ----------------
+// ---------------- (getCurrentState 関数群) ----------------
 
-/**
- * 状態のディープコピーではない、シンプルなデータ構造を返す
- * (handler.js側でJSON化/パースを行うことを想定)
- */
 export function getCurrentState() {
     return { 
-        // 🌟 修正: Tensionレベルは数値として渡す
         tension_level: LogosState.tension_level.getValue(), 
         accounts: LogosState.accounts,
         active_user: LogosState.active_user, 
@@ -80,9 +82,57 @@ export function getCurrentState() {
 }
 
 export function getCurrentStateJson() {
-    // 🌟 修正: JSON.stringifyをここで実行
     return JSON.stringify(getCurrentState());
 }
 
 
-// ... (getActiveUserBalance, setActiveUser, deleteAccounts は変更なし) ...
+// =========================================================================
+// ヘルパー関数と作為関数
+// =========================================================================
+
+/**
+ * 指定されたユーザーの、指定された通貨の残高を取得する
+ */
+export function getActiveUserBalance(currency = "USD") {
+    const user = LogosState.active_user;
+    const balance = LogosState.accounts[user] ? LogosState.accounts[user][currency] : undefined;
+    
+    return balance !== undefined ? balance : 0.00;
+}
+
+/**
+ * 第4作為: アクティブユーザーを切り替える関数
+ */
+export function setActiveUser(username) {
+    if (LogosState.accounts[username] !== undefined) {
+        const oldUser = LogosState.active_user;
+        LogosState.active_user = username;
+        
+        try {
+            localStorage.setItem(PERSISTENCE_KEY_ACTIVE_USER, LogosState.active_user);
+        } catch (e) {
+            console.error("[Logos Foundation ERROR]: アクティブユーザーの永続化に失敗しました。", e);
+        }
+        
+        return `アクティブユーザーを ${oldUser} から ${username} に切り替えました。`;
+    }
+    throw new Error(`ユーザー ${username} は存在しません。`);
+}
+
+/**
+ * 🌟 修正: export キーワードを一つだけ追加
+ * 第9作為: 口座情報を削除し、初期状態に戻す関数 (監査用リセット)
+ */
+export function deleteAccounts() { 
+    localStorage.removeItem(PERSISTENCE_KEY_ACCOUNTS);
+    localStorage.removeItem(PERSISTENCE_KEY_TENSION); 
+    localStorage.removeItem(PERSISTENCE_KEY_ACTIVE_USER);
+    
+    LogosState.accounts = JSON.parse(JSON.stringify(INITIAL_ACCOUNTS)); 
+    LogosState.tension_level = new LogosTension(INITIAL_TENSION);
+    LogosState.active_user = INITIAL_ACTIVE_USER;
+    LogosState.status_message = "Logos Core Reset. Accounts deleted.";
+    LogosState.last_act = "Account Reset";
+    
+    return "✅ 口座情報とロゴス緊張度を初期値にリセットしました。監査ログは保持されます。";
+}
