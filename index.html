@@ -3,16 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MSGAI - ロゴス・コア・インターフェース</title>
+    <title>MSGAI - Logos Core Interface (全機能)</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f4f7f9; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
-        h1, h2 { color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        .status-box { border: 1px solid #007bff; padding: 15px; margin-bottom: 20px; border-radius: 5px; background-color: #e7f0ff; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
+        h1, h2 { color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 25px; }
+        .status-box { border: 1px solid #007bff; padding: 15px; margin-bottom: 25px; border-radius: 5px; background-color: #e7f0ff; }
+        .action-section { border: 1px solid #ccc; padding: 20px; border-radius: 5px; margin-bottom: 20px; }
+        .action-section input, .action-section select, .action-section button { padding: 8px; margin-right: 10px; border-radius: 3px; border: 1px solid #ddd; }
+        .action-section button { background-color: #4CAF50; color: white; cursor: pointer; border: none; }
+        #exchange-button { background-color: #007bff; }
         .tension-level { font-weight: bold; color: #dc3545; font-size: 1.2em; }
         .info-row { display: flex; justify-content: space-between; padding: 5px 0; }
-        #mint-button { padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 10px; }
-        .log-info { font-size: 0.8em; color: #666; margin-top: 20px; }
+        .balance-list div { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dotted #eee; }
     </style>
 </head>
 <body>
@@ -26,32 +29,55 @@
                 <span><strong>現在のステータス:</strong></span>
                 <span id="status-message">コアをロード中...</span>
             </div>
-
             <div class="info-row">
                 <span><strong>Tension レベル:</strong></span>
                 <span id="tension-level" class="tension-level">0.00%</span>
             </div>
-            
             <div class="info-row">
                 <span><strong>最終実行Act:</strong></span>
-                <span id="last-act">--</span>
+                <span id="last-act">Genesis</span>
             </div>
         </div>
 
         <h2>User A 残高</h2>
-        <div id="user-a-balances">
-            <p><strong>USD:</strong> <span id="balance-USD">0.00</span></p>
-            <p><strong>JPY:</strong> <span id="balance-JPY">0</span></p>
+        <div id="user-a-balances" class="balance-list">
+            <div><strong>USD:</strong> <span id="balance-USD">0.00</span></div>
+            <div><strong>JPY:</strong> <span id="balance-JPY">0</span></div>
+            <div><strong>EUR:</strong> <span id="balance-EUR">0.00</span></div>
+            <div><strong>BTC:</strong> <span id="balance-BTC">0.00000000</span></div>
             </div>
 
-        <h2>アクション</h2>
-        <button id="mint-button">
-            1.0 USD 発行 (Tension増加)
-        </button>
+        <h2>アクション: 通貨の発行/交換</h2>
         
-        <p class="log-info">
-            Tensionはシステムの発行行為により増加します。詳細はコンソールを確認してください。
-        </p>
+        <div class="action-section">
+            <h3>通貨の発行 (Mint)</h3>
+            <select id="mint-currency-select">
+                <option value="USD">USD</option>
+                <option value="JPY">JPY</option>
+                </select>
+            <input type="number" id="mint-amount-input" value="1.0" min="0.01" step="0.01">
+            <button id="mint-button">発行 (Mint)</button>
+        </div>
+
+        <div class="action-section">
+            <h3>通貨の交換 (Exchange)</h3>
+            <p><strong>売却:</strong></p>
+            <input type="number" id="exchange-amount-input" value="100.00" min="0.01">
+            <select id="from-currency-select">
+                <option value="USD">USD</option>
+                <option value="JPY">JPY</option>
+                <option value="EUR">EUR</option>
+            </select>
+            
+            <p><strong>交換先:</strong></p>
+            <select id="to-currency-select">
+                <option value="JPY">JPY</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+            </select>
+            
+            <button id="exchange-button">交換 (Exchange)</button>
+        </div>
     </div>
 
     <script type="module" src="./app/main.js"></script> 
