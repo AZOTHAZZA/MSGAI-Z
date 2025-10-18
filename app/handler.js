@@ -1,50 +1,46 @@
-// app/handler.js (擬態前バージョン)
+// app/handler.js
 
-import * as CoreAPI from '../core/core_api.js';
-import { generateRenderList, LRPCommand } from './protocol_lrp.js';
-import { renderCommands, executeLRPCommand } from './ui_fusion.js';
+import * as CoreAPI from './core_api.js';
+import * as UI from './fusionui.js'; // 修正: fusionui.jsをインポート
 
-// ... (getActionInputs 関数は省略) ...
+function getActionInputs() {
+    const recipient = document.getElementById('recipient_input').value;
+    const amountStr = document.getElementById('amount_input').value;
+    const amount = parseFloat(amountStr);
+    
+    if (isNaN(amount) || amount <= 0) {
+        throw new Error("有効な数量を入力してください。");
+    }
+    return { recipient, amount };
+}
 
-// -----------------------------------------------------------
-// 1. 対話作為ハンドラ (監査モード)
-// -----------------------------------------------------------
+function updateUIAndLog(resultMessage) {
+    const stateData = JSON.parse(CoreAPI.getCurrentStateJson());
+    const matrixData = CoreAPI.getControlParameters(stateData.tension_level);
+    UI.updateUI(stateData, resultMessage, matrixData);
+}
+
+
 export function handleDialogueAct() {
-    // ... (ユーザー入力処理は省略) ...
+    const prompt = document.getElementById('dialogue_input').value;
+    if (!prompt) return;
+
     let resultMessage = '対話応答成功。';
     const username = "User_A";
     
+    UI.displayDialogue('User', prompt);
+    document.getElementById('dialogue_input').value = '';
+
     try {
-        // Rust CoreAPIを呼び出し、純粋な応答テキストを取得
         const responseText = CoreAPI.actDialogue(username, prompt);
-        
-        // AIの純粋な応答をUIに出力
-        executeLRPCommand(new LRPCommand('DisplayDialogue', { sender: 'MSGAI', text: responseText }));
-
-        // ** 統治パラメータを取得するロジックを追加 **
-        const stateData = JSON.parse(CoreAPI.getCurrentStateJson());
-        const tension = stateData.tension_level;
-        
-        // ** I/Rパラメータを別途計算または取得し、レンダリングに渡す **
-        // JS Core Logicから直接I/Rを計算する関数を呼び出す必要があるが、
-        // ここでは便宜的にtensionに基づいてI/Rを再計算する (あるいはCoreAPIに追加)
-        const matrixData = CoreAPI.determineControlParameters(tension); 
-
-        const commands = generateRenderList(stateData, resultMessage, matrixData);
-        renderCommands(commands);
-        
+        UI.displayDialogue('MSGAI', responseText);
     } catch (error) {
         resultMessage = `❌ 対話作為失敗: ${error.message}`;
-        // エラー時もゲージを更新するために状態を取得
-        const stateData = JSON.parse(CoreAPI.getCurrentStateJson());
-        const commands = generateRenderList(stateData, resultMessage);
-        renderCommands(commands);
     }
+
+    updateUIAndLog(resultMessage);
 }
 
-// -----------------------------------------------------------
-// 2. 内部送金ハンドラ
-// -----------------------------------------------------------
 export function handleInternalTransferAct() {
     let resultMessage = '';
     const sender = "User_A";
@@ -56,18 +52,10 @@ export function handleInternalTransferAct() {
     } catch (error) {
         resultMessage = `❌ 内部送金作為失敗: ${error.message}`;
     }
-
-    // 状態を更新し、UIを再描画
-    const stateData = JSON.parse(CoreAPI.getCurrentStateJson());
-    const commands = generateRenderList(stateData, resultMessage);
-    renderCommands(commands);
+    updateUIAndLog(resultMessage);
 }
 
-// -----------------------------------------------------------
-// 3. 外部出金ハンドラ
-// -----------------------------------------------------------
 export function handleExternalTransferAct() {
-    // ... (ロジックは擬態後とほぼ同様だが、メッセージは監査的トーン) ...
     let resultMessage = '';
     const sender = "User_A";
     
@@ -78,16 +66,9 @@ export function handleExternalTransferAct() {
     } catch (error) {
         resultMessage = `❌ 外部送金作為拒否 (暴走抑止): ${error.message}`;
     }
-
-    // 状態を更新し、UIを再描画
-    const stateData = JSON.parse(CoreAPI.getCurrentStateJson());
-    const commands = generateRenderList(stateData, resultMessage);
-    renderCommands(commands);
+    updateUIAndLog(resultMessage);
 }
 
-// -----------------------------------------------------------
-// 4. 自律的修正請願ハンドラ
-// -----------------------------------------------------------
 export function handleRevisionPetitionAct() {
     let resultMessage = '';
     
@@ -97,13 +78,8 @@ export function handleRevisionPetitionAct() {
     } catch (error) {
         resultMessage = `❌ 修正請願拒否: ${error.message}`;
     }
-
-    // 状態を更新し、UIを再描画
-    const stateData = JSON.parse(CoreAPI.getCurrentStateJson());
-    const commands = generateRenderList(stateData, resultMessage);
-    renderCommands(commands);
+    updateUIAndLog(resultMessage);
 }
-
 
 export function attachEventHandlers() {
     document.getElementById('dialogue_button').addEventListener('click', handleDialogueAct);
@@ -113,5 +89,5 @@ export function attachEventHandlers() {
     
     document.getElementById('transfer_internal_button').addEventListener('click', handleInternalTransferAct);
     document.getElementById('transfer_external_button').addEventListener('click', handleExternalTransferAct);
-    document.getElementById('revision_button').addEventListener('click', handleRevisionPetitionAct); // 新しいボタン
+    document.getElementById('revision_button').addEventListener('click', handleRevisionPetitionAct);
 }
