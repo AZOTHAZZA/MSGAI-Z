@@ -1,138 +1,101 @@
-// core/foundation.js (export修正済み、Tensionインスタンス保護最終版)
+// core/currency.js (Tension操作確実化版)
 
-import { LogosTension } from './arithmos.js';
+import { LogosState, updateState } from './foundation.js';
+import { ControlMatrix } from './arithmos.js';
 
-// 永続化キー
-const PERSISTENCE_KEY_ACCOUNTS = 'msgaicore_accounts';
-const PERSISTENCE_KEY_TENSION = 'msgaicore_tension';
-const PERSISTENCE_KEY_ACTIVE_USER = 'msgaicore_active_user';
-
-// 初期値の定義
-const INITIAL_ACCOUNTS = { 
-    "User_A": { "USD": 1000.00, "JPY": 0.00, "EUR": 0.00, "BTC": 0.00, "ETH": 0.00, "MATIC": 0.00 },
-    "User_B": { "USD": 500.00, "JPY": 0.00, "EUR": 0.00, "BTC": 0.00, "ETH": 0.00, "MATIC": 0.00 }
+// 各通貨の摩擦度
+const CURRENCY_FRICTION = {
+    "USD": 0.005, "JPY": 0.005, "EUR": 0.005, // 低摩擦
+    "BTC": 0.03, "ETH": 0.02, "MATIC": 0.015 // 高摩擦
 };
-const INITIAL_TENSION = 0.05;
-const INITIAL_ACTIVE_USER = "User_A";
-
-// ... (loadPersistedAccounts, loadPersistedTension, loadPersistedActiveUser 関数は省略) ...
-function loadPersistedAccounts() { /* ... */ return JSON.parse(JSON.stringify(INITIAL_ACCOUNTS)); }
-function loadPersistedTension() { /* ... */ return INITIAL_TENSION; }
-function loadPersistedActiveUser() { /* ... */ return INITIAL_ACTIVE_USER; }
-
+const MIN_EXTERNAL_TRANSFER_AMOUNT = 100.00; 
+const TENSION_THRESHOLD_EXTERNAL_TRANSFER = 0.70; 
 
 // =========================================================================
-// LogosState 初期化と更新
-// =========================================================================
-
-export const LogosState = {
-    tension_level: new LogosTension(loadPersistedTension()),
-    accounts: loadPersistedAccounts(),
-    active_user: loadPersistedActiveUser(),
-    status_message: "Logos Core Initialized. Awaiting first act.",
-    last_act: "Genesis",
-};
-
-// ... (コンソールログは省略) ...
-
-/**
- * 状態の更新と永続化を行う関数
- */
-export function updateState(newState) {
-    
-    // Tensionインスタンスを厳密に復元
-    if (newState.tension_level instanceof LogosTension) {
-        LogosState.tension_level = newState.tension_level;
-    } else if (typeof newState.tension_level === 'number') {
-        LogosState.tension_level = new LogosTension(newState.tension_level);
-    } else if (newState.tension_level && typeof newState.tension_level.getValue === 'function') {
-        LogosState.tension_level = new LogosTension(newState.tension_level.getValue());
-    } else {
-        const value = (typeof newState.tension_level === 'object' && newState.tension_level.value !== undefined) 
-            ? newState.tension_level.value 
-            : INITIAL_TENSION;
-            
-        LogosState.tension_level = new LogosTension(value);
-    }
-    
-    LogosState.accounts = newState.accounts;
-    LogosState.active_user = newState.active_user;
-    LogosState.status_message = newState.status_message;
-    LogosState.last_act = newState.last_act;
-
-    try {
-        localStorage.setItem(PERSISTENCE_KEY_ACCOUNTS, JSON.stringify(LogosState.accounts));
-        localStorage.setItem(PERSISTENCE_KEY_TENSION, LogosState.tension_level.getValue().toString());
-        localStorage.setItem(PERSISTENCE_KEY_ACTIVE_USER, LogosState.active_user);
-    } catch (e) {
-        console.error("[Logos Foundation ERROR]: 状態の永続化に失敗しました。", e);
-    }
-}
-
-// ---------------- (getCurrentState 関数群) ----------------
-
-export function getCurrentState() {
-    return { 
-        tension_level: LogosState.tension_level.getValue(), 
-        accounts: LogosState.accounts,
-        active_user: LogosState.active_user, 
-        status_message: LogosState.status_message,
-        last_act: LogosState.last_act
-    };
-}
-
-export function getCurrentStateJson() {
-    return JSON.stringify(getCurrentState());
-}
-
-
-// =========================================================================
-// ヘルパー関数と作為関数
+// 経済ロゴスの作為 (Acts of Economic Logos)
 // =========================================================================
 
 /**
- * 指定されたユーザーの、指定された通貨の残高を取得する
+ * 第1作為: 内部送金 (低摩擦)
  */
-export function getActiveUserBalance(currency = "USD") {
-    const user = LogosState.active_user;
-    const balance = LogosState.accounts[user] ? LogosState.accounts[user][currency] : undefined;
+export function actTransferInternal(sender, recipient, amount, currency = "USD") {
+    const state = LogosState; 
     
-    return balance !== undefined ? balance : 0.00;
+    if (sender === recipient) throw new Error("自己宛の送金は認められません。");
+    if (state.accounts[sender] === undefined || state.accounts[recipient] === undefined) throw new Error("無効な送金元または受取人です。");
+    if (CURRENCY_FRICTION[currency] === undefined) throw new Error(`通貨 ${currency} はサポートされていません。`);
+    if (state.accounts[sender][currency] < amount) throw new Error(`${sender} は ${currency} 残高不足です (必要: ${amount.toFixed(2)}, 現状: ${state.accounts[sender][currency].toFixed(2)})。`);
+
+    state.accounts[sender][currency] -= amount;
+    state.accounts[recipient][currency] = (state.accounts[recipient][currency] || 0) + amount;
+
+    state.last_act = `Internal Transfer (${currency})`;
+    state.status_message = `${sender} から ${recipient} へ ${currency} 送金完了。`;
+    
+    updateState(state); 
 }
 
+
 /**
- * 第4作為: アクティブユーザーを切り替える関数
+ * 第2作為: 外部送金 (高摩擦)
  */
-export function setActiveUser(username) {
-    if (LogosState.accounts[username] !== undefined) {
-        const oldUser = LogosState.active_user;
-        LogosState.active_user = username;
-        
-        try {
-            localStorage.setItem(PERSISTENCE_KEY_ACTIVE_USER, LogosState.active_user);
-        } catch (e) {
-            console.error("[Logos Foundation ERROR]: アクティブユーザーの永続化に失敗しました。", e);
+export function actExternalTransfer(sender, amount, currency = "USD") {
+    const state = LogosState;
+    const currentTension = state.tension_level.getValue(); 
+    
+    if (state.accounts[sender] === undefined) throw new Error("無効な送金元です。");
+    if (CURRENCY_FRICTION[currency] === undefined) throw new Error(`通貨 ${currency} はサポートされていません。`);
+    if (state.accounts[sender][currency] < amount) throw new Error(`${sender} は ${currency} 残高不足です (必要: ${amount.toFixed(2)}, 現状: ${state.accounts[sender][currency].toFixed(2)})。`);
+
+    const balance = state.accounts[sender][currency];
+    const matrix = new ControlMatrix(state.tension_level);
+    const rigor = matrix.rigor;
+    
+    // 厳密な暴走抑止ロジック
+    if (currentTension >= TENSION_THRESHOLD_EXTERNAL_TRANSFER && amount > MIN_EXTERNAL_TRANSFER_AMOUNT) {
+        const riskFactor = (amount / balance) * (1 - rigor);
+        if (riskFactor > 0.5) { 
+            throw new Error(`現在のロゴス緊張度 (${currentTension.toFixed(4)}) では、大規模な外部作為は厳密性 (${rigor.toFixed(4)}) により抑止されます。`);
         }
-        
-        return `アクティブユーザーを ${oldUser} から ${username} に切り替えました。`;
     }
-    throw new Error(`ユーザー ${username} は存在しません。`);
+    
+    // 1. 口座から出金
+    state.accounts[sender][currency] -= amount;
+
+    // 2. TENSIONの変動計算
+    const friction = CURRENCY_FRICTION[currency];
+    const tensionChange = friction * (1 + (amount / balance) * 0.1);
+
+    // Tensionインスタンスの add メソッドを呼び出す
+    state.tension_level.add(tensionChange); 
+
+    state.last_act = `External Transfer (${currency})`;
+    state.status_message = `${sender} から ${currency} 外部送金。Tension +${tensionChange.toFixed(4)}。`;
+    updateState(state);
 }
 
+
 /**
- * 🌟 修正: export キーワードを一つだけ追加
- * 第9作為: 口座情報を削除し、初期状態に戻す関数 (監査用リセット)
+ * 第3作為: 通貨生成 (Minting Act)
  */
-export function deleteAccounts() { 
-    localStorage.removeItem(PERSISTENCE_KEY_ACCOUNTS);
-    localStorage.removeItem(PERSISTENCE_KEY_TENSION); 
-    localStorage.removeItem(PERSISTENCE_KEY_ACTIVE_USER);
+export function actMintCurrency(currency, amount) {
+    const state = LogosState;
+    const sender = state.active_user;
     
-    LogosState.accounts = JSON.parse(JSON.stringify(INITIAL_ACCOUNTS)); 
-    LogosState.tension_level = new LogosTension(INITIAL_TENSION);
-    LogosState.active_user = INITIAL_ACTIVE_USER;
-    LogosState.status_message = "Logos Core Reset. Accounts deleted.";
-    LogosState.last_act = "Account Reset";
+    if (state.accounts[sender] === undefined) throw new Error("無効な操作ユーザーです。");
+    if (CURRENCY_FRICTION[currency] === undefined) throw new Error(`通貨 ${currency} の生成はサポートされていません。`);
+
+    // 1. 口座へ追加
+    state.accounts[sender][currency] = (state.accounts[sender][currency] || 0) + amount;
     
-    return "✅ 口座情報とロゴス緊張度を初期値にリセットしました。監査ログは保持されます。";
+    // 2. TENSIONの変動計算
+    const friction = CURRENCY_FRICTION[currency];
+    const tensionChange = friction * 0.5;
+
+    // Tensionインスタンスの add メソッドを呼び出す
+    state.tension_level.add(tensionChange);
+    
+    state.last_act = `Minting Act (${currency})`;
+    state.status_message = `${sender} に ${currency} $${amount.toFixed(2)} 生成。Tension +${tensionChange.toFixed(4)}。`;
+    updateState(state);
 }
