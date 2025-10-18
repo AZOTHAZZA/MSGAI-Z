@@ -8,35 +8,55 @@
     <link rel="stylesheet" href="style.css"> 
     
     <style>
-        /* (前回のインラインスタイルは省略。style.cssで定義されている前提) */
+        /* 基本的なレイアウトスタイル */
+        body { display: flex; font-family: sans-serif; margin: 0; background-color: #f0f0f0; }
+        #sidebar { width: 350px; background-color: #fff; padding: 20px; box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); }
+        #main-content { flex-grow: 1; padding: 20px; display: flex; flex-direction: column; }
+        .gauge-area { border: 1px solid #ddd; padding: 15px; margin-top: 15px; border-radius: 5px; }
         
-        .action-button { width: 100%; padding: 10px; margin-top: 5px; border: none; border-radius: 4px; color: white; cursor: pointer; }
-        #mint_execute_button { background-color: #FFA500; } /* オレンジ */
-        #exchange_button { background-color: #007bff; } /* 青 */
-        
+        /* フォームとラベルのレイアウト修正 */
+        .gauge-area label {
+            display: block; 
+            margin-top: 10px; 
+            margin-bottom: 3px; 
+            font-weight: bold;
+        }
         .gauge-area input, .gauge-area select {
             width: 90%; 
-            margin-bottom: 10px; 
             padding: 8px; 
             border: 1px solid #ccc; 
             border-radius: 3px; 
             box-sizing: border-box; 
-        }
-
-        /* 🌟 修正: ラベルのレイアウト修正 🌟 */
-        .gauge-area label {
-            /* ラベルをブロック要素にし、必ず新しい行から表示させる */
-            display: block; 
-            /* 上部にわずかなマージンを追加して、前の要素から分離 */
-            margin-top: 10px; 
-            margin-bottom: 3px; 
-            font-weight: bold; /* 視認性向上のため */
-        }
-        /* 数量入力欄がくっつかないように、既存の input, select のマージンも再確認 */
-        .gauge-area input.action-input, .gauge-area select.action-input {
             margin-top: 0;
-            margin-bottom: 15px; /* 下にマージンを設けて次のラベルと分離 */
+            margin-bottom: 15px;
         }
+        
+        /* ボタンのスタイルと色分け */
+        .action-button { width: 100%; padding: 10px; margin-top: 5px; border: none; border-radius: 4px; color: white; cursor: pointer; }
+        .action-internal { background-color: #007bff; }
+        .action-external { background-color: #ffc107; }
+        .action-revision { background-color: #28a745; }
+        #delete_accounts_button { background-color: #A6A6A6; }
+        
+        /* 🎨 生成実行 (Mint): 暖色系 */
+        #mint_execute_button { background-color: #FFA500; } 
+        /* 🎨 交換実行 (Exchange): 寒色系 */
+        #exchange_button { background-color: #007bff; } 
+
+        /* Tension Bar Style */
+        #tension_bar { background-color: #e9ecef; border-radius: 5px; height: 10px; margin-top: 5px; overflow: hidden; }
+        #tension_level_display_bar { height: 100%; width: 0%; transition: width 0.3s; background-color: #dc3545; }
+        
+        /* Dialogue Console */
+        #dialogue-output { flex-grow: 1; border: 1px solid #ddd; background-color: #fff; padding: 10px; overflow-y: scroll; margin-bottom: 10px; border-radius: 5px; }
+        .ai-message { color: #007bff; margin-bottom: 5px; }
+        .error-message { color: #dc3545; font-weight: bold; }
+        #input-area { display: flex; }
+        #dialogue_input { flex-grow: 1; padding: 10px; margin-right: 10px; }
+        #dialogue_button { padding: 10px 15px; background-color: #6c757d; color: white; border: none; border-radius: 4px; }
+        
+        /* 自律性ステータスの色調整（CSSがない場合の暫定）*/
+        #autonomy_status { color: #dc3545; } 
     </style>
 </head>
 <body>
@@ -61,28 +81,28 @@
             <h3>経済ロゴスと状態</h3>
             
             <label for="active_user_select">アクティブユーザー:</label>
-            <select id="active_user_select" class="action-input" style="width: 100%; margin-bottom: 15px;">
+            <select id="active_user_select" class="action-input">
                 </select>
             
             <p style="margin-top: 10px;">
                 <span id="active_user_name">User_A</span> 残高詳細:
             </p>
             <div style="font-size: 0.9em; line-height: 1.4;">
-                <p style="margin: 3px 0;">USD: $<span id="balance_USD">0.00</span></p>
                 <p style="margin: 3px 0;">JPY: ¥<span id="balance_JPY">0</span></p>
+                <p style="margin: 3px 0;">USD: $<span id="balance_USD">0.00</span></p>
                 <p style="margin: 3px 0;">EUR: €<span id="balance_EUR">0.00</span></p>
                 <p style="margin: 3px 0;">BTC: <span id="balance_BTC">0.00000000</span></p>
                 <p style="margin: 3px 0;">ETH: <span id="balance_ETH">0.00000000</span></p>
                 <p style="margin: 3px 0;">MATIC: <span id="balance_MATIC">0.00000000</span></p>
             </div>
             
-            <label for="recipient_input" style="margin-top: 15px;">受取人:</label> 
+            <label for="recipient_input" style="margin-top: 15px;">受取人:</label>
             <input type="text" id="recipient_input" value="User_B" class="action-input" placeholder="User_B">
             
             <label for="amount_input">数量:</label>
             <input type="number" id="amount_input" value="10.00" class="action-input">
             
-            <p id="autonomy_status" style="font-size: 0.85em; color: var(--color-alert-red); margin-bottom: 8px;">
+            <p id="autonomy_status" style="font-size: 0.85em; margin-bottom: 8px;">
                 暴走抑止ステータス: **低緊張**
             </p>
             
@@ -98,7 +118,7 @@
                 自律的修正請願 (Adjustment Petition)
             </button>
             
-            <button id="delete_accounts_button" class="action-button" style="background-color: #A6A6A6; margin-top: 15px;">
+            <button id="delete_accounts_button" class="action-button">
                 口座情報削除 (監査用リセット)
             </button>
         </div>
