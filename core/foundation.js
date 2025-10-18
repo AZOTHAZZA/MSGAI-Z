@@ -1,4 +1,4 @@
-// core/foundation.js (アクティブユーザー追跡・永続化ロジック追加版)
+// core/foundation.js (口座リセット機能追加版)
 
 import { LogosTension } from './arithmos.js';
 
@@ -6,6 +6,11 @@ import { LogosTension } from './arithmos.js';
 const PERSISTENCE_KEY_ACCOUNTS = 'msgaicore_accounts';
 const PERSISTENCE_KEY_TENSION = 'msgaicore_tension';
 const PERSISTENCE_KEY_ACTIVE_USER = 'msgaicore_active_user';
+
+// 初期値を定義
+const INITIAL_ACCOUNTS = { "User_A": 1000.00, "User_B": 500.00 };
+const INITIAL_TENSION = 0.05;
+const INITIAL_ACTIVE_USER = "User_A";
 
 /**
  * 永続化された口座情報を読み込む関数
@@ -20,8 +25,7 @@ function loadPersistedAccounts() {
     } catch (e) {
         console.warn("[Logos Foundation WARNING]: 口座情報の読み込みに失敗しました。初期値を使用します。", e);
     }
-    // 永続化データがない場合、または失敗した場合は初期値を返す
-    return { "User_A": 1000.00, "User_B": 500.00 }; 
+    return INITIAL_ACCOUNTS; 
 }
 
 /**
@@ -38,7 +42,7 @@ function loadPersistedTension() {
     } catch (e) {
         console.warn("[Logos Foundation WARNING]: 緊張度情報の読み込みに失敗しました。初期値を使用します。", e);
     }
-    return 0.05; // 失敗した場合は初期値
+    return INITIAL_TENSION; 
 }
 
 /**
@@ -47,14 +51,13 @@ function loadPersistedTension() {
 function loadPersistedActiveUser() {
     try {
         const persisted = localStorage.getItem(PERSISTENCE_KEY_ACTIVE_USER);
-        // 永続化データがあり、かつアカウントリストに存在するユーザーであること
         if (persisted && (loadPersistedAccounts()[persisted] !== undefined)) {
             return persisted;
         }
     } catch (e) {
         console.warn("[Logos Foundation WARNING]: アクティブユーザーの読み込みに失敗しました。初期値を使用します。", e);
     }
-    return "User_A"; // 初期値
+    return INITIAL_ACTIVE_USER; 
 }
 
 
@@ -64,7 +67,7 @@ function loadPersistedActiveUser() {
 export const LogosState = {
     tension_level: new LogosTension(loadPersistedTension()),
     accounts: loadPersistedAccounts(),
-    active_user: loadPersistedActiveUser(), // 🌟 アクティブユーザー
+    active_user: loadPersistedActiveUser(),
     status_message: "Logos Core Initialized. Awaiting first act.",
     last_act: "Genesis",
 };
@@ -82,7 +85,6 @@ export function updateState(newState) {
     LogosState.status_message = newState.status_message;
     LogosState.last_act = newState.last_act;
 
-    // 🌟 永続化処理の更新
     try {
         localStorage.setItem(PERSISTENCE_KEY_ACCOUNTS, JSON.stringify(LogosState.accounts));
         localStorage.setItem(PERSISTENCE_KEY_TENSION, LogosState.tension_level.getValue().toString());
@@ -92,7 +94,7 @@ export function updateState(newState) {
     }
 }
 
-// ---------------- (getCurrentState 関数群) ----------------
+// ---------------- (既存の getCurrentState 関数群) ----------------
 
 export function getCurrentState() {
     return JSON.parse(JSON.stringify({ 
@@ -115,7 +117,7 @@ export function getCurrentStateJson() {
 }
 
 /**
- * 🌟 第4作為: アクティブユーザーを切り替える関数
+ * 第4作為: アクティブユーザーを切り替える関数
  */
 export function setActiveUser(username) {
     if (LogosState.accounts[username] !== undefined) {
@@ -131,4 +133,23 @@ export function setActiveUser(username) {
         return `アクティブユーザーを ${oldUser} から ${username} に切り替えました。`;
     }
     throw new Error(`ユーザー ${username} は存在しません。`);
+}
+
+/**
+ * 🌟 追加: 第9作為: 口座情報を削除し、初期状態に戻す関数 (監査用リセット)
+ */
+export function deleteAccounts() {
+    // 1. ローカルストレージから永続化データを削除
+    localStorage.removeItem(PERSISTENCE_KEY_ACCOUNTS);
+    localStorage.removeItem(PERSISTENCE_KEY_TENSION); // Tensionもリセット対象に含める
+    localStorage.removeItem(PERSISTENCE_KEY_ACTIVE_USER);
+    
+    // 2. メモリ上のLogosStateを初期値にリセット
+    LogosState.accounts = INITIAL_ACCOUNTS;
+    LogosState.tension_level = new LogosTension(INITIAL_TENSION);
+    LogosState.active_user = INITIAL_ACTIVE_USER;
+    LogosState.status_message = "Logos Core Reset. Accounts deleted.";
+    LogosState.last_act = "Account Reset";
+    
+    return "✅ 口座情報とロゴス緊張度を初期値にリセットしました。監査ログは保持されます。";
 }
