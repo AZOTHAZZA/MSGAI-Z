@@ -1,24 +1,22 @@
- // core/foundation.js (最終最終最終決定版 - トップレベルインスタンス)
+// core/foundation.js (最終最終最終決定版 - 参照隠蔽)
 
-import { LogosTension } from './arithmos.js'; 
+import { createLogosTension } from './arithmos.js'; 
 
-// 永続化キー
+// 永続化キーと初期値の定義 (変更なし)
 const PERSISTENCE_KEY_ACCOUNTS = 'msgaicore_accounts';
 const PERSISTENCE_KEY_TENSION = 'msgaicore_tension';
 const PERSISTENCE_KEY_ACTIVE_USER = 'msgaicore_active_user';
 
-// 初期値の定義
 const INITIAL_ACCOUNTS = { 
     "User_A": { "USD": 1000.00, "JPY": 0.00, "EUR": 0.00, "BTC": 0.00, "ETH": 0.00, "MATIC": 0.00 },
     "User_B": { "USD": 500.00, "JPY": 0.00, "EUR": 0.00, "BTC": 0.00, "ETH": 0.00, "MATIC": 0.00 }
 };
-const INITIAL_TENSION_VALUE = 0.05; // 値のみを保持
+const INITIAL_TENSION_VALUE = 0.05; 
+const INITIAL_ACTIVE_USER = "User_A";
 
 // =========================================================================
 // 状態ロード関数 (防御的なロード) - 変更なし
 // =========================================================================
-
-// ... (loadPersistedAccounts, loadPersistedActiveUser は変更なし) ...
 
 function loadPersistedAccounts() {
     try {
@@ -44,7 +42,7 @@ function loadPersistedTensionValue() {
         if (!persisted) return INITIAL_TENSION_VALUE;
         const t = parseFloat(persisted);
         if (!isNaN(t) && t >= 0 && t <= 1.0) {
-            console.log(`[Logos Foundation]: 永続化されたTension値 (${t.toFixed(4)}) を読み込みました。`);
+            console.log(`[Logos Foundation]: 永続化されたTension (${t.toFixed(4)}) を読み込みました。`);
             return t;
         }
     } catch (e) {
@@ -65,50 +63,21 @@ function loadPersistedActiveUser() {
     return INITIAL_ACTIVE_USER;
 }
 
-
 // =========================================================================
-// LogosState & LogosTensionInstance の定義と遅延初期化ロジック
+// LogosState & LogosTension のカプセル化ロジック
 // =========================================================================
 
-// 🌟 修正: LogosStateからTensionを分離
-let LogosState = null;
-let LogosTensionInstance = null; // トップレベルでTensionインスタンスを管理
+// 🌟 修正: グローバルなlet変数を内部的な名前で定義し、クロージャ内で保護
+let _LogosState = null;
+let _LogosTensionInstance = null;
 
 /**
- * Tensionインスタンスを初期化または修復する（単一責任）
- */
-function ensureTensionIntegrity() {
-    if (LogosTensionInstance === null) {
-        LogosTensionInstance = new LogosTension(loadPersistedTensionValue());
-        console.log("[Foundation]: Tensionインスタンスを初期ロードしました。");
-        return;
-    }
-    
-    // 破損していれば修復する防御ロジック
-    if (typeof LogosTensionInstance.add !== 'function') {
-        console.warn("[Logos Foundation WARNING]: Tensionインスタンスが破損していました。再インスタンス化します。");
-        const value = (typeof LogosTensionInstance.value === 'number') 
-            ? LogosTensionInstance.value 
-            : INITIAL_TENSION_VALUE;
-            
-        // 新しいインスタンスで置き換え
-        LogosTensionInstance = new LogosTension(value);
-        // 修復後は即座に永続化し安定化を図る
-        updateState({}); 
-    }
-}
-
-
-/**
- * LogosStateがnullの場合にのみ、他の状態をロードし、初期化を行う。
+ * LogosStateの初期化を行う。破損チェックは行わない。
  */
 function loadInitialState() {
-    // Tensionの健全性を常に先に保証する
-    ensureTensionIntegrity(); 
-    
-    if (LogosState === null) {
+    if (_LogosState === null) {
         console.log("[Foundation]: LogosStateを初期化中...");
-        LogosState = { 
+        _LogosState = { 
             // 🌟 修正: tension_level プロパティを削除
             accounts: loadPersistedAccounts(),
             active_user: loadPersistedActiveUser(),
@@ -117,16 +86,42 @@ function loadInitialState() {
         };
         console.log("[Foundation]: LogosState初期化完了。");
     }
-    return LogosState;
+    return _LogosState;
 }
 
+/**
+ * 🌟 核心修正: Tensionインスタンスの参照を取得・修復する単一責任クロージャ
+ */
+function getTensionReference() {
+    if (_LogosTensionInstance === null) {
+        // 🌟 修正: createLogosTensionで初期化
+        _LogosTensionInstance = createLogosTension(loadPersistedTensionValue());
+        console.log("[Foundation]: Tension機能構造体を初期ロードしました。");
+    }
+    
+    // 破損していれば修復する防御ロジック (単一集中化)
+    // 🌟 修正: 'value'プロパティによる状態値の取得に変更
+    if (typeof _LogosTensionInstance.add !== 'function') {
+        console.warn("[Logos Foundation WARNING]: Tension機能構造体が破損していました。再構築します。");
+        
+        const value = (typeof _LogosTensionInstance.value === 'number') 
+            ? _LogosTensionInstance.value 
+            : INITIAL_TENSION_VALUE;
+            
+        // 新しい機能構造体で置き換え
+        _LogosTensionInstance = createLogosTension(value);
+        // 修復後は即座に永続化し安定化を図る
+        updateState({}); 
+    }
+    return _LogosTensionInstance;
+}
 
 /**
- * 🌟 修正: LogosStateへの単一エントリポイント。
+ * LogosStateへの単一エントリポイント
  */
 function getStateReference() {
     // 常にTensionの健全性を先に保証
-    ensureTensionIntegrity();
+    getTensionReference();
     
     // LogosStateのロードを保証し、その参照を返す
     return loadInitialState();
@@ -140,12 +135,10 @@ function getStateReference() {
  * 状態の更新と永続化を行う関数
  */
 export function updateState(newState) {
-    // 🌟 修正: loadInitialStateを呼び出し、初期化を保証 (Tensionインスタンスを参照しない)
     const currentState = loadInitialState(); 
 
     // 状態全体を新しいオブジェクトで置き換える (不変性強制)
-    LogosState = {
-        // TensionはLogosStateにないため、含めない
+    _LogosState = {
         accounts: newState.accounts || currentState.accounts,
         active_user: newState.active_user || currentState.active_user,
         status_message: newState.status_message || currentState.status_message,
@@ -154,10 +147,10 @@ export function updateState(newState) {
     
     // 永続化を試行
     try {
-        localStorage.setItem(PERSISTENCE_KEY_ACCOUNTS, JSON.stringify(LogosState.accounts));
-        // 🌟 修正: LogosTensionInstanceから直接値を取得
-        localStorage.setItem(PERSISTENCE_KEY_TENSION, LogosTensionInstance.getValue().toString());
-        localStorage.setItem(PERSISTENCE_KEY_ACTIVE_USER, LogosState.active_user);
+        localStorage.setItem(PERSISTENCE_KEY_ACCOUNTS, JSON.stringify(_LogosState.accounts));
+        // 🌟 修正: getTensionReference()から値を取得
+        localStorage.setItem(PERSISTENCE_KEY_TENSION, getTensionReference().getValue().toString());
+        localStorage.setItem(PERSISTENCE_KEY_ACTIVE_USER, _LogosState.active_user);
         
         console.log("[Logos Foundation]: 状態の永続化に成功しました。");
 
@@ -167,19 +160,18 @@ export function updateState(newState) {
 }
 
 
-/** LogosTensionインスタンスの参照を返す。（Tension値を取得する関数のみに用途を限定する） */
+/** LogosTension機能構造体の参照を返す。（Tension値を取得する関数のみに用途を限定する） */
 export function getTensionInstance() { 
-    // 🌟 修正: 常に健全な参照を取得
-    ensureTensionIntegrity();
-    return LogosTensionInstance; 
+    // 常に健全な参照を取得
+    return getTensionReference(); 
 }
 
 /** Tensionレベルを安全に操作するための公開関数 */
 export function addTension(amount) {
-    // 🌟 修正: 常に健全な参照を取得 (修復は ensureTensionIntegrity 内で完了)
-    ensureTensionIntegrity();
+    // 🌟 修正: 常に健全な参照を取得 (修復は getTensionReference 内で完了)
+    const tension = getTensionReference();
     
-    LogosTensionInstance.add(amount); 
+    tension.add(amount); 
     
     // 最終永続化
     updateState({}); // LogosStateは変更しないが、Tensionの値を永続化
@@ -219,8 +211,8 @@ export function deleteAccounts() {
     localStorage.removeItem(PERSISTENCE_KEY_TENSION);
     localStorage.removeItem(PERSISTENCE_KEY_ACTIVE_USER);
 
-    LogosState = null; 
-    LogosTensionInstance = null; // Tensionもリセット
+    _LogosState = null; 
+    _LogosTensionInstance = null; // Tensionもリセット
     
     // 再初期化
     const state = getStateReference(); 
