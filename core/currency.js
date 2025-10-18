@@ -1,117 +1,102 @@
-// core/currency.js (代替修正版 - getCurrentStateを利用して起動優先)
+// core/currency.js (最終修正版 - 全文)
 
-// 🚨 修正: getMutableStateを外し、 getCurrentState をインポート。
-// これにより、古い foundation.js との互換性を確保。
-import { getCurrentState, updateState, getTensionInstance } from './foundation.js'; 
+import { 
+    getCurrentState, 
+    updateState, 
+    getTensionInstance, 
+    addTension // 💡 修正: addTensionをインポート
+} from './foundation.js';
 
-// 仮定のレート（実際のプロジェクトではAPIから取得）
+// 簡略化された静的な為替レート (USDに対する固定比率)
 const EXCHANGE_RATES = {
-    "USD/JPY": 150.00,
-    "EUR/USD": 1.08,
-    "BTC/USD": 60000.00,
-    "ETH/USD": 3000.00,
-    "MATIC/USD": 0.75,
+    JPY: 130, // 1 USD = 130 JPY
+    EUR: 0.9,  // 1 USD = 0.9 EUR
+    BTC: 0.00005, // 1 USD = 0.00005 BTC
+    ETH: 0.001, // 1 USD = 0.001 ETH
+    MATIC: 1.5, // 1 USD = 1.5 MATIC
+    USD: 1
 };
 
-/**
- * 通貨間の交換レートを取得する。
- * @param {string} fromC - 売り通貨
- * @param {string} toC - 買い通貨
- * @returns {number} 交換レート
- */
-function getRate(fromC, toC) {
-    if (fromC === toC) return 1.0;
-    
-    const key = `${fromC}/${toC}`;
-    const inverseKey = `${toC}/${fromC}`;
 
-    if (EXCHANGE_RATES[key]) {
-        return EXCHANGE_RATES[key];
-    }
-    if (EXCHANGE_RATES[inverseKey]) {
-        return 1.0 / EXCHANGE_RATES[inverseKey];
-    }
-
-    // クロスレート計算 (全てUSDを介す簡略化)
-    if (fromC !== "USD" && toC !== "USD") {
-        const rateFrom = getRate(fromC, "USD");
-        const rateTo = getRate("USD", toC);
-        return rateFrom * rateTo;
-    }
-
-    throw new Error(`Unsupported exchange pair: ${fromC}/${toC}`);
-}
+// =========================================================================
+// 通貨生成 (Minting Act)
+// =========================================================================
 
 /**
- * ユーザーの口座間で通貨のミント（発行）またはバーン（償却）を行う。
- * ミント行為はTensionを増加させる。
- * @param {string} username - ユーザー名
- * @param {string} currency - 通貨コード
- * @param {number} amount - ミント/バーンする量 (正の値でミント、負の値でバーン)
- * @returns {object} 新しい状態
+ * 通貨生成作為 (Minting Act) を実行し、残高とTensionを増やす。
+ * @param {string} user - 通貨を生成するユーザー名
+ * @param {string} currency - 生成する通貨コード
+ * @param {number} amount - 生成する数量
+ * @returns {object} 更新された状態 (newState)
  */
-export function actMintCurrency(username, currency, amount) {
-    // 🌟 修正: getCurrentStateで読み取り、JSON操作でミュータブルなディープコピーを作成
-    const state = JSON.parse(JSON.stringify(getCurrentState()));
-    
-    if (!state.accounts[username]) {
-        throw new Error(`User ${username} not found.`);
+export function actMintCurrency(user, currency, amount) {
+    const state = getCurrentState();
+
+    if (!state.accounts[user]) {
+        throw new Error(`User ${user} not found.`);
     }
 
-    // Tensionの操作
-    if (amount > 0) {
-        const tensionInstance = getTensionInstance();
-        const tensionIncrease = amount * 0.000001; 
-        tensionInstance.add(tensionIncrease);
-        console.log(`[Mint]: Tension increased by ${tensionIncrease.toFixed(6)}. New Tension: ${tensionInstance.getValue().toFixed(6)}`);
-    }
+    // 1. 残高の増加
+    state.accounts[user][currency] = (state.accounts[user][currency] || 0) + amount;
 
-    // 口座残高の更新
-    state.accounts[username][currency] = 
-        (state.accounts[username][currency] || 0) + amount;
+    // 2. Tensionの計算と増加
+    // Mintingは大きな作為とみなし、Tension増加率は高めに設定
+    const usdEquivalent = amount / (EXCHANGE_RATES[currency] || 1);
+    const tensionIncrease = usdEquivalent * 0.005; 
     
-    state.status_message = `${username} minted ${amount.toFixed(2)} ${currency}.`;
-    state.last_act = "MintCurrency";
+    // 💡 修正: tensionInstance.add() から addTension() へ変更
+    addTension(tensionIncrease);
 
-    // 最終的な状態の永続化と更新
+    // 3. 状態の更新
     updateState(state);
-
     return state;
 }
 
+// =========================================================================
+// 通貨交換 (Exchange Act)
+// =========================================================================
 
 /**
- * ユーザー間で通貨を交換する（取引手数料はゼロとする）。
- * @param {string} username - 取引を行うユーザー名
- * @param {string} fromC - 売り通貨
- * @param {number} amount - 売り通貨の量
- * @param {string} toC - 買い通貨
- * @returns {object} 新しい状態
+ * 通貨交換作為 (Exchange Act) を実行し、残高を交換する。
+ * @param {string} user - 交換を行うユーザー名
+ * @param {string} fromCurrency - 売却する通貨コード
+ * @param {number} fromAmount - 売却する数量
+ * @param {string} toCurrency - 購入する通貨コード
+ * @returns {object} 更新された状態 (newState)
  */
-export function actExchangeCurrency(username, fromC, amount, toC) {
-    // 🌟 修正: getCurrentStateで読み取り、JSON操作でミュータブルなディープコピーを作成
-    const state = JSON.parse(JSON.stringify(getCurrentState()));
+export function actExchangeCurrency(user, fromCurrency, fromAmount, toCurrency) {
+    const state = getCurrentState();
+
+    if (!state.accounts[user]) {
+        throw new Error(`User ${user} not found.`);
+    }
+
+    // 1. 残高チェック
+    if ((state.accounts[user][fromCurrency] || 0) < fromAmount) {
+        throw new Error(`${fromCurrency} の残高が不足しています。`);
+    }
+
+    // 2. 数量の計算
+    // USD基準で換算
+    const rateFrom = EXCHANGE_RATES[fromCurrency] || 1;
+    const rateTo = EXCHANGE_RATES[toCurrency] || 1;
     
-    const rate = getRate(fromC, toC);
-    const receiveAmount = amount * rate;
+    // 売却数量をUSD換算
+    const usdEquivalent = fromAmount / rateFrom;
+    // USD換算値を購入通貨に換算
+    const toAmount = usdEquivalent * rateTo;
 
-    if (!state.accounts[username]) {
-        throw new Error(`User ${username} not found.`);
-    }
-    if ((state.accounts[username][fromC] || 0) < amount) {
-        throw new Error(`Insufficient balance in ${fromC} for ${username}.`);
-    }
+    // 3. 残高の変更
+    state.accounts[user][fromCurrency] -= fromAmount;
+    state.accounts[user][toCurrency] = (state.accounts[user][toCurrency] || 0) + toAmount;
 
-    // 残高の更新
-    state.accounts[username][fromC] -= amount;
-    state.accounts[username][toC] = 
-        (state.accounts[username][toC] || 0) + receiveAmount;
+    // 4. Tensionの計算と増加
+    // ExchangeはMintingよりは低いが、Tensionが発生
+    const tensionIncrease = usdEquivalent * 0.001; 
+    
+    addTension(tensionIncrease); // 💡 修正: addTensionを使用
 
-    state.status_message = `${username} exchanged ${amount.toFixed(2)} ${fromC} for ${receiveAmount.toFixed(2)} ${toC} at rate ${rate.toFixed(4)}.`;
-    state.last_act = "ExchangeCurrency";
-
-    // 最終的な状態の永続化と更新
+    // 5. 状態の更新
     updateState(state);
-
     return state;
 }
