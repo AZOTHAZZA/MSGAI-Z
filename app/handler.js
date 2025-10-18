@@ -1,15 +1,15 @@
-// app/handler.js (修正版: 通貨生成ハンドラを追加)
+// app/handler.js (ユーザー切り替え・リセットハンドラ追加版)
 
-// 修正: core_api.jsを削除し、必要なコアモジュールを直接インポート
 import { actDialogue } from '../ai/generator.js';
-// 修正: actMintCurrencyをインポートに追加
 import { actTransferInternal, actExternalTransfer, actMintCurrency } from '../core/currency.js';
 import { initiateAutonomousRevision } from '../core/revision.js'; 
-import { getCurrentStateJson } from '../core/foundation.js';
+// 修正: setActiveUser と deleteAccounts をインポート
+import { getCurrentStateJson, setActiveUser, deleteAccounts } from '../core/foundation.js';
 import { LogosTension, ControlMatrix } from '../core/arithmos.js';
 
 import * as UI from './fusionui.js';
 
+// ... (getActionInputs, getMintInputs, updateUIAndLog 関数は変更なし) ...
 function getActionInputs() {
     const recipient = document.getElementById('recipient_input').value;
     const amount = parseFloat(document.getElementById('amount_input').value);
@@ -56,13 +56,13 @@ export function handleDialogueAct() {
     if (!prompt) return;
 
     let resultMessage = '対話応答成功。';
-    const username = "User_A";
+    const state = JSON.parse(getCurrentStateJson());
+    const username = state.active_user; // 🌟 アクティブユーザーを使用
     
     UI.displayDialogue('User', prompt);
     document.getElementById('dialogue_input').value = '';
 
     try {
-        // Core機能を直接呼び出し
         const responseText = actDialogue(username, prompt); 
         UI.displayDialogue('MSGAI', responseText);
     } catch (error) {
@@ -74,13 +74,13 @@ export function handleDialogueAct() {
 
 export function handleInternalTransferAct() {
     let resultMessage = '';
-    const sender = "User_A";
+    const state = JSON.parse(getCurrentStateJson());
+    const sender = state.active_user; // 🌟 アクティブユーザーを使用
     
     try {
         const { recipient, amount } = getActionInputs();
-        // Core機能を直接呼び出し
         actTransferInternal(sender, recipient, amount); 
-        resultMessage = `✅ 内部送金作為成功: ${recipient} へ $${amount.toFixed(2)} USD。`;
+        resultMessage = `✅ 内部送金作為成功: ${sender} -> ${recipient} へ $${amount.toFixed(2)} USD。`;
     } catch (error) {
         resultMessage = `❌ 内部送金作為失敗: ${error.message}`;
     }
@@ -89,13 +89,13 @@ export function handleInternalTransferAct() {
 
 export function handleExternalTransferAct() {
     let resultMessage = '';
-    const sender = "User_A";
+    const state = JSON.parse(getCurrentStateJson());
+    const sender = state.active_user; // 🌟 アクティブユーザーを使用
     
     try {
         const { amount } = getActionInputs();
-        // Core機能を直接呼び出し
         actExternalTransfer(sender, amount); 
-        resultMessage = `🚨 外部送金作為受理: $${amount.toFixed(2)} USD。ロゴス緊張度が上昇しました。`;
+        resultMessage = `🚨 外部送金作為受理: ${sender} から $${amount.toFixed(2)} USD。ロゴス緊張度が上昇しました。`;
     } catch (error) {
         resultMessage = `❌ 外部送金作為拒否 (暴走抑止): ${error.message}`;
     }
@@ -106,7 +106,6 @@ export function handleRevisionPetitionAct() {
     let resultMessage = '';
     
     try {
-        // Core機能を直接呼び出し
         const revisionMessage = initiateAutonomousRevision(); 
         resultMessage = `✅ 修正請願作為受理: ${revisionMessage}`;
     } catch (error) {
@@ -115,21 +114,15 @@ export function handleRevisionPetitionAct() {
     updateUIAndLog(resultMessage);
 }
 
-/**
- * 通貨生成ハンドラ。data-currency属性から通貨タイプを取得し、コアを呼び出す。
- */
 function handleMintAct(event) {
     let resultMessage = '';
-    // イベント発生元ボタンのdata-currency属性から通貨タイプを取得
     const currencyType = event.currentTarget.getAttribute('data-currency');
     
     try {
         const { amount } = getMintInputs();
-        // Core機能を直接呼び出し
         actMintCurrency(currencyType, amount); 
         resultMessage = `💰 ${currencyType} 生成作為成功: ${currencyType} $${amount.toFixed(2)}。`;
         
-        // 暗号通貨は高摩擦として警告
         if (currencyType === 'BTC' || currencyType === 'ETH' || currencyType === 'MATIC') {
              resultMessage += ` (高摩擦)`
         }
@@ -137,6 +130,40 @@ function handleMintAct(event) {
     } catch (error) {
         resultMessage = `❌ ${currencyType} 生成作為失敗: ${error.message}`;
     }
+    updateUIAndLog(resultMessage);
+}
+
+
+/**
+ * 🌟 追加: アクティブユーザー切り替えハンドラ
+ */
+function handleActiveUserChange(event) {
+    const newUsername = event.target.value;
+    let resultMessage = '';
+    try {
+        resultMessage = setActiveUser(newUsername);
+    } catch (error) {
+        resultMessage = `❌ ユーザー切り替え失敗: ${error.message}`;
+    }
+    // ユーザーが切り替わったため、UI全体を更新
+    updateUIAndLog(resultMessage);
+}
+
+/**
+ * 🌟 追加: 口座情報削除ハンドラ
+ */
+function handleDeleteAccountsAct() {
+    let resultMessage = '';
+    if (confirm("警告: 口座情報、緊張度を初期値にリセットします。続行しますか？")) {
+        try {
+            resultMessage = deleteAccounts();
+        } catch (error) {
+            resultMessage = `❌ 口座リセット失敗: ${error.message}`;
+        }
+    } else {
+        resultMessage = "口座リセット作為をキャンセルしました。";
+    }
+    // 状態がリセットされたため、UI全体を更新
     updateUIAndLog(resultMessage);
 }
 
@@ -151,13 +178,17 @@ export function attachEventHandlers() {
     document.getElementById('transfer_external_button').addEventListener('click', handleExternalTransferAct);
     document.getElementById('revision_button').addEventListener('click', handleRevisionPetitionAct);
     
-    // 🌟 追加された通貨生成ハンドラ
+    // 通貨生成ハンドラ
     document.getElementById('mint_jpy_button').addEventListener('click', handleMintAct);
     document.getElementById('mint_usd_button').addEventListener('click', handleMintAct);
     document.getElementById('mint_eur_button').addEventListener('click', handleMintAct);
     document.getElementById('mint_btc_button').addEventListener('click', handleMintAct);
     document.getElementById('mint_eth_button').addEventListener('click', handleMintAct);
     document.getElementById('mint_matic_button').addEventListener('click', handleMintAct);
+    
+    // 🌟 追加された新しいハンドラ
+    document.getElementById('active_user_select').addEventListener('change', handleActiveUserChange);
+    document.getElementById('delete_accounts_button').addEventListener('click', handleDeleteAccountsAct);
     
     console.log('[UI]: Event handlers attached.');
 }
