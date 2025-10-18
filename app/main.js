@@ -1,6 +1,7 @@
-// app/main.js (最終修正版 - Tension安定化対応)
+// app/main.js のインポート部分の修正
 
-import { getCurrentState, actMintCurrency } from './foundation.js'; 
+// 🚨 修正後のパス: ディレクトリを一つ上がってから(..)、coreフォルダ内のfoundation.jsを参照
+import { getCurrentState, actMintCurrency } from '../core/foundation.js'; 
 // 🚨 修正: Arithmosモジュールへの直接依存を削除しました。
 
 /**
