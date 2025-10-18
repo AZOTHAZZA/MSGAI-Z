@@ -1,4 +1,4 @@
-// app/handler.js (event_handler.jsからリネーム)
+// app/handler.js (修正版: イベントハンドラ接続ログを追加)
 
 // 修正: core_api.jsを削除し、必要なコアモジュールを直接インポート
 import { actDialogue } from '../ai/generator.js';
@@ -10,7 +10,13 @@ import { LogosTension, ControlMatrix } from '../core/arithmos.js';
 import * as UI from './fusionui.js';
 
 function getActionInputs() {
-    // ... (変更なし) ...
+    const recipient = document.getElementById('recipient_input').value;
+    const amount = parseFloat(document.getElementById('amount_input').value);
+    
+    if (isNaN(amount) || amount <= 0) {
+        throw new Error("数量は正の数でなければなりません。");
+    }
+    return { recipient, amount };
 }
 
 /**
@@ -97,5 +103,11 @@ export function handleRevisionPetitionAct() {
 }
 
 export function attachEventHandlers() {
-    // ... (変更なし) ...
+    document.getElementById('dialogue_button').addEventListener('click', handleDialogueAct);
+    document.getElementById('transfer_internal_button').addEventListener('click', handleInternalTransferAct);
+    document.getElementById('transfer_external_button').addEventListener('click', handleExternalTransferAct);
+    document.getElementById('revision_button').addEventListener('click', handleRevisionPetitionAct);
+    
+    // 🌟 追加: ハンドラ接続後にログを出力
+    console.log('[UI]: Event handlers attached.');
 }
