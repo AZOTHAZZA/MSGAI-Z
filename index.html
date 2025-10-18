@@ -8,13 +8,35 @@
     <link rel="stylesheet" href="style.css"> 
     
     <style>
-        /* 基本的なレイアウトスタイル */
-        body { display: flex; font-family: sans-serif; margin: 0; background-color: #f0f0f0; }
-        #sidebar { width: 350px; background-color: #fff; padding: 20px; box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); }
-        #main-content { flex-grow: 1; padding: 20px; display: flex; flex-direction: column; }
-        .gauge-area { border: 1px solid #ddd; padding: 15px; margin-top: 15px; border-radius: 5px; }
+        /* 🌟 修正: UI全体の色と基本レイアウトの復元 🌟 */
+        body { 
+            display: flex; 
+            font-family: sans-serif; 
+            margin: 0; 
+            /* 監査コンソールらしい淡い背景色を復元 */
+            background-color: #f0f0f0; 
+        }
+        #sidebar { 
+            width: 350px; 
+            /* サイドバーの背景色を白に復元 */
+            background-color: #fff; 
+            padding: 20px; 
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); 
+        }
+        #main-content { 
+            flex-grow: 1; 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+        }
+        .gauge-area { 
+            border: 1px solid #ddd; 
+            padding: 15px; 
+            margin-top: 15px; 
+            border-radius: 5px; 
+        }
         
-        /* フォームとラベルのレイアウト修正 */
+        /* フォームとラベルのレイアウト修正 (前回の修正を維持) */
         .gauge-area label {
             display: block; 
             margin-top: 10px; 
@@ -31,23 +53,21 @@
             margin-bottom: 15px;
         }
         
-        /* ボタンのスタイルと色分け */
+        /* ボタンのスタイルと色分け (前回の修正を維持) */
         .action-button { width: 100%; padding: 10px; margin-top: 5px; border: none; border-radius: 4px; color: white; cursor: pointer; }
         .action-internal { background-color: #007bff; }
         .action-external { background-color: #ffc107; }
         .action-revision { background-color: #28a745; }
         #delete_accounts_button { background-color: #A6A6A6; }
         
-        /* 🎨 生成実行 (Mint): 暖色系 */
         #mint_execute_button { background-color: #FFA500; } 
-        /* 🎨 交換実行 (Exchange): 寒色系 */
         #exchange_button { background-color: #007bff; } 
 
         /* Tension Bar Style */
         #tension_bar { background-color: #e9ecef; border-radius: 5px; height: 10px; margin-top: 5px; overflow: hidden; }
         #tension_level_display_bar { height: 100%; width: 0%; transition: width 0.3s; background-color: #dc3545; }
         
-        /* Dialogue Console */
+        /* Dialogue Console Style */
         #dialogue-output { flex-grow: 1; border: 1px solid #ddd; background-color: #fff; padding: 10px; overflow-y: scroll; margin-bottom: 10px; border-radius: 5px; }
         .ai-message { color: #007bff; margin-bottom: 5px; }
         .error-message { color: #dc3545; font-weight: bold; }
@@ -55,7 +75,7 @@
         #dialogue_input { flex-grow: 1; padding: 10px; margin-right: 10px; }
         #dialogue_button { padding: 10px 15px; background-color: #6c757d; color: white; border: none; border-radius: 4px; }
         
-        /* 自律性ステータスの色調整（CSSがない場合の暫定）*/
+        /* 自律性ステータスの色調整（Tension更新ロジックも参照）*/
         #autonomy_status { color: #dc3545; } 
     </style>
 </head>
@@ -64,7 +84,7 @@
     <div id="sidebar">
         <h2>ロゴス監査コンソール (MSGAI Pure Core)</h2>
         <p id="status_message">[STATUS]: コア起動中...</p>
-
+        
         <div class="gauge-area">
             <h3>I. 根源と数理 (ロゴス緊張度 T)</h3>
             <p id="tension_level_display">T: 0.0000</p>
