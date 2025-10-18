@@ -1,4 +1,4 @@
-// core/foundation.js (getMutableState保護版 - 全文)
+// core/foundation.js (修復ロジック分離版 - 全文)
 
 import { LogosTension } from './arithmos.js'; 
 
@@ -90,7 +90,27 @@ function ensureLogosStateInitialized() {
 // =========================================================================
 
 /**
+ * Tensionインスタンスを破損から保護し、必要であれば修復する (内部関数)
+ * @param {object} state - LogosStateオブジェクトの参照
+ */
+function ensureTensionInstanceIntegrity(state) {
+    // 破損していれば修復する防御ロジック (最終防衛ライン)
+    if (typeof state.tension_level.add !== 'function') {
+        console.warn("[Logos Foundation WARNING]: Tensionインスタンスが破損していました。再インスタンス化します。");
+        const value = (typeof state.tension_level.value === 'number') 
+            ? state.tension_level.value 
+            : INITIAL_TENSION;
+            
+        state.tension_level = new LogosTension(value);
+        // 修復後は状態全体を永続化し、新しいインスタンス参照を安定させる
+        updateState(state); 
+    }
+}
+
+
+/**
  * 状態の更新と永続化を行う関数
+ * ⚠️ 主に永続化を実行します。Tensionインスタンスの完全な代入は行いません。
  */
 export function updateState(newState) {
     const state = ensureLogosStateInitialized();
@@ -100,7 +120,6 @@ export function updateState(newState) {
     if (newState.active_user) state.active_user = newState.active_user;
     if (newState.status_message) state.status_message = newState.status_message;
     if (newState.last_act) state.last_act = newState.last_act;
-    // Tensionインスタンスは addTension() 経由で操作されるため、ここではコピーしない。
     
     // 永続化を試行
     try {
@@ -116,35 +135,36 @@ export function updateState(newState) {
 }
 
 
+/** LogosTensionインスタンスの参照を返す。（Tension値を取得する関数のみに用途を限定する） */
 export function getTensionInstance() { 
     const state = ensureLogosStateInitialized();
-
-    // 破損していれば修復する防御ロジック (最終防衛ライン)
-    if (typeof state.tension_level.add !== 'function') {
-        console.warn("[Logos Foundation WARNING]: Tensionインスタンスが破損していました。再インスタンス化します。");
-        const value = (typeof state.tension_level.value === 'number') ? state.tension_level.value : INITIAL_TENSION;
-        state.tension_level = new LogosTension(value);
-    }
-    
+    // 🌟 修正: 修復ロジックを分離したため、ここではインスタンスをそのまま返す
     return state.tension_level; 
 }
 
 /** Tensionレベルを安全に操作するための公開関数 */
 export function addTension(amount) {
-    const tensionInstance = getTensionInstance(); 
-    tensionInstance.add(amount);
+    const state = ensureLogosStateInitialized();
+    
+    // 🌟 修正: Tensionインスタンスの完全性チェックを操作の開始時に行う
+    ensureTensionInstanceIntegrity(state); 
+    
+    // 修復された/正常なインスタンスのaddメソッドを呼び出す
+    state.tension_level.add(amount); 
     
     // 永続化のために、LogosState全体を updateState に渡す
-    updateState(ensureLogosStateInitialized());
+    updateState(state); 
 }
 
 
 // ---------------- (getCurrentState 関数群) ----------------
 
+/** 最新の状態オブジェクトの参照を返す。 */
 export function getCurrentState() { 
     return ensureLogosStateInitialized(); 
 }
 
+/** 状態オブジェクトのディープコピー（JSON形式）を返す。 */
 export function getCurrentStateJson() { 
     return JSON.parse(JSON.stringify(ensureLogosStateInitialized())); 
 }
@@ -156,7 +176,7 @@ export function getCurrentStateJson() {
 
 /**
  * 必須: 常に最新かつ操作可能なLogosStateのオブジェクト参照を返す
- * 🌟 修正: 外部からの破壊を防ぐため、シャローコピーを返すように変更
+ * 🌟 外部からの破壊を防ぐため、シャローコピーを返す
  */
 export function getMutableState() {
     return { ...ensureLogosStateInitialized() }; 
