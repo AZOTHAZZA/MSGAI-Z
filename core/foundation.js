@@ -1,4 +1,4 @@
-// core/foundation.js
+// core/foundation.js (修正版: 初期化ログを追加)
 
 import { LogosTension } from './arithmos.js';
 
@@ -9,7 +9,12 @@ export const LogosState = {
     last_act: "Genesis",
 };
 
+// 🌟 追加: LogosStateの初期化後にログを出力
+console.log(`[Logos Core]: Initialized. Tension: ${LogosState.tension_level.getValue().toFixed(4)}`);
+
+
 export function getCurrentState() {
+// ... (中略、残りの関数は変更なし) ...
     return JSON.parse(JSON.stringify({ 
         tension_level: LogosState.tension_level.getValue(),
         accounts: LogosState.accounts,
