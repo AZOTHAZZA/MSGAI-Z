@@ -1,4 +1,4 @@
-// core/foundation.js (不変性強化版 - 全文)
+// core/foundation.js (安定化ロジック適用版 - 全文)
 
 import { LogosTension } from './arithmos.js'; 
 
@@ -101,23 +101,25 @@ function ensureTensionInstanceIntegrity(state) {
             ? state.tension_level.value 
             : INITIAL_TENSION;
             
-        // 🌟 修正: 新しいTensionインスタンスで置き換え、updateStateで状態全体を新しい参照で置き換える。
+        // 新しいTensionインスタンスで置き換え
         state.tension_level = new LogosTension(value);
-        updateState(state); 
+        
+        // 🌟 修正: LogosState変数自体を新しい参照に置き換え、インスタンス参照を安定化
+        LogosState = { ...state };
     }
 }
 
 
 /**
  * 状態の更新と永続化を行う関数
- * 🌟 修正: LogosState変数自体を新しいオブジェクトで置き換え、参照の不変性を強制する。
+ * 🌟 LogosState変数自体を新しいオブジェクトで置き換え、参照の不変性を強制する。
  */
 export function updateState(newState) {
     const currentState = ensureLogosStateInitialized();
 
-    // 🌟 状態全体を新しいオブジェクトで置き換える (不変性強化)
+    // 状態全体を新しいオブジェクトで置き換える (不変性強化)
+    // newStateにtension_levelは含まれないため、currentStateから取得
     LogosState = {
-        // tension_levelは、常にcurrentState（addTensionで既に値が更新されている）から取得する
         tension_level: currentState.tension_level, 
         
         // 他のプロパティはnewState（currency.jsから渡された最新の状態）から取得
@@ -151,13 +153,13 @@ export function getTensionInstance() {
 export function addTension(amount) {
     const state = ensureLogosStateInitialized();
     
-    // Tensionインスタンスの完全性チェックを操作の開始時に行う
+    // 1. Tensionインスタンスの完全性チェックを操作の開始時に行う
     ensureTensionInstanceIntegrity(state); 
     
-    // 修復された/正常なインスタンスのaddメソッドを呼び出す
+    // 2. 修復された/正常なインスタンスのaddメソッドを呼び出す
     state.tension_level.add(amount); 
     
-    // 永続化のために、LogosState全体を updateState に渡す
+    // 3. 永続化のために、LogosState全体を updateState に渡す
     updateState(state); 
 }
 
