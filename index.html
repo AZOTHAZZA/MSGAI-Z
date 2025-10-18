@@ -7,7 +7,25 @@
     
     <link rel="stylesheet" href="style.css"> 
     
-    </head>
+    <style>
+        /* (前回のインラインスタイルは省略。style.cssで定義されている前提) */
+        /* ボタンの色定義を追加/上書き */
+        .action-button { width: 100%; padding: 10px; margin-top: 5px; border: none; border-radius: 4px; color: white; cursor: pointer; }
+        /* 🎨 生成実行 (Mint): 暖色系 */
+        #mint_execute_button { background-color: #FFA500; } /* オレンジ */
+        /* 🎨 交換実行 (Exchange): 寒色系 */
+        #exchange_button { background-color: #007bff; } /* 青 */
+        
+        .gauge-area input, .gauge-area select {
+            width: 90%; 
+            margin-bottom: 10px; 
+            padding: 8px; 
+            border: 1px solid #ccc; 
+            border-radius: 3px; 
+            box-sizing: border-box; /* 親要素の幅に合わせて調整 */
+        }
+    </style>
+</head>
 <body>
     
     <div id="sidebar">
@@ -74,34 +92,17 @@
 
         <div class="currency-minting-area gauge-area" style="margin-top: 20px;">
             <h3>通貨生成作為 (Minting Act)</h3>
+            
             <label for="mint_amount_input">生成数量:</label>
             <input type="number" id="mint_amount_input" value="10.00" class="action-input">
             
-            <div class="mint-button-group">
-                <h4>法定通貨 (低摩擦: T微増)</h4>
-                <button id="mint_jpy_button" class="action-button action-mint mint-jpy" data-currency="JPY">
-                    JPY 生成
-                </button>
-                <button id="mint_usd_button" class="action-button action-mint mint-usd" data-currency="USD">
-                    USD 生成
-                </button>
-                <button id="mint_eur_button" class="action-button action-mint mint-eur" data-currency="EUR">
-                    EUR 生成
-                </button>
-            </div>
-
-            <div class="mint-button-group" style="margin-top: 10px;">
-                <h4>暗号通貨 (高摩擦: T中増)</h4>
-                <button id="mint_btc_button" class="action-button action-mint mint-btc" data-currency="BTC">
-                    BTC 生成
-                </button>
-                <button id="mint_eth_button" class="action-button action-mint mint-eth" data-currency="ETH">
-                    ETH 生成
-                </button>
-                <button id="mint_matic_button" class="action-button action-mint mint-matic" data-currency="MATIC">
-                    MATIC 生成
-                </button>
-            </div>
+            <label for="mint_currency_select">生成通貨:</label>
+            <select id="mint_currency_select" class="action-input">
+                </select>
+            
+            <button id="mint_execute_button" class="action-button">
+                生成実行
+            </button>
         </div>
 
         <div class="currency-exchange-area gauge-area" style="margin-top: 20px;">
@@ -111,13 +112,13 @@
             
             <label for="exchange_from_select">売却通貨:</label>
             <select id="exchange_from_select" class="action-input">
-                </select>
+            </select>
             
             <label for="exchange_to_select">購入通貨:</label>
             <select id="exchange_to_select" class="action-input">
-                </select>
+            </select>
             
-            <button id="exchange_button" class="action-button action-internal" style="background-color: #008CBA;">
+            <button id="exchange_button" class="action-button">
                 交換実行
             </button>
         </div>
