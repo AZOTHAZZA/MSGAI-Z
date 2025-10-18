@@ -1,4 +1,4 @@
-// core/foundation.js (最終修正版 - 全文)
+// core/foundation.js (構文エラー修正済み - 全文)
 
 // 初期アカウント残高の定義 (USD, JPY, EUR, BTC, ETH, MATIC)
 const INITIAL_ACCOUNTS = {
@@ -162,6 +162,6 @@ export function actTransfer(sender, recipient, amount, currency) {
 
 export { 
     updateState, 
-    initializeState,
-    actTransfer // 💡 追加: 送金機能
+    initializeState 
+    // 💡 actTransfer は関数定義時にexport済みのため、ここから削除
 };
