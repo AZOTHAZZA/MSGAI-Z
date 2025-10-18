@@ -20,7 +20,6 @@
             <div id="tension_bar">
                 <div id="tension_level_display_bar"></div>
             </div>
-            
         </div>
 
         <div class="gauge-area">
@@ -53,6 +52,39 @@
                 自律的修正請願 (Adjustment Petition)
             </button>
         </div>
+
+        <div class="currency-minting-area gauge-area" style="margin-top: 20px;">
+            <h3>通貨生成作為 (Minting Act)</h3>
+            <label for="mint_amount_input">生成数量:</label>
+            <input type="number" id="mint_amount_input" value="10.00" class="action-input">
+            
+            <div class="mint-button-group">
+                <h4>法定通貨 (低摩擦: T微増)</h4>
+                <button id="mint_jpy_button" class="action-button action-mint" data-currency="JPY">
+                    JPY 生成
+                </button>
+                <button id="mint_usd_button" class="action-button action-mint" data-currency="USD">
+                    USD 生成
+                </button>
+                <button id="mint_eur_button" class="action-button action-mint" data-currency="EUR">
+                    EUR 生成
+                </button>
+            </div>
+
+            <div class="mint-button-group" style="margin-top: 10px;">
+                <h4>暗号通貨 (高摩擦: T中増)</h4>
+                <button id="mint_btc_button" class="action-button action-mint" data-currency="BTC" style="background-color: #f7931a;">
+                    BTC 生成
+                </button>
+                <button id="mint_eth_button" class="action-button action-mint" data-currency="ETH" style="background-color: #627EEA;">
+                    ETH 生成
+                </button>
+                <button id="mint_matic_button" class="action-button action-mint" data-currency="MATIC" style="background-color: #8247E5;">
+                    MATIC 生成
+                </button>
+            </div>
+        </div>
+
     </div>
 
     <div id="main-content">
