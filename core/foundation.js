@@ -1,4 +1,4 @@
-// core/foundation.js (安定化ロジック適用版 - 全文)
+// core/foundation.js (最終安定化版 - 全文)
 
 import { LogosTension } from './arithmos.js'; 
 
@@ -90,39 +90,17 @@ function ensureLogosStateInitialized() {
 // =========================================================================
 
 /**
- * Tensionインスタンスを破損から保護し、必要であれば修復する (内部関数)
- * @param {object} state - LogosStateオブジェクトの参照
- */
-function ensureTensionInstanceIntegrity(state) {
-    // 破損していれば修復する防御ロジック (最終防衛ライン)
-    if (typeof state.tension_level.add !== 'function') {
-        console.warn("[Logos Foundation WARNING]: Tensionインスタンスが破損していました。再インスタンス化します。");
-        const value = (typeof state.tension_level.value === 'number') 
-            ? state.tension_level.value 
-            : INITIAL_TENSION;
-            
-        // 新しいTensionインスタンスで置き換え
-        state.tension_level = new LogosTension(value);
-        
-        // 🌟 修正: LogosState変数自体を新しい参照に置き換え、インスタンス参照を安定化
-        LogosState = { ...state };
-    }
-}
-
-
-/**
  * 状態の更新と永続化を行う関数
  * 🌟 LogosState変数自体を新しいオブジェクトで置き換え、参照の不変性を強制する。
  */
 export function updateState(newState) {
     const currentState = ensureLogosStateInitialized();
 
-    // 状態全体を新しいオブジェクトで置き換える (不変性強化)
+    // 🌟 状態全体を新しいオブジェクトで置き換える (不変性強化)
     // newStateにtension_levelは含まれないため、currentStateから取得
     LogosState = {
         tension_level: currentState.tension_level, 
         
-        // 他のプロパティはnewState（currency.jsから渡された最新の状態）から取得
         accounts: newState.accounts || currentState.accounts,
         active_user: newState.active_user || currentState.active_user,
         status_message: newState.status_message || currentState.status_message,
@@ -146,20 +124,30 @@ export function updateState(newState) {
 /** LogosTensionインスタンスの参照を返す。（Tension値を取得する関数のみに用途を限定する） */
 export function getTensionInstance() { 
     const state = ensureLogosStateInitialized();
+    // 参照が壊れていても修復せずに返す（修復はaddTensionの責任）
     return state.tension_level; 
 }
 
-/** Tensionレベルを安全に操作するための公開関数 */
+/** * Tensionレベルを安全に操作するための公開関数 
+ * 🌟 破損チェック、修復、add実行をこの関数内に統合し、参照の安定を保証する。
+ */
 export function addTension(amount) {
     const state = ensureLogosStateInitialized();
     
-    // 1. Tensionインスタンスの完全性チェックを操作の開始時に行う
-    ensureTensionInstanceIntegrity(state); 
-    
-    // 2. 修復された/正常なインスタンスのaddメソッドを呼び出す
+    // 🌟 破損チェックと修復を直接実行
+    if (typeof state.tension_level.add !== 'function') {
+        console.warn("[Logos Foundation WARNING]: Tensionインスタンスが破損していました。再インスタンス化します。");
+        const value = (typeof state.tension_level.value === 'number') 
+            ? state.tension_level.value 
+            : INITIAL_TENSION;
+            
+        // 1. 新しいインスタンスで置き換え
+        state.tension_level = new LogosTension(value);
+    }
+    // 破損が修復されたか、最初から正常であったインスタンスに対してaddを実行
     state.tension_level.add(amount); 
     
-    // 3. 永続化のために、LogosState全体を updateState に渡す
+    // 最終永続化
     updateState(state); 
 }
 
