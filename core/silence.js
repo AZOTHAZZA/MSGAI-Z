@@ -1,4 +1,4 @@
-// core/logos_silence.js
+// core/silence.js
 
 /**
  * ロゴス緊張度に影響を与える作為（イベント）の型を定義する。
