@@ -1,4 +1,4 @@
-// core/arithmos.js (最終修正版: TensionEventの定義を同期)
+// core/arithmos.js (最終確定版: calculateTension をエクスポート)
 
 import { TensionEvent } from './silence.js'; // TensionEventの定義をインポート
 
@@ -48,7 +48,7 @@ export function calculateTension(currentTension, eventType) {
             change = 0.005; // 低摩擦な対話ではわずかに上昇
             break;
         
-        case TensionEvent.ExternalAct: // 修正: ExternalTransfer -> ExternalAct
+        case TensionEvent.ExternalAct: 
             change = 0.15;  // 高摩擦な外部作為は大きく緊張度を上昇させる
             break;
 
@@ -70,7 +70,7 @@ export function calculateTension(currentTension, eventType) {
     
     // ロゴス緊張度が閾値 (0.8) を超えている場合、変化を増幅させる
     if (tension > 0.8) {
-        // T > 0.8 で上昇（正のchange）は加速、下降（負のchange）は減速させることで不安定性を表現
+        // T > 0.8 で上昇は加速、下降は減速させることで不安定性を表現
         change *= (change > 0) ? 1.5 : 0.5;
     }
 
