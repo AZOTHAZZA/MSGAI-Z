@@ -6,16 +6,18 @@
     <title>MSGAI - ロゴス監査コンソール</title>
     
     <style>
-        /* 🌟 復元されたすべてのCSSルールをここに記述 🌟 */
+        /* 🌟 UI全体の色と基本レイアウトの最終復元 🌟 */
         body { 
             display: flex; 
             font-family: sans-serif; 
             margin: 0; 
-            background-color: #f0f0f0; /* 全体の背景色 */
+            /* 全体の背景色 */
+            background-color: #f0f0f0; 
         }
         #sidebar { 
             width: 350px; 
-            background-color: #fff; /* サイドバーの背景色 */
+            /* サイドバーの背景色を白に復元 */
+            background-color: #fff; 
             padding: 20px; 
             box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); 
         }
@@ -24,12 +26,16 @@
             padding: 20px; 
             display: flex; 
             flex-direction: column; 
+            /* メインコンテンツに背景色を設定 */
+            background-color: #f0f0f0; 
         }
         .gauge-area { 
             border: 1px solid #ddd; 
             padding: 15px; 
             margin-top: 15px; 
             border-radius: 5px; 
+            /* ゲージエリアの背景色を白に設定 */
+            background-color: #fff;
         }
         
         /* フォームとラベルのレイアウト修正 */
@@ -56,7 +62,9 @@
         .action-revision { background-color: #28a745; }
         #delete_accounts_button { background-color: #A6A6A6; }
         
+        /* 🎨 Mint: 暖色系 */
         #mint_execute_button { background-color: #FFA500; } 
+        /* 🎨 Exchange: 寒色系 */
         #exchange_button { background-color: #007bff; } 
 
         /* Tension Bar Style */
