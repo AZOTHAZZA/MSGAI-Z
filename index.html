@@ -7,21 +7,19 @@
     
     <style>
         /* 🌟 UI全体の色と基本レイアウトの最終復元 🌟 */
+        /* CSS_DEFAULT_STATE と完全に同期 */
         body { 
             display: flex; 
             font-family: 'Segoe UI', 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif; 
             margin: 0; 
-            /* 全体の背景色 */
             background-color: #f0f0f0; 
         }
         
-        /* 💡 修正: ヘッダーのマージンとボーダーを調整し、見栄えを整える */
         h2 { margin-top: 0; padding-top: 5px; border-bottom: 2px solid #ddd; padding-bottom: 5px; }
         h3 { margin-top: 0; margin-bottom: 10px; font-size: 1.1em; }
 
         #sidebar { 
             width: 350px; 
-            /* サイドバーの背景色を白に復元 */
             background-color: #fff; 
             padding: 20px; 
             box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); 
@@ -31,7 +29,6 @@
             padding: 20px; 
             display: flex; 
             flex-direction: column; 
-            /* メインコンテンツに背景色を設定 */
             background-color: #f0f0f0; 
         }
         .gauge-area { 
@@ -39,7 +36,6 @@
             padding: 15px; 
             margin-top: 15px; 
             border-radius: 5px; 
-            /* ゲージエリアの背景色を白に設定 */
             background-color: #fff;
         }
         
@@ -67,9 +63,7 @@
         .action-revision { background-color: #28a745; }
         #delete_accounts_button { background-color: #A6A6A6; }
         
-        /* 🎨 Mint: 暖色系 */
         #mint_execute_button { background-color: #FFA500; } 
-        /* 🎨 Exchange: 寒色系 */
         #exchange_button { background-color: #007bff; } 
 
         /* Tension Bar Style */
@@ -202,7 +196,434 @@
         </div>
     </div>
 
-    <script type="module" src="./app/main.js"></script>
+    <script>
+        // =========================================================================
+        // core/foundation.js の内容を全てここに埋め込み
+        // =========================================================================
+
+        // 初期アカウント残高の定義 (すべてゼロに設定)
+        const INITIAL_ACCOUNTS = {
+            User_A: { USD: 0.00, JPY: 0, EUR: 0.00, BTC: 0.0, ETH: 0.0, MATIC: 0.0 },
+            User_B: { USD: 0.00, JPY: 0, EUR: 0.00, BTC: 0.0, ETH: 0.0, MATIC: 0.0 },
+            User_C: { USD: 0.00, JPY: 0, EUR: 0.00, BTC: 0.0, ETH: 0.0, MATIC: 0.0 }
+        };
+
+        let state = initializeState();
+
+        function initializeState() {
+            return {
+                status_message: "コア起動完了",
+                active_user: "User_A",
+                accounts: JSON.parse(JSON.stringify(INITIAL_ACCOUNTS)),
+                tension: { value: 0.0, max_limit: 0.5, increase_rate: 0.00001 }
+            };
+        }
+
+        function getCurrentState() { return state; }
+
+        function updateState(newState) {
+            state = newState;
+            localStorage.setItem('msaiState', JSON.stringify(state));
+        }
+        
+        // ローカルストレージからの状態復元を試みる
+        const savedState = localStorage.getItem('msaiState');
+        if (savedState) {
+            try {
+                state = JSON.parse(savedState);
+                state.tension = { value: state.tension.value, max_limit: 0.5, increase_rate: 0.00001 };
+                state.status_message = "コア状態復元済み";
+            } catch (e) {
+                state = initializeState();
+            }
+        } else {
+            updateState(state);
+        }
+
+        function getTensionInstance() { return state.tension; }
+
+        function addTension(amount) {
+            state.tension.value += amount;
+            state.tension.value = Math.max(0, state.tension.value);
+            updateState(state);
+        }
+
+        function setActiveUser(user) {
+            if (state.accounts[user]) {
+                state.active_user = user;
+                updateState(state);
+            } else {
+                throw new Error(`User ${user} not found.`);
+            }
+        }
+        
+        function deleteAccounts() {
+            localStorage.removeItem('msaiState');
+            state = initializeState();
+        }
+
+        function actTransfer(sender, recipient, amount, currency) {
+            const currentState = getCurrentState();
+            const isInternal = currentState.accounts[recipient];
+
+            if ((currentState.accounts[sender][currency] || 0) < amount) {
+                throw new Error(`${sender} の ${currency} 残高不足です。`);
+            }
+
+            currentState.accounts[sender][currency] -= amount;
+            
+            if (isInternal) {
+                currentState.accounts[recipient][currency] = (currentState.accounts[recipient][currency] || 0) + amount;
+            }
+            
+            updateState(currentState);
+            return currentState;
+        }
+
+
+        // =========================================================================
+        // core/currency.js の内容を全てここに埋め込み
+        // =========================================================================
+        
+        // 簡略化された静的な為替レート (USDに対する固定比率)
+        const EXCHANGE_RATES = {
+            JPY: 130, 
+            EUR: 0.9,
+            BTC: 0.00005,
+            ETH: 0.001,
+            MATIC: 1.5, 
+            USD: 1
+        };
+
+        function actMintCurrency(user, currency, amount) {
+            const currentState = getCurrentState();
+
+            if (!currentState.accounts[user]) {
+                throw new Error(`User ${user} not found.`);
+            }
+
+            currentState.accounts[user][currency] = (currentState.accounts[user][currency] || 0) + amount;
+            const usdEquivalent = amount / (EXCHANGE_RATES[currency] || 1);
+            const tensionIncrease = usdEquivalent * 0.005; 
+            
+            addTension(tensionIncrease);
+
+            updateState(currentState);
+            return currentState;
+        }
+
+        function actExchangeCurrency(user, fromCurrency, fromAmount, toCurrency) {
+            const currentState = getCurrentState();
+
+            if (!currentState.accounts[user]) {
+                throw new Error(`User ${user} not found.`);
+            }
+            if ((currentState.accounts[user][fromCurrency] || 0) < fromAmount) {
+                throw new Error(`${fromCurrency} の残高が不足しています。`);
+            }
+
+            const rateFrom = EXCHANGE_RATES[fromCurrency] || 1;
+            const rateTo = EXCHANGE_RATES[toCurrency] || 1;
+            
+            const usdEquivalent = fromAmount / rateFrom;
+            const toAmount = usdEquivalent * rateTo;
+
+            currentState.accounts[user][fromCurrency] -= fromAmount;
+            currentState.accounts[user][toCurrency] = (currentState.accounts[user][toCurrency] || 0) + toAmount;
+
+            const tensionIncrease = usdEquivalent * 0.001; 
+            addTension(tensionIncrease);
+
+            updateState(currentState);
+            return currentState;
+        }
+
+
+        // =========================================================================
+        // app/main.js の内容を全てここに埋め込み
+        // =========================================================================
+        
+        const SUPPORTED_CURRENCIES = ["USD", "JPY", "EUR", "BTC", "ETH", "MATIC"];
+        const TENSION_LIMIT = 0.5; 
+        let UI_ELEMENTS = {};
+
+        function cacheUIElements() {
+            const ids = [
+                'status_message', 'tension_level_display', 'tension_bar', 'tension_level_display_bar',
+                'intensity_display', 'rigor_display', 'active_user_select', 
+                'active_user_name', 'recipient_input', 
+                'amount_input', 'autonomy_status', 'transfer_internal_button', 
+                'transfer_external_button', 'revision_button', 'delete_accounts_button',
+                'mint_amount_input', 'dialogue-output', 'dialogue_input', 'dialogue_button',
+                'exchange_amount_input', 'exchange_from_select', 'exchange_to_select', 
+                'exchange_button',
+                'mint_currency_select', 'mint_execute_button', 'css_reset_button'
+            ];
+            
+            SUPPORTED_CURRENCIES.forEach(c => { ids.push(`balance_${c}`); });
+            
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                UI_ELEMENTS[id] = el;
+            });
+        }
+
+        function logToConsole(message, type = 'ai-message') {
+            // 💡 F12コンソールへの強制出力
+            console.error("AUDIT LOGGING TEST: " + message); 
+            
+            const output = UI_ELEMENTS['dialogue-output'];
+            if (!output) return; 
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = type;
+            messageDiv.innerHTML = `<strong>[CORE]:</strong> ${message}`;
+            output.appendChild(messageDiv);
+            output.scrollTop = output.scrollHeight; 
+        }
+
+        function updateUI(state) {
+            const tension = getTensionInstance();
+            const tensionValue = tension.value; 
+            const activeUserName = state.active_user;
+            
+            if (UI_ELEMENTS['status_message']) {
+                UI_ELEMENTS['status_message'].textContent = `[STATUS]: ${state.status_message}`;
+            }
+            
+            // Tension & Autonomy Status
+            if (UI_ELEMENTS['tension_level_display']) {
+                UI_ELEMENTS['tension_level_display'].textContent = `T: ${tensionValue.toFixed(4)}`;
+            }
+            const tensionBarEl = UI_ELEMENTS['tension_level_display_bar'];
+            if (tensionBarEl) { 
+                const tensionPercent = Math.min(tensionValue / TENSION_LIMIT, 1) * 100;
+                tensionBarEl.style.width = `${tensionPercent}%`;
+                tensionBarEl.style.backgroundColor = (tensionValue > TENSION_LIMIT * 0.7) ? '#dc3545' : '#ffc107';
+            }
+            const autonomyStatusEl = UI_ELEMENTS['autonomy_status'];
+            if (autonomyStatusEl) {
+                 // ... (Autonomy Statusロジック) ...
+                 if (tensionValue > TENSION_LIMIT) {
+                    autonomyStatusEl.innerHTML = `暴走抑止ステータス: **警告 (T > ${TENSION_LIMIT.toFixed(4)})**`;
+                    autonomyStatusEl.style.color = '#dc3545';
+                } else if (tensionValue > TENSION_LIMIT * 0.7) {
+                    autonomyStatusEl.innerHTML = `暴走抑止ステータス: **高緊張**`;
+                    autonomyStatusEl.style.color = '#ffc107';
+                } else {
+                    autonomyStatusEl.innerHTML = `暴走抑止ステータス: **低緊張**`;
+                    autonomyStatusEl.style.color = '#28a745';
+                }
+            }
+
+            // ... (I/R表示ロジックは省略) ...
+            if (UI_ELEMENTS['intensity_display']) { UI_ELEMENTS['intensity_display'].textContent = "0.9025"; } 
+            if (UI_ELEMENTS['rigor_display']) { UI_ELEMENTS['rigor_display'].textContent = "0.2236"; }
+            
+            // Active User & Balance
+            if (UI_ELEMENTS['active_user_name']) {
+                UI_ELEMENTS['active_user_name'].textContent = activeUserName;
+            }
+            
+            const accounts = state.accounts[activeUserName];
+            SUPPORTED_CURRENCIES.forEach(currency => {
+                const el = UI_ELEMENTS[`balance_${currency}`];
+                if (el) { 
+                    const balance = accounts[currency] || 0;
+                    if (currency === "JPY") {
+                         el.textContent = Math.floor(balance).toLocaleString();
+                    } else if (["BTC", "ETH", "MATIC"].includes(currency)) {
+                         el.textContent = balance.toFixed(8);
+                    } else {
+                         el.textContent = balance.toFixed(2);
+                    }
+                }
+            });
+
+            const selectEl = UI_ELEMENTS['active_user_select'];
+            if (selectEl) {
+                selectEl.innerHTML = '';
+                Object.keys(state.accounts).forEach(user => {
+                    const option = document.createElement('option');
+                    option.value = user;
+                    option.textContent = user;
+                    if (user === activeUserName) {
+                        option.selected = true;
+                    }
+                    selectEl.appendChild(option);
+                });
+            }
+        }
+
+        // イベントハンドラー
+        function handleMintingExecuteAct() {
+            try {
+                const currency = UI_ELEMENTS['mint_currency_select'].value;
+                const amount = parseFloat(UI_ELEMENTS['mint_amount_input'].value);
+                
+                if (isNaN(amount) || amount <= 0) { logToConsole("生成数量は正の値を指定してください。", 'user-message'); return; }
+
+                const state = getCurrentState();
+                const newState = actMintCurrency(state.active_user, currency, amount);
+                
+                logToConsole(`${state.active_user} が ${amount.toFixed(2)} ${currency} を生成しました。Tensionが増加しました。`, 'ai-message');
+                updateUI(newState);
+                
+            } catch (error) {
+                logToConsole(`Minting Act 失敗: ${error.message}`, 'error-message');
+            }
+        }
+
+        function handleExchangeAct() {
+            try {
+                const fromC = UI_ELEMENTS['exchange_from_select'].value;
+                const toC = UI_ELEMENTS['exchange_to_select'].value;
+                const amount = parseFloat(UI_ELEMENTS['exchange_amount_input'].value);
+
+                if (fromC === toC || isNaN(amount) || amount <= 0) { logToConsole("有効な交換数量と異なる通貨を指定してください。", 'user-message'); return; }
+                
+                const state = getCurrentState();
+                const newState = actExchangeCurrency(state.active_user, fromC, amount, toC);
+                
+                logToConsole(`${state.active_user} が ${amount.toFixed(4)} ${fromC} を ${toC} に交換しました。`, 'ai-message');
+                updateUI(newState);
+                
+            } catch (error) {
+                logToConsole(`Exchange Act 失敗: ${error.message}`, 'error-message');
+            }
+        }
+
+        function handleTransfer(isExternal) {
+            const CURRENCY = 'USD';
+            
+            try {
+                let recipient = UI_ELEMENTS['recipient_input'].value;
+                const amount = parseFloat(UI_ELEMENTS['amount_input'].value);
+                const state = getCurrentState();
+
+                if (isNaN(amount) || amount <= 0) { logToConsole("有効な数量を指定してください。", 'user-message'); return; }
+                
+                if (isExternal) {
+                    recipient = recipient.includes('External') ? recipient : 'External_Gateway (' + recipient + ')'; 
+                }
+                
+                if (!recipient || recipient === state.active_user) { logToConsole("有効な受取人を指定してください。", 'user-message'); return; }
+                
+                const newState = actTransfer(state.active_user, recipient, amount, CURRENCY);
+                
+                const tensionAmount = isExternal ? amount * 0.0001 : amount * 0.00001;
+                addTension(tensionAmount); 
+                
+                const actType = isExternal ? '外部送金（高摩擦）' : '内部送金（低摩擦）';
+                
+                logToConsole(`${state.active_user} が ${recipient} へ **$${amount.toFixed(2)} ${CURRENCY}** を ${actType} しました。Tensionが${tensionAmount.toFixed(6)}増加。`, 'ai-message');
+                updateUI(newState);
+                
+            } catch (error) {
+                logToConsole(`Transfer Act 失敗: ${error.message}`, 'error-message');
+            }
+        }
+
+        function handleUserSelect(event) {
+            const newActiveUser = event.target.value;
+            setActiveUser(newActiveUser);
+            logToConsole(`アクティブユーザーを ${newActiveUser} に切り替えました。`, 'user-message');
+            updateUI(getCurrentState());
+        }
+
+        function handleDeleteAccounts() {
+            if (confirm("🚨 警告: 全ての口座情報とTensionを削除し、システムを初期状態にリセットします。よろしいですか？")) {
+                deleteAccounts();
+                logToConsole("全ての口座情報と状態が削除され、システムは初期状態にリセットされました。", 'error-message');
+                window.location.reload(); 
+            }
+        }
+
+        // UI配色リセット機能
+        const CSS_DEFAULT_STATE = document.querySelector('style').textContent; // <style>タグの内容全体を取得
+        function resetCSS() {
+            const styleElement = document.querySelector('style');
+            const output = UI_ELEMENTS['dialogue-output'];
+
+            if (styleElement) {
+                styleElement.textContent = CSS_DEFAULT_STATE;
+                
+                if (output) {
+                    output.innerHTML += `<div class="ai-message"><strong>[AUDIT]:</strong> UI配色を既定の安全な状態にリセットしました。</div>`;
+                }
+
+                alert('UI配色をリセットします。OKを押すと、キャッシュを無視してページを強制再読み込みします。');
+                window.location.reload(true); 
+
+            } else {
+                 if (output) {
+                    output.innerHTML += `<div class="error-message"><strong>[AUDIT ERROR]:</strong> CSSリセットに失敗しました。<style>タグが見つかりません。</div>`;
+                 }
+            }
+        }
+
+        // 初期化ロジック
+        function initializeCurrencySelectors() {
+            const mintSelect = UI_ELEMENTS['mint_currency_select'];
+            const fromSelect = UI_ELEMENTS['exchange_from_select'];
+            const toSelect = UI_ELEMENTS['exchange_to_select'];
+
+            if (!mintSelect || !fromSelect || !toSelect) return;
+
+            SUPPORTED_CURRENCIES.forEach(currency => {
+                const option = (c) => {
+                    const opt = document.createElement('option');
+                    opt.value = c;
+                    opt.textContent = c;
+                    return opt;
+                };
+                
+                mintSelect.appendChild(option(currency).cloneNode(true));
+                fromSelect.appendChild(option(currency).cloneNode(true));
+                toSelect.appendChild(option(currency).cloneNode(true));
+            });
+            
+            mintSelect.value = "JPY"; 
+            fromSelect.value = "JPY"; 
+            toSelect.value = "USD"; 
+        }
+
+        function initializeApp() {
+            try {
+                // 1. UI要素のキャッシュ
+                cacheUIElements();
+                // 2. ログの開始 (F12とHTMLの両方に出力されるはず)
+                logToConsole("Logos Foundationを初期化中...", 'system-message');
+                
+                const initialState = getCurrentState(); 
+                logToConsole(`監査コンソール起動成功。アクティブユーザー: ${initialState.active_user}`, 'ai-message');
+
+                // 3. UIの初期化
+                initializeCurrencySelectors();
+
+                // 4. イベントリスナーの設定
+                UI_ELEMENTS['mint_execute_button'].addEventListener('click', handleMintingExecuteAct);
+                UI_ELEMENTS['exchange_button'].addEventListener('click', handleExchangeAct);
+                UI_ELEMENTS['transfer_internal_button'].addEventListener('click', () => handleTransfer(false)); 
+                UI_ELEMENTS['transfer_external_button'].addEventListener('click', () => handleTransfer(true)); 
+                UI_ELEMENTS['active_user_select'].addEventListener('change', handleUserSelect); 
+                UI_ELEMENTS['delete_accounts_button'].addEventListener('click', handleDeleteAccounts); 
+                UI_ELEMENTS['css_reset_button'].addEventListener('click', resetCSS);
+                UI_ELEMENTS['revision_button'].addEventListener('click', () => {
+                     logToConsole("自律的修正請願をログに記録しました。Tension制御アルゴリズムが検討します。", 'ai-message');
+                });
+                
+                // 5. UIの最終更新
+                updateUI(initialState);
+                
+            } catch (error) {
+                console.error("致命的な初期化エラー:", error); 
+                logToConsole(`致命的な初期化エラー: ${error.message}`, 'error-message');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    </script>
 
 </body>
 </html>
