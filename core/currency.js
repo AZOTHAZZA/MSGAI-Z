@@ -1,6 +1,7 @@
-// core/currency.js (Tension操作確実化版)
+// core/currency.js (状態取得修正版)
 
-import { LogosState, updateState } from './foundation.js';
+// 🌟 修正: LogosState の直接インポートを削除。代わりに getMutableState をインポート。
+import { updateState, getMutableState } from './foundation.js'; 
 import { ControlMatrix } from './arithmos.js';
 
 // 各通貨の摩擦度
@@ -19,8 +20,9 @@ const TENSION_THRESHOLD_EXTERNAL_TRANSFER = 0.70;
  * 第1作為: 内部送金 (低摩擦)
  */
 export function actTransferInternal(sender, recipient, amount, currency = "USD") {
-    const state = LogosState; 
+    const state = getMutableState(); // 🌟 最新の状態を取得
     
+    // ... (チェックロジックは省略) ...
     if (sender === recipient) throw new Error("自己宛の送金は認められません。");
     if (state.accounts[sender] === undefined || state.accounts[recipient] === undefined) throw new Error("無効な送金元または受取人です。");
     if (CURRENCY_FRICTION[currency] === undefined) throw new Error(`通貨 ${currency} はサポートされていません。`);
@@ -40,9 +42,10 @@ export function actTransferInternal(sender, recipient, amount, currency = "USD")
  * 第2作為: 外部送金 (高摩擦)
  */
 export function actExternalTransfer(sender, amount, currency = "USD") {
-    const state = LogosState;
+    const state = getMutableState(); // 🌟 最新の状態を取得
     const currentTension = state.tension_level.getValue(); 
     
+    // ... (チェックロジックは省略) ...
     if (state.accounts[sender] === undefined) throw new Error("無効な送金元です。");
     if (CURRENCY_FRICTION[currency] === undefined) throw new Error(`通貨 ${currency} はサポートされていません。`);
     if (state.accounts[sender][currency] < amount) throw new Error(`${sender} は ${currency} 残高不足です (必要: ${amount.toFixed(2)}, 現状: ${state.accounts[sender][currency].toFixed(2)})。`);
@@ -79,9 +82,10 @@ export function actExternalTransfer(sender, amount, currency = "USD") {
  * 第3作為: 通貨生成 (Minting Act)
  */
 export function actMintCurrency(currency, amount) {
-    const state = LogosState;
+    const state = getMutableState(); // 🌟 最新の状態を取得
     const sender = state.active_user;
     
+    // ... (チェックロジックは省略) ...
     if (state.accounts[sender] === undefined) throw new Error("無効な操作ユーザーです。");
     if (CURRENCY_FRICTION[currency] === undefined) throw new Error(`通貨 ${currency} の生成はサポートされていません。`);
 
