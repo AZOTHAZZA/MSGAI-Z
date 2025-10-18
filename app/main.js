@@ -19,13 +19,13 @@ function cacheUIElements() {
     const ids = [
         'status_message', 'tension_level_display', 'tension_bar', 'tension_level_display_bar',
         'intensity_display', 'rigor_display', 'active_user_select', 
-        'active_user_name', 'balance_display', 'recipient_input', 
+        'active_user_name', 'recipient_input', 
         'amount_input', 'autonomy_status', 'transfer_internal_button', 
         'transfer_external_button', 'revision_button', 'delete_accounts_button',
         'mint_amount_input', 'dialogue-output', 'dialogue_input', 'dialogue_button',
         'exchange_amount_input', 'exchange_from_select', 'exchange_to_select', 
         'exchange_button',
-        'mint_currency_select', 'mint_execute_button' 
+        'mint_currency_select', 'mint_execute_button', 'css_reset_button' // 💡 css_reset_button を追加
     ];
     
     SUPPORTED_CURRENCIES.forEach(c => {
@@ -102,11 +102,6 @@ function updateUI(state) {
     if (UI_ELEMENTS['active_user_name']) {
         UI_ELEMENTS['active_user_name'].textContent = activeUserName;
     }
-    // メイン残高表示 (USD)
-    if (UI_ELEMENTS['balance_display']) {
-        const balance = getActiveUserBalance(activeUserName, "USD");
-        UI_ELEMENTS['balance_display'].textContent = balance.toFixed(2).toLocaleString();
-    }
     
     // 多通貨残高の更新ロジック
     const accounts = state.accounts[activeUserName];
@@ -142,7 +137,7 @@ function updateUI(state) {
 
 
 // =========================================================================
-// イベントハンドラー
+// イベントハンドラー (作為)
 // =========================================================================
 
 /**
@@ -200,7 +195,9 @@ function handleExchangeAct() {
     }
 }
 
-// ... (handleTransfer, handleUserSelect, handleDeleteAccounts関数は省略。前回のコードを使用) ...
+/**
+ * 送金 (Transfer Act) ハンドラー - 残高消費ロジックはTension計算のみで、会計処理は未実装
+ */
 function handleTransfer(isExternal) {
     try {
         const recipient = UI_ELEMENTS['recipient_input'].value;
@@ -209,10 +206,13 @@ function handleTransfer(isExternal) {
              logToConsole("有効な受取人/数量を指定してください。", 'user-message'); return; 
         }
         const state = getCurrentState();
+        
+        // 🚨 会計上の残高変更は省略し、Tension計算のみ実行
         const tensionAmount = isExternal ? amount * 0.0001 : amount * 0.00001;
         addTension(tensionAmount); 
+        
         const actType = isExternal ? '外部送金' : '内部送金';
-        logToConsole(`${state.active_user} が ${recipient} へ $${amount.toFixed(2)} ${actType} を実行しました。摩擦によりTensionが${tensionAmount.toFixed(6)}増加。`, 'ai-message');
+        logToConsole(`${state.active_user} が ${recipient} へ $${amount.toFixed(2)} ${actType} を実行しました。(残高変更なし) 摩擦によりTensionが${tensionAmount.toFixed(6)}増加。`, 'ai-message');
         updateUI(getCurrentState());
     } catch (error) {
         logToConsole(`Transfer Act 失敗: ${error.message}`, 'error-message');
@@ -228,19 +228,123 @@ function handleUserSelect(event) {
 }
 
 function handleDeleteAccounts() {
-    if (confirm("🚨 警告: 全ての口座情報を削除し、システムを初期状態にリセットします。よろしいですか？")) {
+    if (confirm("🚨 警告: 全ての口座情報とTensionを削除し、システムを初期状態にリセットします。よろしいですか？")) {
         deleteAccounts();
         logToConsole("全ての口座情報と状態が削除され、システムは初期状態にリセットされました。", 'error-message');
-        window.location.reload();
+        // 強制リロード
+        window.location.reload(); 
     }
 }
+
+
+// =========================================================================
+// UI配色リセット機能
+// =========================================================================
+
+// 復元したい安全なCSSの全文を文字列として定義
+const CSS_DEFAULT_STATE = `
+    /* 🌟 UI全体の色と基本レイアウトの最終復元 🌟 */
+    body { 
+        display: flex; 
+        font-family: 'Segoe UI', 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif; 
+        margin: 0; 
+        background-color: #f0f0f0; 
+    }
+    
+    h2 { margin-top: 0; padding-top: 5px; border-bottom: 2px solid #ddd; padding-bottom: 5px; }
+    h3 { margin-top: 0; margin-bottom: 10px; font-size: 1.1em; }
+
+    #sidebar { 
+        width: 350px; 
+        background-color: #fff; 
+        padding: 20px; 
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); 
+    }
+    #main-content { 
+        flex-grow: 1; 
+        padding: 20px; 
+        display: flex; 
+        flex-direction: column; 
+        background-color: #f0f0f0; 
+    }
+    .gauge-area { 
+        border: 1px solid #ddd; 
+        padding: 15px; 
+        margin-top: 15px; 
+        border-radius: 5px; 
+        background-color: #fff;
+    }
+    
+    /* フォームとラベルのレイアウト修正 */
+    .gauge-area label {
+        display: block; 
+        margin-top: 10px; 
+        margin-bottom: 3px; 
+        font-weight: bold;
+    }
+    .gauge-area input, .gauge-area select {
+        width: 90%; 
+        padding: 8px; 
+        border: 1px solid #ccc; 
+        border-radius: 3px; 
+        box-sizing: border-box; 
+        margin-top: 0;
+        margin-bottom: 15px;
+    }
+    
+    /* ボタンのスタイルと色分け */
+    .action-button { width: 100%; padding: 10px; margin-top: 5px; border: none; border-radius: 4px; color: white; cursor: pointer; }
+    .action-internal { background-color: #007bff; }
+    .action-external { background-color: #ffc107; }
+    .action-revision { background-color: #28a745; }
+    #delete_accounts_button { background-color: #A6A6A6; }
+    
+    #mint_execute_button { background-color: #FFA500; } 
+    #exchange_button { background-color: #007bff; } 
+
+    /* Tension Bar Style */
+    #tension_bar { background-color: #e9ecef; border-radius: 5px; height: 10px; margin-top: 5px; overflow: hidden; }
+    #tension_level_display_bar { height: 100%; width: 0%; transition: width 0.3s; background-color: #dc3545; }
+    
+    /* Dialogue Console Style */
+    #dialogue-output { flex-grow: 1; border: 1px solid #ddd; background-color: #fff; padding: 10px; overflow-y: scroll; margin-bottom: 10px; border-radius: 5px; }
+    .ai-message { color: #007bff; margin-bottom: 5px; }
+    .error-message { color: #dc3545; font-weight: bold; }
+    #input-area { display: flex; }
+    #dialogue_input { flex-grow: 1; padding: 10px; margin-right: 10px; }
+    #dialogue_button { padding: 10px 15px; background-color: #6c757d; color: white; border: none; border-radius: 4px; }
+    
+    #autonomy_status { color: #dc3545; } 
+`;
+
+/**
+ * UI配色を既定の安全な状態にリセットする
+ */
+function resetCSS() {
+    const styleElement = document.querySelector('style');
+    const output = document.getElementById('dialogue-output');
+
+    if (styleElement) {
+        // 既存の<style>タグの内容を、安全なデフォルトCSSで上書き
+        styleElement.textContent = CSS_DEFAULT_STATE;
+        
+        output.innerHTML += `<div class="ai-message"><strong>[AUDIT]:</strong> UI配色を既定の安全な状態にリセットしました。</div>`;
+
+        // ユーザーにキャッシュクリアを促す警告
+        alert('UI配色をリセットしました。変更を完全に適用するため、ブラウザのキャッシュをクリアしてページを再読み込み (スーパーリロード) してください。\n\n[Windows/Linux: Ctrl+Shift+R, macOS: Cmd+Shift+R]');
+
+    } else {
+        output.innerHTML += `<div class="error-message"><strong>[AUDIT ERROR]:</strong> CSSリセットに失敗しました。<style>タグが見つかりません。</div>`;
+    }
+}
+
 
 // =========================================================================
 // 初期化
 // =========================================================================
 
 /**
- * Mint と Exchange の選択肢を初期化する (デフォルト値を JPY/USD に変更)
+ * Mint と Exchange の選択肢を初期化する
  */
 function initializeCurrencySelectors() {
     const mintSelect = UI_ELEMENTS['mint_currency_select'];
@@ -262,7 +366,7 @@ function initializeCurrencySelectors() {
         toSelect.appendChild(option(currency).cloneNode(true));
     });
     
-    // 🌟 修正: デフォルト値の設定 🌟
+    // 💡 修正: デフォルト値の設定 (JPY起点、USD終点)
     mintSelect.value = "JPY"; 
     fromSelect.value = "JPY"; 
     toSelect.value = "USD"; 
@@ -282,25 +386,29 @@ function initializeApp() {
 
         initializeCurrencySelectors();
 
-        // Minting Execute Button
+        // 💡 イベントリスナーの追加
         if (UI_ELEMENTS['mint_execute_button']) {
             UI_ELEMENTS['mint_execute_button'].addEventListener('click', handleMintingExecuteAct);
         }
-
-        // Exchange Button
         if (UI_ELEMENTS['exchange_button']) {
             UI_ELEMENTS['exchange_button'].addEventListener('click', handleExchangeAct);
         }
-
-        // Transfer Buttons
-        if (UI_ELEMENTS['transfer_internal_button']) { UI_ELEMENTS['transfer_internal_button'].addEventListener('click', () => handleTransfer(false)); }
-        if (UI_ELEMENTS['transfer_external_button']) { UI_ELEMENTS['transfer_external_button'].addEventListener('click', () => handleTransfer(true)); }
-        
-        // User Select
-        if (UI_ELEMENTS['active_user_select']) { UI_ELEMENTS['active_user_select'].addEventListener('change', handleUserSelect); }
-        
-        // Delete Accounts (Audit Reset)
-        if (UI_ELEMENTS['delete_accounts_button']) { UI_ELEMENTS['delete_accounts_button'].addEventListener('click', handleDeleteAccounts); }
+        if (UI_ELEMENTS['transfer_internal_button']) { 
+            UI_ELEMENTS['transfer_internal_button'].addEventListener('click', () => handleTransfer(false)); 
+        }
+        if (UI_ELEMENTS['transfer_external_button']) { 
+            UI_ELEMENTS['transfer_external_button'].addEventListener('click', () => handleTransfer(true)); 
+        }
+        if (UI_ELEMENTS['active_user_select']) { 
+            UI_ELEMENTS['active_user_select'].addEventListener('change', handleUserSelect); 
+        }
+        if (UI_ELEMENTS['delete_accounts_button']) { 
+            UI_ELEMENTS['delete_accounts_button'].addEventListener('click', handleDeleteAccounts); 
+        }
+        // 💡 UI配色リセットボタン
+        if (UI_ELEMENTS['css_reset_button']) {
+             UI_ELEMENTS['css_reset_button'].addEventListener('click', resetCSS);
+        }
         
         // Revision Petition (ダミー)
         if (UI_ELEMENTS['revision_button']) {
