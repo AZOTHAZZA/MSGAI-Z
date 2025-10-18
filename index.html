@@ -5,21 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MSGAI - ロゴス監査コンソール</title>
     
-    <link rel="stylesheet" href="style.css"> 
-    
     <style>
-        /* 🌟 修正: UI全体の色と基本レイアウトの復元 🌟 */
+        /* 🌟 復元されたすべてのCSSルールをここに記述 🌟 */
         body { 
             display: flex; 
             font-family: sans-serif; 
             margin: 0; 
-            /* 監査コンソールらしい淡い背景色を復元 */
-            background-color: #f0f0f0; 
+            background-color: #f0f0f0; /* 全体の背景色 */
         }
         #sidebar { 
             width: 350px; 
-            /* サイドバーの背景色を白に復元 */
-            background-color: #fff; 
+            background-color: #fff; /* サイドバーの背景色 */
             padding: 20px; 
             box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); 
         }
@@ -36,7 +32,7 @@
             border-radius: 5px; 
         }
         
-        /* フォームとラベルのレイアウト修正 (前回の修正を維持) */
+        /* フォームとラベルのレイアウト修正 */
         .gauge-area label {
             display: block; 
             margin-top: 10px; 
@@ -53,7 +49,7 @@
             margin-bottom: 15px;
         }
         
-        /* ボタンのスタイルと色分け (前回の修正を維持) */
+        /* ボタンのスタイルと色分け */
         .action-button { width: 100%; padding: 10px; margin-top: 5px; border: none; border-radius: 4px; color: white; cursor: pointer; }
         .action-internal { background-color: #007bff; }
         .action-external { background-color: #ffc107; }
@@ -75,7 +71,6 @@
         #dialogue_input { flex-grow: 1; padding: 10px; margin-right: 10px; }
         #dialogue_button { padding: 10px 15px; background-color: #6c757d; color: white; border: none; border-radius: 4px; }
         
-        /* 自律性ステータスの色調整（Tension更新ロジックも参照）*/
         #autonomy_status { color: #dc3545; } 
     </style>
 </head>
