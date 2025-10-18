@@ -1,4 +1,4 @@
-// app/main.js (UI統一・初期残高0対応版 - 全文)
+// app/main.js (最終修正版 - 全文)
 
 import { getCurrentState, getTensionInstance, addTension, setActiveUser, getActiveUserBalance, deleteAccounts } from '../core/foundation.js'; 
 import { actMintCurrency, actExchangeCurrency } from '../core/currency.js'; 
@@ -13,7 +13,7 @@ const TENSION_LIMIT = 0.5;
 let UI_ELEMENTS = {};
 
 /**
- * すべてのUI要素のIDをキャッシュする (IDを統一)
+ * すべてのUI要素のIDをキャッシュする
  */
 function cacheUIElements() {
     const ids = [
@@ -25,10 +25,9 @@ function cacheUIElements() {
         'mint_amount_input', 'dialogue-output', 'dialogue_input', 'dialogue_button',
         'exchange_amount_input', 'exchange_from_select', 'exchange_to_select', 
         'exchange_button',
-        // 🌟 修正: MintingボタンIDを統一 (単一の実行ボタン)
         'mint_currency_select', 'mint_execute_button' 
     ];
-    // 残高IDを動的に追加
+    
     SUPPORTED_CURRENCIES.forEach(c => {
         ids.push(`balance_${c}`); 
     });
@@ -36,8 +35,7 @@ function cacheUIElements() {
     ids.forEach(id => {
         const el = document.getElementById(id);
         if (!el) {
-            // ログコンソールが機能しない場合の致命的エラーチェック
-            if (id === 'status_message' || id === 'tension_level_display') {
+             if (id === 'status_message' || id === 'tension_level_display') {
                  console.error(`Missing critical UI element ID: ${id}`);
                  throw new Error(`Critical UI element missing: ${id}. Check index.html.`);
             }
@@ -56,7 +54,13 @@ function logToConsole(message, type = 'ai-message') {
     output.scrollTop = output.scrollHeight; 
 }
 
-// ... (updateUI関数は前回のコードをそのまま使用) ...
+// =========================================================================
+// UI更新ロジック
+// =========================================================================
+
+/**
+ * UI全体を最新の状態に基づいて更新する
+ */
 function updateUI(state) {
     const tension = getTensionInstance();
     const tensionValue = tension.getValue();
@@ -66,24 +70,39 @@ function updateUI(state) {
         UI_ELEMENTS['status_message'].textContent = `[STATUS]: ${state.status_message}`;
     }
     
-    // 2. Tension & Autonomy Status (省略。ロジックは前回通り)
+    // Tension & Autonomy Status
     if (UI_ELEMENTS['tension_level_display']) {
         UI_ELEMENTS['tension_level_display'].textContent = `T: ${tensionValue.toFixed(4)}`;
     }
     const tensionBarEl = UI_ELEMENTS['tension_level_display_bar'];
-    if (tensionBarEl) { /* ... Tension Bar Logic ... */ }
+    if (tensionBarEl) { 
+        const tensionPercent = Math.min(tensionValue / TENSION_LIMIT, 1) * 100;
+        tensionBarEl.style.width = `${tensionPercent}%`;
+        tensionBarEl.style.backgroundColor = (tensionValue > TENSION_LIMIT * 0.7) ? '#dc3545' : '#ffc107';
+    }
     const autonomyStatusEl = UI_ELEMENTS['autonomy_status'];
-    if (autonomyStatusEl) { /* ... Autonomy Status Logic ... */ }
+    if (autonomyStatusEl) {
+        if (tensionValue > TENSION_LIMIT) {
+            autonomyStatusEl.innerHTML = `暴走抑止ステータス: **警告 (T > ${TENSION_LIMIT.toFixed(4)})**`;
+            autonomyStatusEl.style.color = '#dc3545';
+        } else if (tensionValue > TENSION_LIMIT * 0.7) {
+            autonomyStatusEl.innerHTML = `暴走抑止ステータス: **高緊張**`;
+            autonomyStatusEl.style.color = '#ffc107';
+        } else {
+            autonomyStatusEl.innerHTML = `暴走抑止ステータス: **低緊張**`;
+            autonomyStatusEl.style.color = '#28a745';
+        }
+    }
 
-    // 3. 数理的制御パラメータ (I/R) (省略。ロジックは前回通り)
+    // 数理的制御パラメータ (I/R) 
     if (UI_ELEMENTS['intensity_display']) { UI_ELEMENTS['intensity_display'].textContent = "0.9025"; } 
     if (UI_ELEMENTS['rigor_display']) { UI_ELEMENTS['rigor_display'].textContent = "0.2236"; }
     
-    // 4. Active User & Balance
+    // Active User & Balance
     if (UI_ELEMENTS['active_user_name']) {
         UI_ELEMENTS['active_user_name'].textContent = activeUserName;
     }
-    // メイン残高表示
+    // メイン残高表示 (USD)
     if (UI_ELEMENTS['balance_display']) {
         const balance = getActiveUserBalance(activeUserName, "USD");
         UI_ELEMENTS['balance_display'].textContent = balance.toFixed(2).toLocaleString();
@@ -93,7 +112,7 @@ function updateUI(state) {
     const accounts = state.accounts[activeUserName];
     SUPPORTED_CURRENCIES.forEach(currency => {
         const el = UI_ELEMENTS[`balance_${currency}`];
-        if (el) { // 要素が存在する場合のみ更新
+        if (el) { 
             const balance = accounts[currency] || 0;
             if (currency === "JPY") {
                  el.textContent = Math.floor(balance).toLocaleString();
@@ -105,9 +124,20 @@ function updateUI(state) {
         }
     });
 
-    // ユーザー選択肢の更新 (省略。ロジックは前回通り)
+    // ユーザー選択肢の更新
     const selectEl = UI_ELEMENTS['active_user_select'];
-    if (selectEl) { /* ... User Select Logic ... */ }
+    if (selectEl) {
+        selectEl.innerHTML = '';
+        Object.keys(state.accounts).forEach(user => {
+            const option = document.createElement('option');
+            option.value = user;
+            option.textContent = user;
+            if (user === activeUserName) {
+                option.selected = true;
+            }
+            selectEl.appendChild(option);
+        });
+    }
 }
 
 
@@ -116,11 +146,11 @@ function updateUI(state) {
 // =========================================================================
 
 /**
- * 🌟 修正: 通貨生成実行ボタンのハンドラー
+ * 通貨生成実行ボタンのハンドラー (Minting Act)
  */
 function handleMintingExecuteAct() {
     try {
-        const currency = UI_ELEMENTS['mint_currency_select'].value; // ドロップダウンから通貨を取得
+        const currency = UI_ELEMENTS['mint_currency_select'].value;
         const amount = parseFloat(UI_ELEMENTS['mint_amount_input'].value);
         
         if (isNaN(amount) || amount <= 0) {
@@ -140,33 +170,77 @@ function handleMintingExecuteAct() {
     }
 }
 
-// ... (handleExchangeAct, handleTransfer, handleUserSelect, handleDeleteAccounts関数は省略。前回のコードを使用) ...
+/**
+ * 通貨交換実行ボタンのハンドラー (Exchange Act)
+ */
 function handleExchangeAct() {
     try {
         const fromC = UI_ELEMENTS['exchange_from_select'].value;
         const toC = UI_ELEMENTS['exchange_to_select'].value;
         const amount = parseFloat(UI_ELEMENTS['exchange_amount_input'].value);
-        if (fromC === toC || isNaN(amount) || amount <= 0) { /* ... Validation ... */ return; }
+
+        if (fromC === toC) {
+            logToConsole("同じ通貨間の交換はできません。", 'user-message');
+            return;
+        }
+        if (isNaN(amount) || amount <= 0) {
+            logToConsole("交換数量は正の値を指定してください。", 'user-message');
+            return;
+        }
+        
         const state = getCurrentState();
         const newState = actExchangeCurrency(state.active_user, fromC, amount, toC);
+        
         logToConsole(`${state.active_user} が ${amount.toFixed(4)} ${fromC} を ${toC} に交換しました。`, 'ai-message');
         updateUI(newState);
+        
     } catch (error) {
         logToConsole(`Exchange Act 失敗: ${error.message}`, 'error-message');
         console.error(error);
     }
 }
-function handleTransfer(isExternal) { /* ... Transfer Logic ... */ }
-function handleUserSelect(event) { /* ... User Select Logic ... */ }
-function handleDeleteAccounts() { /* ... Delete Accounts Logic ... */ }
 
+// ... (handleTransfer, handleUserSelect, handleDeleteAccounts関数は省略。前回のコードを使用) ...
+function handleTransfer(isExternal) {
+    try {
+        const recipient = UI_ELEMENTS['recipient_input'].value;
+        const amount = parseFloat(UI_ELEMENTS['amount_input'].value);
+        if (!recipient || recipient === getCurrentState().active_user || isNaN(amount) || amount <= 0) { 
+             logToConsole("有効な受取人/数量を指定してください。", 'user-message'); return; 
+        }
+        const state = getCurrentState();
+        const tensionAmount = isExternal ? amount * 0.0001 : amount * 0.00001;
+        addTension(tensionAmount); 
+        const actType = isExternal ? '外部送金' : '内部送金';
+        logToConsole(`${state.active_user} が ${recipient} へ $${amount.toFixed(2)} ${actType} を実行しました。摩擦によりTensionが${tensionAmount.toFixed(6)}増加。`, 'ai-message');
+        updateUI(getCurrentState());
+    } catch (error) {
+        logToConsole(`Transfer Act 失敗: ${error.message}`, 'error-message');
+        console.error(error);
+    }
+}
+
+function handleUserSelect(event) {
+    const newActiveUser = event.target.value;
+    setActiveUser(newActiveUser);
+    logToConsole(`アクティブユーザーを ${newActiveUser} に切り替えました。`, 'user-message');
+    updateUI(getCurrentState());
+}
+
+function handleDeleteAccounts() {
+    if (confirm("🚨 警告: 全ての口座情報を削除し、システムを初期状態にリセットします。よろしいですか？")) {
+        deleteAccounts();
+        logToConsole("全ての口座情報と状態が削除され、システムは初期状態にリセットされました。", 'error-message');
+        window.location.reload();
+    }
+}
 
 // =========================================================================
 // 初期化
 // =========================================================================
 
 /**
- * 🌟 修正: Mint と Exchange の選択肢を初期化する
+ * Mint と Exchange の選択肢を初期化する (デフォルト値を JPY/USD に変更)
  */
 function initializeCurrencySelectors() {
     const mintSelect = UI_ELEMENTS['mint_currency_select'];
@@ -183,20 +257,15 @@ function initializeCurrencySelectors() {
             return opt;
         };
         
-        // Mint Select
         mintSelect.appendChild(option(currency).cloneNode(true));
-        
-        // From Select
         fromSelect.appendChild(option(currency).cloneNode(true));
-
-        // To Select
         toSelect.appendChild(option(currency).cloneNode(true));
     });
     
-    // デフォルト値の設定
-    mintSelect.value = "USD";
-    fromSelect.value = "USD";
-    toSelect.value = "JPY";
+    // 🌟 修正: デフォルト値の設定 🌟
+    mintSelect.value = "JPY"; 
+    fromSelect.value = "JPY"; 
+    toSelect.value = "USD"; 
 }
 
 
@@ -206,41 +275,40 @@ function initializeCurrencySelectors() {
 function initializeApp() {
     try {
         cacheUIElements();
-        
         logToConsole("Logos Foundationを初期化中...", 'system-message');
         
-        // 💡 foundation.js の INITIAL_STATE の USD 残高を 0 に修正する必要があります。
         const initialState = getCurrentState(); 
-
         logToConsole(`監査コンソール起動成功。アクティブユーザー: ${initialState.active_user}`, 'ai-message');
 
-        // 通貨の選択肢を初期化
         initializeCurrencySelectors();
 
-        // イベントリスナーの設定
-        
-        // 🌟 修正: Minting Execute Button
+        // Minting Execute Button
         if (UI_ELEMENTS['mint_execute_button']) {
             UI_ELEMENTS['mint_execute_button'].addEventListener('click', handleMintingExecuteAct);
         }
 
-        // Exchange Button (省略)
-        if (UI_ELEMENTS['exchange_button']) { /* ... Exchange Button Listener ... */ }
+        // Exchange Button
+        if (UI_ELEMENTS['exchange_button']) {
+            UI_ELEMENTS['exchange_button'].addEventListener('click', handleExchangeAct);
+        }
 
-        // Transfer Buttons (省略)
-        if (UI_ELEMENTS['transfer_internal_button']) { /* ... Transfer Internal Listener ... */ }
-        if (UI_ELEMENTS['transfer_external_button']) { /* ... Transfer External Listener ... */ }
+        // Transfer Buttons
+        if (UI_ELEMENTS['transfer_internal_button']) { UI_ELEMENTS['transfer_internal_button'].addEventListener('click', () => handleTransfer(false)); }
+        if (UI_ELEMENTS['transfer_external_button']) { UI_ELEMENTS['transfer_external_button'].addEventListener('click', () => handleTransfer(true)); }
         
-        // User Select (省略)
-        if (UI_ELEMENTS['active_user_select']) { /* ... User Select Listener ... */ }
+        // User Select
+        if (UI_ELEMENTS['active_user_select']) { UI_ELEMENTS['active_user_select'].addEventListener('change', handleUserSelect); }
         
-        // Delete Accounts (Audit Reset) (省略)
-        if (UI_ELEMENTS['delete_accounts_button']) { /* ... Delete Accounts Listener ... */ }
+        // Delete Accounts (Audit Reset)
+        if (UI_ELEMENTS['delete_accounts_button']) { UI_ELEMENTS['delete_accounts_button'].addEventListener('click', handleDeleteAccounts); }
         
-        // Revision Petition (ダミー) (省略)
-        if (UI_ELEMENTS['revision_button']) { /* ... Revision Button Listener ... */ }
+        // Revision Petition (ダミー)
+        if (UI_ELEMENTS['revision_button']) {
+             UI_ELEMENTS['revision_button'].addEventListener('click', () => {
+                 logToConsole("自律的修正請願をログに記録しました。Tension制御アルゴリズムが検討します。", 'ai-message');
+            });
+        }
         
-        // UIを初期状態で更新
         updateUI(initialState);
         
     } catch (error) {
