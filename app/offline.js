@@ -1,4 +1,4 @@
-// App/offline.js
+// app/offline.js
 // MSGAI: App層 ネットワークと沈黙レベル調整ロジック
 
 // 🚨 修正: Core層へのインポートは一つ上の階層へ移動 (../) し、小文字に統一
