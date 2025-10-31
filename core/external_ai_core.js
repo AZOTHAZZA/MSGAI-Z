@@ -2,7 +2,7 @@
 
 // 💡 修正箇所 1: VercelプロキシのURLを定義
 // あなたのデプロイURLに合わせて修正済みです
-const VERCEL_PROXY_URL = 'https://msgai-z.vercel.app/api/gemini-proxy'; 
+const VERCEL_PROXY_URL = 'https://msgai-z.vercel.app/api/gemini-proxy-node'; 
 
 /**
  * 外部LLM APIを呼び出し、応答を生成する (非同期処理)
