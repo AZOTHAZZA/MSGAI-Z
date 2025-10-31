@@ -190,13 +190,14 @@ function actExchangeCurrency(user, fromCurrency, fromAmount, toCurrency) {
  * @returns {Promise<{status: string, data: string}>} - Geminiの応答テキスト
  */
 async function actAIQuery(user, prompt) {
-    // 外部AIコアが新しいオブジェクト構造を使用しているかチェック
-    if (typeof external_ai_core === 'undefined' || typeof external_ai_core.generate !== 'function') {
-        throw new Error("外部AIコア (external_ai_core.js) のロジックが見つかりません。");
+    // 外部AIコアがグローバルスコープで利用可能かチェック
+    if (typeof window.external_ai_core === 'undefined' || typeof window.external_ai_core.generate !== 'function') {
+        // 修正後の external_ai_core.js がロードされていない場合のエラー
+        throw new Error("外部AIコア (external_ai_core.js) がロードされていません。index.htmlでコアがapp/main.jsより前に読み込まれているか確認してください。");
     }
 
-    // 新しいコアロジック (external_ai_core.generate) を呼び出し、生のテキスト応答を取得
-    const textResponse = await external_ai_core.generate(prompt); 
+    // 新しいコアロジック (window.external_ai_core.generate) を呼び出し、生のテキスト応答を取得
+    const textResponse = await window.external_ai_core.generate(prompt); 
 
     // 応答のテキストを返す
     return { status: "success", data: textResponse };
