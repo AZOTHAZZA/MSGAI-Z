@@ -1,17 +1,19 @@
-// /api/gemini-proxy.js - Vercel Edge Function (シンプルなfetchによる実装)
-// SDKへの依存を削除し、デプロイエラーを回避します。
+// /api/gemini-proxy.js - Vercel Edge Function (最終修正版)
+// 504エラーの原因となった request.json() の呼び出し方を修正
 
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=";
 
 export default async function handler(request) {
-    // 💡 リクエストメソッドのチェック (GETリクエストをブロック)
     if (request.method !== 'POST') {
         return new Response(JSON.stringify({ error: 'Method Not Allowed' }), { status: 405 });
     }
 
     try {
         const apiKey = process.env.GEMINI_API_KEY;
-        const { prompt } = await request.json();
+        
+        // 💡 修正箇所: request.json() を正しく呼び出す
+        const requestBody = await request.json(); 
+        const { prompt } = requestBody;          
         
         if (!apiKey) {
             throw new Error("API_KEY is not configured in Vercel Environment Variables.");
@@ -39,7 +41,6 @@ export default async function handler(request) {
 
         const responseText = geminiData.candidates[0].content.parts[0].text;
 
-        // 成功応答をCalcLangフロントエンドに返す
         return new Response(JSON.stringify({ text: responseText }), {
             status: 200,
             headers: {
@@ -50,7 +51,6 @@ export default async function handler(request) {
 
     } catch (error) {
         console.error("Internal Function Error:", error.message);
-        // エラーをフロントエンドに返し、CalcLangがそれを表示できるようにする
         return new Response(JSON.stringify({ error: `Function Failed: ${error.message}` }), { status: 500 });
     }
 }
