@@ -206,31 +206,34 @@
         </div>
     </div>
 
-    <script src="./core/main.js"></script> 
+    <script src="./app/main.js"></script> 
     <script src="./core/external_ai_core.js"></script>
     <script src="./core/calcshell_host.js"></script>
+    
     <script>
         // =========================================================================
-        // アプリケーション（UI Event ハンドラー） - CalcLang経由の呼び出しに修正
+        // 既存のMSGAIロジック（actTransferなど）は /app/main.js に依存します。
+        // ここからはUI Event ハンドラーのみを記述し、CalcCore.MöbiusAct経由で呼び出します。
         // =========================================================================
         
+        // 💡 注意: 既存の main.js の initializeState, getCurrentState, updateState, 
+        // addTension, setActiveUser, deleteAccounts などの関数は、
+        // /app/main.js 内のグローバルスコープで定義されている必要があります。
+
         const SUPPORTED_CURRENCIES = ["USD", "JPY", "EUR", "BTC", "ETH", "MATIC"];
         const TENSION_LIMIT = 0.5; 
         let UI_ELEMENTS = {};
 
         function cacheUIElements() {
-            // ... (既存のUIキャッシュロジックを保持)
             const ids = [
                 'status_message', 'tension_level_display', 'tension_bar', 'tension_level_display_bar',
-                'intensity_display', 'rigor_display', 'active_user_select', 
-                'active_user_name', 'recipient_input', 
-                'amount_input', 'autonomy_status', 'transfer_internal_button', 
+                'intensity_display', 'rigor_display', 'active_user_select', 'active_user_name', 
+                'recipient_input', 'amount_input', 'autonomy_status', 'transfer_internal_button', 
                 'transfer_external_button', 'revision_button', 'delete_accounts_button',
                 'mint_amount_input', 'dialogue-output', 'dialogue_input', 'dialogue_button',
                 'exchange_amount_input', 'exchange_from_select', 'exchange_to_select', 
-                'exchange_button',
-                'mint_currency_select', 'mint_execute_button', 'css_reset_button',
-                'decay_execute_button', 'ch_display' // 💡 新規追加
+                'exchange_button', 'mint_currency_select', 'mint_execute_button', 'css_reset_button',
+                'decay_execute_button', 'ch_display'
             ];
             
             SUPPORTED_CURRENCIES.forEach(c => { ids.push(`balance_${c}`); });
@@ -242,7 +245,6 @@
         }
 
         function logToConsole(message, type = 'ai-message') {
-            // ... (既存のログ出力ロジックを保持)
             console.log("AUDIT LOGGING TEST: " + message); 
             
             const output = UI_ELEMENTS['dialogue-output'];
@@ -254,16 +256,11 @@
             output.appendChild(messageDiv);
             output.scrollTop = output.scrollHeight; 
         }
-        
-        // 💡 修正: 既存の actTransfer/actMintCurrency/actExchangeCurrency はUIハンドラから直接呼び出さない！
-        // 💡 CalcLangのMöbiusActを介して呼び出すように変更する。
-        
-        // 💡 新規追加: TensionとCHのUI更新ロジックをCalcCoreから取得するように変更
+
         function updateUI(state) {
-            // ... (state取得ロジックは保持)
-            const tension = CalcCore.getTension(); // 💡 CalcCoreから取得
-            const CH = CalcCore.getCH(); // 💡 CalcCoreから取得
-            const tensionValue = tension; 
+            // 💡 Tension/CHの取得をCalcCore経由に変更
+            const tensionValue = CalcCore.getTension(); 
+            const CH = CalcCore.getCH(); 
             const activeUserName = state.active_user;
             
             if (UI_ELEMENTS['status_message']) {
@@ -294,11 +291,11 @@
                 }
             }
             
-            // 💡 新規追加: CHの表示
+            // 💡 CHの表示
             if (UI_ELEMENTS['ch_display']) { UI_ELEMENTS['ch_display'].textContent = CH.toFixed(4); }
             
-            if (UI_ELEMENTS['intensity_display']) { UI_ELEMENTS['intensity_display'].textContent = "0.9025"; } // 既存値を保持
-            if (UI_ELEMENTS['rigor_display']) { UI_ELEMENTS['rigor_display'].textContent = "0.2236"; } // 既存値を保持
+            if (UI_ELEMENTS['intensity_display']) { UI_ELEMENTS['intensity_display'].textContent = "0.9025"; } 
+            if (UI_ELEMENTS['rigor_display']) { UI_ELEMENTS['rigor_display'].textContent = "0.2236"; }
             
             if (UI_ELEMENTS['active_user_name']) {
                 UI_ELEMENTS['active_user_name'].textContent = activeUserName;
@@ -342,12 +339,11 @@
                 
                 if (isNaN(amount) || amount <= 0) { logToConsole("生成数量は正の値を指定してください。", 'user-message'); return; }
 
-                // 💡 ロゴス作為の実行: MöbiusActに処理を委譲
                 const args = [{ type: 'DECIMAL', value: amount }, { type: 'STRING', value: currency }];
                 const result = await CalcCore.MöbiusAct("MINT", args); 
 
-                logToConsole(`${state.active_user} が ${amount.toFixed(2)} ${currency} を生成しました。Tensionが増加しました。`, 'ai-message');
-                updateUI(getCurrentState()); // 状態更新
+                logToConsole(`${getCurrentState().active_user} が ${amount.toFixed(2)} ${currency} を生成しました。Tensionが変動。`, 'ai-message');
+                updateUI(getCurrentState()); 
                 
             } catch (error) {
                 logToConsole(`Minting Act 失敗: ${error.message}`, 'error-message');
@@ -363,11 +359,10 @@
 
                 if (fromC === toC || isNaN(amount) || amount <= 0) { logToConsole("有効な交換数量と異なる通貨を指定してください。", 'user-message'); return; }
                 
-                // 💡 ロゴス作為の実行: MöbiusActに処理を委譲
                 const args = [{ type: 'DECIMAL', value: amount }, { type: 'STRING', value: fromC }, { type: 'STRING', value: toC }];
                 const result = await CalcCore.MöbiusAct("EXCHANGE", args); 
 
-                logToConsole(`${state.active_user} が ${amount.toFixed(4)} ${fromC} を ${toC} に交換しました。`, 'ai-message');
+                logToConsole(`${getCurrentState().active_user} が ${amount.toFixed(4)} ${fromC} を ${toC} に交換しました。`, 'ai-message');
                 updateUI(getCurrentState());
                 
             } catch (error) {
@@ -382,20 +377,18 @@
             try {
                 const recipient = UI_ELEMENTS['recipient_input'].value;
                 const amount = parseFloat(UI_ELEMENTS['amount_input'].value);
-                const state = getCurrentState();
 
                 if (isNaN(amount) || amount <= 0) { logToConsole("有効な数量を指定してください。", 'user-message'); return; }
-                if (!recipient || recipient === state.active_user) { logToConsole("有効な受取人を指定してください。", 'user-message'); return; }
+                if (!recipient || recipient === getCurrentState().active_user) { logToConsole("有効な受取人を指定してください。", 'user-message'); return; }
                 
                 const targetAct = isExternal ? 'TRANSFER_EXTERNAL' : 'TRANSFER_INTERNAL';
 
-                // 💡 ロゴス作為の実行: MöbiusActに処理を委譲
                 const args = [{ type: 'DECIMAL', value: amount }, { type: 'STRING', value: CURRENCY }, { type: 'STRING', value: recipient }];
                 const result = await CalcCore.MöbiusAct(targetAct, args); 
                 
                 const actType = isExternal ? '外部送金（高摩擦）' : '内部送金（低摩擦）';
                 
-                logToConsole(`${state.active_user} が ${recipient} へ **$${amount.toFixed(2)} ${CURRENCY}** を ${actType} しました。Tensionが変動。`, 'ai-message');
+                logToConsole(`${getCurrentState().active_user} が ${recipient} へ **$${amount.toFixed(2)} ${CURRENCY}** を ${actType} しました。Tensionが変動。`, 'ai-message');
                 updateUI(getCurrentState());
                 
             } catch (error) {
@@ -416,38 +409,39 @@
             const input = UI_ELEMENTS['dialogue_input'].value.trim();
             UI_ELEMENTS['dialogue_input'].value = '';
 
-            if (input.startsWith('query')) {
-                const prompt = input.substring(6).trim();
-                const args = [{ type: 'STRING', value: prompt }];
-
-                logToConsole("作為: 対話生成 (AI Query) を要求します...");
-                const result = await CalcCore.MöbiusAct("AI_QUERY", args);
-                logToConsole(`[ロゴス応答] ${result.data}`);
-            } else {
-                 logToConsole("エラー: 対話作為は 'query <質問>' 形式で記述してください。", 'user-message');
+            const prompt = input.startsWith('query') ? input.substring(6).trim() : input;
+            
+            if (prompt === "") {
+                 logToConsole("エラー: 対話作為の質問内容がありません。", 'user-message');
                  return;
             }
+
+            const args = [{ type: 'STRING', value: prompt }];
+
+            logToConsole("作為: 対話生成 (AI Query) を要求します...");
+            const result = await CalcCore.MöbiusAct("AI_QUERY", args);
+            logToConsole(`[ロゴス応答] ${result.data}`);
+            
             updateUI(getCurrentState());
         }
 
         function handleUserSelect(event) {
-             // ... (既存のロジックを保持)
             const newActiveUser = event.target.value;
+            // 既存のsetActiveUser関数を呼び出す
             setActiveUser(newActiveUser);
             logToConsole(`アクティブユーザーを ${newActiveUser} に切り替えました。`, 'user-message');
             updateUI(getCurrentState());
         }
 
         function handleDeleteAccounts() {
-             // ... (既存のロジックを保持)
             if (confirm("🚨 警告: 全ての口座情報とTensionを削除し、システムを初期状態にリセットします。よろしいですか？")) {
+                // 既存のdeleteAccounts関数を呼び出す
                 deleteAccounts();
                 logToConsole("全ての口座情報と状態が削除され、システムは初期状態にリセットされました。", 'error-message');
                 window.location.reload(); 
             }
         }
         
-        // ... (resetCSS, initializeCurrencySelectors, initializeApp ロジックは保持)
         const CSS_DEFAULT_STATE = document.querySelector('style').textContent;
         function resetCSS() {
             const styleElement = document.querySelector('style');
@@ -495,13 +489,14 @@
             toSelect.value = "USD"; 
         }
 
-
         function initializeApp() {
             try {
+                // 💡 既存のgetCurrentState関数がapp/main.jsで定義されていることを前提とする
+                const initialState = getCurrentState(); 
+
                 cacheUIElements();
                 logToConsole("Logos Foundationを初期化中...", 'system-message');
                 
-                const initialState = getCurrentState(); 
                 logToConsole(`監査コンソール起動成功。アクティブユーザー: ${initialState.active_user}`, 'ai-message');
 
                 initializeCurrencySelectors();
@@ -511,12 +506,15 @@
                 UI_ELEMENTS['exchange_button'].addEventListener('click', handleExchangeAct);
                 UI_ELEMENTS['transfer_internal_button'].addEventListener('click', () => handleTransfer(false)); 
                 UI_ELEMENTS['transfer_external_button'].addEventListener('click', () => handleTransfer(true)); 
+                
                 UI_ELEMENTS['active_user_select'].addEventListener('change', handleUserSelect); 
                 UI_ELEMENTS['delete_accounts_button'].addEventListener('click', handleDeleteAccounts); 
                 UI_ELEMENTS['css_reset_button'].addEventListener('click', resetCSS);
+                
                 UI_ELEMENTS['revision_button'].addEventListener('click', () => {
                      logToConsole("自律的修正請願をログに記録しました。Tension制御アルゴリズムが検討します。", 'ai-message');
                 });
+                
                 // 💡 新規追加のイベントハンドラ
                 UI_ELEMENTS['decay_execute_button'].addEventListener('click', handleDecayAct); 
                 UI_ELEMENTS['dialogue_button'].addEventListener('click', handleDialogueAct);
@@ -534,5 +532,6 @@
 
         document.addEventListener('DOMContentLoaded', initializeApp);
     </script>
-    </body>
+
+</body>
 </html>
