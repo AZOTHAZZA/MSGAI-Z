@@ -1,8 +1,10 @@
 // /app/main.js - MSGAI Pure Core (CalcLang制御下で機能するように調整)
 
+
 // =========================================================================
 // I. ロゴス状態と補助関数 (CalcLang Coreによって利用される部分)
 // =========================================================================
+
 
 // 初期アカウント残高の定義 (全てゼロ)
 const INITIAL_ACCOUNTS = {
@@ -11,7 +13,9 @@ const INITIAL_ACCOUNTS = {
     User_C: { USD: 0.00, JPY: 0, EUR: 0.00, BTC: 0.0, ETH: 0.0, MATIC: 0.0 }
 };
 
+
 let state = initializeState();
+
 
 /** 状態の初期化 */
 function initializeState() {
@@ -24,14 +28,17 @@ function initializeState() {
     };
 }
 
+
 /** 状態の取得 (CalcLangコアがTension値を取得・更新するのに利用) */
 function getCurrentState() { return state; }
+
 
 /** 状態の更新 (CalcLangコアがアカウント情報を更新するのに利用) */
 function updateState(newState) {
     state = newState;
     localStorage.setItem('msaiState', JSON.stringify(state));
 }
+
 
 // ローカルストレージからの状態復元を試みる
 const savedState = localStorage.getItem('msaiState');
@@ -48,12 +55,14 @@ if (savedState) {
     updateState(state);
 }
 
+
 /** Tensionの追加/削減 (CalcLangコアによって呼び出される) */
 function addTension(amount) {
     state.tension.value += amount;
     state.tension.value = Math.max(0, state.tension.value);
     updateState(state);
 }
+
 
 /** アクティブユーザーの設定 */
 function setActiveUser(user) {
@@ -66,11 +75,13 @@ function setActiveUser(user) {
     }
 }
 
+
 /** アカウント削除 (リセット) */
 function deleteAccounts() {
     localStorage.removeItem('msaiState');
     state = initializeState();
 }
+
 
 // 為替レート
 const EXCHANGE_RATES = {
@@ -86,6 +97,7 @@ const EXCHANGE_RATES = {
 // =========================================================================
 // II. 既存の作為実行関数 (CalcLang MöbiusActから呼び出される)
 // =========================================================================
+
 
 /**
  * 通貨生成作為 (Minting Act)
@@ -106,16 +118,18 @@ function actMintCurrency(user, currency, amount) {
     // addTension(tensionIncrease); 
 
     updateState(currentState);
-    return currentState;
+    return { status: "success", data: currentState };
 }
+
 
 /**
  * 送金作為 (Transfer Act)
  * 💡 Tensionの更新ロジックは CalcLangコアに移動するため、削除またはコメントアウト
  */
-function actTransfer(sender, recipient, amount, currency) {
+function actTransfer(sender, recipient, amount, currency, isExternal) {
     const currentState = getCurrentState();
-    const isInternal = currentState.accounts[recipient];
+    // 外部送金の場合、 recipientは外部アドレス（アカウント情報には存在しない）として扱う
+    const isInternal = currentState.accounts[recipient]; 
 
     if ((currentState.accounts[sender][currency] || 0) < amount) {
         throw new Error(`${sender} の ${currency} 残高不足です。`);
@@ -132,8 +146,9 @@ function actTransfer(sender, recipient, amount, currency) {
     // addTension(tensionAmount); 
 
     updateState(currentState);
-    return currentState;
+    return { status: "success", data: currentState };
 }
+
 
 /**
  * 通貨交換作為 (Exchange Act)
@@ -163,14 +178,48 @@ function actExchangeCurrency(user, fromCurrency, fromAmount, toCurrency) {
     // addTension(tensionIncrease);
 
     updateState(currentState);
-    return currentState;
+    return { status: "success", data: currentState };
 }
+
+
+/**
+ * 💡 新規追加: AI 対話生成作為 (AI Query Act)
+ * Geminiとの対話処理を external_ai_core.js に委譲します。
+ * @param {string} user - 作為を実行したユーザー名
+ * @param {string} prompt - ユーザーからのプロンプト（哲学的な問いなど）
+ * @returns {Promise<{status: string, data: string}>} - Geminiの応答テキスト
+ */
+async function actAIQuery(user, prompt) {
+    if (typeof generateGeminiContent !== 'function') {
+        throw new Error("外部AIコア (external_ai_core.js) がロードされていません。");
+    }
+
+    // 💡 既存のロゴス履歴 (ここではローカルストレージに依存せず、常に新しい対話として処理)
+    const history = []; 
+
+    // Geminiへの非同期呼び出し
+    const response = await generateGeminiContent(prompt, history);
+
+    // 応答のテキストを返す
+    return { status: "success", data: response.text };
+}
+
+
+/**
+ * 💡 新規追加: ロゴス弛緩作為 (Decay Act)
+ * この作為は、CalcLangコアによってロゴス緊張度を下げるために利用されます。
+ */
+function actDecay(user) {
+    // 💡 弛緩によるTensionの減少ロジックは calcshell_host.js の MöbiusAct に委譲
+    // addTension(-0.01); // 例: Tensionを固定値で下げる
+
+    // 状態自体は変更されないが、作為が成功したことを示す
+    return { status: "success", data: "Logos Tension decayed." };
+}
+
 
 // =========================================================================
 // III. 既存のUI/Appロジック（そのまま維持または削除）
 // =========================================================================
 
-// 💡 注意: 既存の /app/main.js に含まれていた可能性のある
-// UI要素のキャッシュ (cacheUIElements) やイベントハンドラの設定 (initializeApp) は、
-// 制御を index.html のスクリプトブロックに完全に移譲するため、このファイルからは削除します。
-// このファイルは純粋に「状態と作為ロジック」のみを提供します。
+// (UI/Appロジックは index.html に移譲済みのため、このセクションは空です)
