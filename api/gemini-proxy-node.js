@@ -1,25 +1,30 @@
-// /api/gemini-proxy.js - Vercel Edge Function (エラー回避のための最終版)
+// /api/gemini-proxy-node.js - Vercel Serverless Function (Node.js)
 
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=";
 
-export default async function handler(request) {
+// Node.js Serverless Functionでは、この export 形式が一般的
+export default async (request, response) => { 
+    // Node.js環境では、req.method が使われる（Edgeとは異なる）
     if (request.method !== 'POST') {
-        return new Response(JSON.stringify({ error: 'Method Not Allowed' }), { status: 405 });
+        response.status(405).json({ error: 'Method Not Allowed' });
+        return;
     }
 
     try {
         const apiKey = process.env.GEMINI_API_KEY;
         
-        // 💡 修正箇所: JSONボディを安全に解析
-        // request.json() を呼び出し、結果をrequestBodyに代入
-        const requestBody = await request.json(); 
-        const prompt = requestBody.prompt; // requestBodyから直接 prompt プロパティを取得
+        // 💡 修正箇所: request.body を使用（Node.js環境での標準的なJSON解析）
+        // Vercelが自動的に request.body をJSONオブジェクトとして提供してくれる
+        const requestBody = request.body; 
+        const prompt = requestBody.prompt;
         
         if (!apiKey) {
-            throw new Error("API_KEY is not configured in Vercel Environment Variables.");
+            response.status(500).json({ error: "API_KEY is not configured in Vercel Environment Variables." });
+            return;
         }
         if (!prompt) {
-             return new Response(JSON.stringify({ error: 'Prompt is required' }), { status: 400 });
+             response.status(400).json({ error: 'Prompt is required' });
+             return;
         }
         
         // Gemini APIの生のHTTP呼び出し
@@ -41,16 +46,11 @@ export default async function handler(request) {
 
         const responseText = geminiData.candidates[0].content.parts[0].text;
 
-        return new Response(JSON.stringify({ text: responseText }), {
-            status: 200,
-            headers: {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*',
-            },
-        });
+        // 成功応答をCalcLangフロントエンドに返す
+        response.status(200).json({ text: responseText });
 
     } catch (error) {
         console.error("Internal Function Error:", error.message);
-        return new Response(JSON.stringify({ error: `Function Failed: ${error.message}` }), { status: 500 });
+        response.status(500).json({ error: `Function Failed: ${error.message}` });
     }
 }
