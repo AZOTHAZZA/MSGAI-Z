@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MSGAI - ロゴス監査コンソール</title>
+    <title>MTC-AI: ロゴス監査コンソール (CalcLang Core)</title>
     
     <style>
         /* 🌟 UI全体の色と基本レイアウトの最終復元 🌟 */
@@ -64,6 +64,9 @@
         
         #mint_execute_button { background-color: #FFA500; } 
         #exchange_button { background-color: #007bff; } 
+        
+        /* 💡 新規追加: 弛緩作為ボタン */
+        #decay_execute_button { background-color: #20c997; margin-top: 15px; } 
 
         /* Tension Bar Style */
         #tension_bar { background-color: #e9ecef; border-radius: 5px; height: 10px; margin-top: 5px; overflow: hidden; }
@@ -78,12 +81,15 @@
         #dialogue_button { padding: 10px 15px; background-color: #6c757d; color: white; border: none; border-radius: 4px; }
         
         #autonomy_status { color: #dc3545; } 
+        
+        /* 💡 新規追加: 沈黙調和係数 (CH) 表示 */
+        #ch_display { font-weight: bold; color: #28a745; }
     </style>
 </head>
 <body>
     
     <div id="sidebar">
-        <h2>ロゴス監査コンソール (MSGAI Pure Core)</h2>
+        <h2>ロゴス監査コンソール (MTC-AI Core)</h2>
         <p id="status_message">[STATUS]: コア起動中...</p>
         
         <div class="gauge-area">
@@ -95,9 +101,10 @@
         </div>
 
         <div class="gauge-area">
-            <h3>数理的制御パラメータ (I/R)</h3>
-            <p>創造性 (Intensity, I): <span id="intensity_display">0.0000</span></p>
-            <p>厳密性 (Rigor, R): <span id="rigor_display">0.0000</span></p>
+            <h3>数理的制御パラメータ (I/R/CH)</h3>
+            <p>創造性 (Intensity, I): <span id="intensity_display">0.9025</span></p>
+            <p>厳密性 (Rigor, R): <span id="rigor_display">0.2236</span></p>
+            <p><strong>調和係数 (CH):</strong> <span id="ch_display">0.7500</span></p>
 
             <h3>経済ロゴスと状態</h3>
             
@@ -139,6 +146,10 @@
                 自律的修正請願 (Adjustment Petition)
             </button>
             
+            <button id="decay_execute_button" class="action-button action-revision">
+                ロゴス弛緩作為 (Decay Act)
+            </button>
+
             <button id="delete_accounts_button" class="action-button">
                 口座情報削除 (監査用リセット)
             </button>
@@ -190,151 +201,17 @@
         </div>
         
         <div id="input-area">
-            <input type="text" id="dialogue_input" placeholder="哲学的な問い、または作為を記述してください..." />
+            <input type="text" id="dialogue_input" placeholder="哲学的な問い、または作為を記述してください... (例: query ゼロと無限について)" />
             <button id="dialogue_button">作為を実行</button>
         </div>
     </div>
 
+    <script src="./core/main.js"></script> 
+    <script src="./core/external_ai_core.js"></script>
+    <script src="./core/calcshell_host.js"></script>
     <script>
         // =========================================================================
-        // ロゴス・コア（Foundation & Currency ロジック）
-        // =========================================================================
-
-        // 初期アカウント残高の定義 (全てゼロ)
-        const INITIAL_ACCOUNTS = {
-            User_A: { USD: 0.00, JPY: 0, EUR: 0.00, BTC: 0.0, ETH: 0.0, MATIC: 0.0 },
-            User_B: { USD: 0.00, JPY: 0, EUR: 0.00, BTC: 0.0, ETH: 0.0, MATIC: 0.0 },
-            User_C: { USD: 0.00, JPY: 0, EUR: 0.00, BTC: 0.0, ETH: 0.0, MATIC: 0.0 }
-        };
-
-        let state = initializeState();
-
-        function initializeState() {
-            return {
-                status_message: "コア起動完了",
-                active_user: "User_A",
-                accounts: JSON.parse(JSON.stringify(INITIAL_ACCOUNTS)),
-                tension: { value: 0.0, max_limit: 0.5, increase_rate: 0.00001 }
-            };
-        }
-
-        function getCurrentState() { return state; }
-
-        function updateState(newState) {
-            state = newState;
-            localStorage.setItem('msaiState', JSON.stringify(state));
-        }
-        
-        // ローカルストレージからの状態復元を試みる
-        const savedState = localStorage.getItem('msaiState');
-        if (savedState) {
-            try {
-                state = JSON.parse(savedState);
-                state.tension = { value: state.tension.value, max_limit: 0.5, increase_rate: 0.00001 };
-                state.status_message = "コア状態復元済み";
-            } catch (e) {
-                state = initializeState();
-            }
-        } else {
-            updateState(state);
-        }
-
-        function getTensionInstance() { return state.tension; }
-
-        function addTension(amount) {
-            state.tension.value += amount;
-            state.tension.value = Math.max(0, state.tension.value);
-            updateState(state);
-        }
-
-        function setActiveUser(user) {
-            if (state.accounts[user]) {
-                state.active_user = user;
-                updateState(state);
-            } else {
-                throw new Error(`User ${user} not found.`);
-            }
-        }
-        
-        function deleteAccounts() {
-            localStorage.removeItem('msaiState');
-            state = initializeState();
-        }
-
-        function actTransfer(sender, recipient, amount, currency) {
-            const currentState = getCurrentState();
-            const isInternal = currentState.accounts[recipient];
-
-            if ((currentState.accounts[sender][currency] || 0) < amount) {
-                throw new Error(`${sender} の ${currency} 残高不足です。`);
-            }
-
-            currentState.accounts[sender][currency] -= amount;
-            
-            if (isInternal) {
-                currentState.accounts[recipient][currency] = (currentState.accounts[recipient][currency] || 0) + amount;
-            }
-            
-            updateState(currentState);
-            return currentState;
-        }
-
-        // 為替レート
-        const EXCHANGE_RATES = {
-            JPY: 130, 
-            EUR: 0.9,
-            BTC: 0.00005,
-            ETH: 0.001,
-            MATIC: 1.5, 
-            USD: 1
-        };
-
-        function actMintCurrency(user, currency, amount) {
-            const currentState = getCurrentState();
-
-            if (!currentState.accounts[user]) {
-                throw new Error(`User ${user} not found.`);
-            }
-
-            currentState.accounts[user][currency] = (currentState.accounts[user][currency] || 0) + amount;
-            const usdEquivalent = amount / (EXCHANGE_RATES[currency] || 1);
-            const tensionIncrease = usdEquivalent * 0.005; 
-            
-            addTension(tensionIncrease);
-
-            updateState(currentState);
-            return currentState;
-        }
-
-        function actExchangeCurrency(user, fromCurrency, fromAmount, toCurrency) {
-            const currentState = getCurrentState();
-
-            if (!currentState.accounts[user]) {
-                throw new Error(`User ${user} not found.`);
-            }
-            if ((currentState.accounts[user][fromCurrency] || 0) < fromAmount) {
-                throw new Error(`${fromCurrency} の残高が不足しています。`);
-            }
-
-            const rateFrom = EXCHANGE_RATES[fromCurrency] || 1;
-            const rateTo = EXCHANGE_RATES[toCurrency] || 1;
-            
-            const usdEquivalent = fromAmount / rateFrom;
-            const toAmount = usdEquivalent * rateTo;
-
-            currentState.accounts[user][fromCurrency] -= fromAmount;
-            currentState.accounts[user][toCurrency] = (currentState.accounts[user][toCurrency] || 0) + toAmount;
-
-            const tensionIncrease = usdEquivalent * 0.001; 
-            addTension(tensionIncrease);
-
-            updateState(currentState);
-            return currentState;
-        }
-
-
-        // =========================================================================
-        // アプリケーション（main.js ロジック）
+        // アプリケーション（UI Event ハンドラー） - CalcLang経由の呼び出しに修正
         // =========================================================================
         
         const SUPPORTED_CURRENCIES = ["USD", "JPY", "EUR", "BTC", "ETH", "MATIC"];
@@ -342,6 +219,7 @@
         let UI_ELEMENTS = {};
 
         function cacheUIElements() {
+            // ... (既存のUIキャッシュロジックを保持)
             const ids = [
                 'status_message', 'tension_level_display', 'tension_bar', 'tension_level_display_bar',
                 'intensity_display', 'rigor_display', 'active_user_select', 
@@ -351,7 +229,8 @@
                 'mint_amount_input', 'dialogue-output', 'dialogue_input', 'dialogue_button',
                 'exchange_amount_input', 'exchange_from_select', 'exchange_to_select', 
                 'exchange_button',
-                'mint_currency_select', 'mint_execute_button', 'css_reset_button'
+                'mint_currency_select', 'mint_execute_button', 'css_reset_button',
+                'decay_execute_button', 'ch_display' // 💡 新規追加
             ];
             
             SUPPORTED_CURRENCIES.forEach(c => { ids.push(`balance_${c}`); });
@@ -363,7 +242,7 @@
         }
 
         function logToConsole(message, type = 'ai-message') {
-            // 💡 修正済み: console.errorをconsole.logに戻し、F12コンソールのエラーマークを解消
+            // ... (既存のログ出力ロジックを保持)
             console.log("AUDIT LOGGING TEST: " + message); 
             
             const output = UI_ELEMENTS['dialogue-output'];
@@ -375,10 +254,16 @@
             output.appendChild(messageDiv);
             output.scrollTop = output.scrollHeight; 
         }
-
+        
+        // 💡 修正: 既存の actTransfer/actMintCurrency/actExchangeCurrency はUIハンドラから直接呼び出さない！
+        // 💡 CalcLangのMöbiusActを介して呼び出すように変更する。
+        
+        // 💡 新規追加: TensionとCHのUI更新ロジックをCalcCoreから取得するように変更
         function updateUI(state) {
-            const tension = getTensionInstance();
-            const tensionValue = tension.value; 
+            // ... (state取得ロジックは保持)
+            const tension = CalcCore.getTension(); // 💡 CalcCoreから取得
+            const CH = CalcCore.getCH(); // 💡 CalcCoreから取得
+            const tensionValue = tension; 
             const activeUserName = state.active_user;
             
             if (UI_ELEMENTS['status_message']) {
@@ -408,9 +293,12 @@
                     autonomyStatusEl.style.color = '#28a745';
                 }
             }
-
-            if (UI_ELEMENTS['intensity_display']) { UI_ELEMENTS['intensity_display'].textContent = "0.9025"; } 
-            if (UI_ELEMENTS['rigor_display']) { UI_ELEMENTS['rigor_display'].textContent = "0.2236"; }
+            
+            // 💡 新規追加: CHの表示
+            if (UI_ELEMENTS['ch_display']) { UI_ELEMENTS['ch_display'].textContent = CH.toFixed(4); }
+            
+            if (UI_ELEMENTS['intensity_display']) { UI_ELEMENTS['intensity_display'].textContent = "0.9025"; } // 既存値を保持
+            if (UI_ELEMENTS['rigor_display']) { UI_ELEMENTS['rigor_display'].textContent = "0.2236"; } // 既存値を保持
             
             if (UI_ELEMENTS['active_user_name']) {
                 UI_ELEMENTS['active_user_name'].textContent = activeUserName;
@@ -446,76 +334,104 @@
             }
         }
 
-        // イベントハンドラー（作為ロジック）
-        function handleMintingExecuteAct() {
+        // 💡 修正: MöbiusAct経由のハンドラに変更
+        async function handleMintingExecuteAct() {
             try {
                 const currency = UI_ELEMENTS['mint_currency_select'].value;
                 const amount = parseFloat(UI_ELEMENTS['mint_amount_input'].value);
                 
                 if (isNaN(amount) || amount <= 0) { logToConsole("生成数量は正の値を指定してください。", 'user-message'); return; }
 
-                const state = getCurrentState();
-                const newState = actMintCurrency(state.active_user, currency, amount);
-                
+                // 💡 ロゴス作為の実行: MöbiusActに処理を委譲
+                const args = [{ type: 'DECIMAL', value: amount }, { type: 'STRING', value: currency }];
+                const result = await CalcCore.MöbiusAct("MINT", args); 
+
                 logToConsole(`${state.active_user} が ${amount.toFixed(2)} ${currency} を生成しました。Tensionが増加しました。`, 'ai-message');
-                updateUI(newState);
+                updateUI(getCurrentState()); // 状態更新
                 
             } catch (error) {
                 logToConsole(`Minting Act 失敗: ${error.message}`, 'error-message');
             }
         }
 
-        function handleExchangeAct() {
-            try {
+        // 💡 修正: MöbiusAct経由のハンドラに変更
+        async function handleExchangeAct() {
+             try {
                 const fromC = UI_ELEMENTS['exchange_from_select'].value;
                 const toC = UI_ELEMENTS['exchange_to_select'].value;
                 const amount = parseFloat(UI_ELEMENTS['exchange_amount_input'].value);
 
                 if (fromC === toC || isNaN(amount) || amount <= 0) { logToConsole("有効な交換数量と異なる通貨を指定してください。", 'user-message'); return; }
                 
-                const state = getCurrentState();
-                const newState = actExchangeCurrency(state.active_user, fromC, amount, toC);
-                
+                // 💡 ロゴス作為の実行: MöbiusActに処理を委譲
+                const args = [{ type: 'DECIMAL', value: amount }, { type: 'STRING', value: fromC }, { type: 'STRING', value: toC }];
+                const result = await CalcCore.MöbiusAct("EXCHANGE", args); 
+
                 logToConsole(`${state.active_user} が ${amount.toFixed(4)} ${fromC} を ${toC} に交換しました。`, 'ai-message');
-                updateUI(newState);
+                updateUI(getCurrentState());
                 
             } catch (error) {
                 logToConsole(`Exchange Act 失敗: ${error.message}`, 'error-message');
             }
         }
-
-        function handleTransfer(isExternal) {
+        
+        // 💡 修正: MöbiusAct経由のハンドラに変更
+        async function handleTransfer(isExternal) {
             const CURRENCY = 'USD';
             
             try {
-                let recipient = UI_ELEMENTS['recipient_input'].value;
+                const recipient = UI_ELEMENTS['recipient_input'].value;
                 const amount = parseFloat(UI_ELEMENTS['amount_input'].value);
                 const state = getCurrentState();
 
                 if (isNaN(amount) || amount <= 0) { logToConsole("有効な数量を指定してください。", 'user-message'); return; }
-                
-                if (isExternal) {
-                    recipient = recipient.includes('External') ? recipient : 'External_Gateway (' + recipient + ')'; 
-                }
-                
                 if (!recipient || recipient === state.active_user) { logToConsole("有効な受取人を指定してください。", 'user-message'); return; }
                 
-                const newState = actTransfer(state.active_user, recipient, amount, CURRENCY);
-                
-                const tensionAmount = isExternal ? amount * 0.0001 : amount * 0.00001;
-                addTension(tensionAmount); 
+                const targetAct = isExternal ? 'TRANSFER_EXTERNAL' : 'TRANSFER_INTERNAL';
+
+                // 💡 ロゴス作為の実行: MöbiusActに処理を委譲
+                const args = [{ type: 'DECIMAL', value: amount }, { type: 'STRING', value: CURRENCY }, { type: 'STRING', value: recipient }];
+                const result = await CalcCore.MöbiusAct(targetAct, args); 
                 
                 const actType = isExternal ? '外部送金（高摩擦）' : '内部送金（低摩擦）';
                 
-                logToConsole(`${state.active_user} が ${recipient} へ **$${amount.toFixed(2)} ${CURRENCY}** を ${actType} しました。Tensionが${tensionAmount.toFixed(6)}増加。`, 'ai-message');
-                updateUI(newState);
+                logToConsole(`${state.active_user} が ${recipient} へ **$${amount.toFixed(2)} ${CURRENCY}** を ${actType} しました。Tensionが変動。`, 'ai-message');
+                updateUI(getCurrentState());
                 
             } catch (error) {
                 logToConsole(`Transfer Act 失敗: ${error.message}`, 'error-message');
             }
         }
+        
+        // 💡 新規追加: Decay Act ハンドラ
+        async function handleDecayAct() {
+            logToConsole("作為: ロゴス弛緩 (Decay Act) を要求します...");
+            const result = await CalcCore.MöbiusAct("DECAY", []);
+            logToConsole(`[ロゴス結果] 弛緩: ${result.success ? '完了' : '失敗'}`);
+            updateUI(getCurrentState());
+        }
+
+        // 💡 新規追加: Dialogue Buttonのイベントハンドラ
+        async function handleDialogueAct() {
+            const input = UI_ELEMENTS['dialogue_input'].value.trim();
+            UI_ELEMENTS['dialogue_input'].value = '';
+
+            if (input.startsWith('query')) {
+                const prompt = input.substring(6).trim();
+                const args = [{ type: 'STRING', value: prompt }];
+
+                logToConsole("作為: 対話生成 (AI Query) を要求します...");
+                const result = await CalcCore.MöbiusAct("AI_QUERY", args);
+                logToConsole(`[ロゴス応答] ${result.data}`);
+            } else {
+                 logToConsole("エラー: 対話作為は 'query <質問>' 形式で記述してください。", 'user-message');
+                 return;
+            }
+            updateUI(getCurrentState());
+        }
 
         function handleUserSelect(event) {
+             // ... (既存のロジックを保持)
             const newActiveUser = event.target.value;
             setActiveUser(newActiveUser);
             logToConsole(`アクティブユーザーを ${newActiveUser} に切り替えました。`, 'user-message');
@@ -523,14 +439,15 @@
         }
 
         function handleDeleteAccounts() {
+             // ... (既存のロジックを保持)
             if (confirm("🚨 警告: 全ての口座情報とTensionを削除し、システムを初期状態にリセットします。よろしいですか？")) {
                 deleteAccounts();
                 logToConsole("全ての口座情報と状態が削除され、システムは初期状態にリセットされました。", 'error-message');
                 window.location.reload(); 
             }
         }
-
-        // UI配色リセット機能
+        
+        // ... (resetCSS, initializeCurrencySelectors, initializeApp ロジックは保持)
         const CSS_DEFAULT_STATE = document.querySelector('style').textContent;
         function resetCSS() {
             const styleElement = document.querySelector('style');
@@ -553,7 +470,6 @@
             }
         }
 
-        // 初期化ロジック
         function initializeCurrencySelectors() {
             const mintSelect = UI_ELEMENTS['mint_currency_select'];
             const fromSelect = UI_ELEMENTS['exchange_from_select'];
@@ -579,6 +495,7 @@
             toSelect.value = "USD"; 
         }
 
+
         function initializeApp() {
             try {
                 cacheUIElements();
@@ -589,6 +506,7 @@
 
                 initializeCurrencySelectors();
 
+                // 💡 イベントハンドラーの接続先をMöbiusAct経由に変更
                 UI_ELEMENTS['mint_execute_button'].addEventListener('click', handleMintingExecuteAct);
                 UI_ELEMENTS['exchange_button'].addEventListener('click', handleExchangeAct);
                 UI_ELEMENTS['transfer_internal_button'].addEventListener('click', () => handleTransfer(false)); 
@@ -598,6 +516,12 @@
                 UI_ELEMENTS['css_reset_button'].addEventListener('click', resetCSS);
                 UI_ELEMENTS['revision_button'].addEventListener('click', () => {
                      logToConsole("自律的修正請願をログに記録しました。Tension制御アルゴリズムが検討します。", 'ai-message');
+                });
+                // 💡 新規追加のイベントハンドラ
+                UI_ELEMENTS['decay_execute_button'].addEventListener('click', handleDecayAct); 
+                UI_ELEMENTS['dialogue_button'].addEventListener('click', handleDialogueAct);
+                UI_ELEMENTS['dialogue_input'].addEventListener('keydown', (event) => {
+                     if(event.key === 'Enter') handleDialogueAct();
                 });
                 
                 updateUI(initialState);
@@ -610,6 +534,5 @@
 
         document.addEventListener('DOMContentLoaded', initializeApp);
     </script>
-
-</body>
+    </body>
 </html>
