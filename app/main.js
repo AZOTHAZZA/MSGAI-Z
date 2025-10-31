@@ -190,18 +190,16 @@ function actExchangeCurrency(user, fromCurrency, fromAmount, toCurrency) {
  * @returns {Promise<{status: string, data: string}>} - Geminiの応答テキスト
  */
 async function actAIQuery(user, prompt) {
-    if (typeof generateGeminiContent !== 'function') {
-        throw new Error("外部AIコア (external_ai_core.js) がロードされていません。");
+    // 外部AIコアが新しいオブジェクト構造を使用しているかチェック
+    if (typeof external_ai_core === 'undefined' || typeof external_ai_core.generate !== 'function') {
+        throw new Error("外部AIコア (external_ai_core.js) のロジックが見つかりません。");
     }
 
-    // 💡 既存のロゴス履歴 (ここではローカルストレージに依存せず、常に新しい対話として処理)
-    const history = []; 
-
-    // Geminiへの非同期呼び出し
-    const response = await generateGeminiContent(prompt, history);
+    // 新しいコアロジック (external_ai_core.generate) を呼び出し、生のテキスト応答を取得
+    const textResponse = await external_ai_core.generate(prompt); 
 
     // 応答のテキストを返す
-    return { status: "success", data: response.text };
+    return { status: "success", data: textResponse };
 }
 
 
@@ -223,3 +221,4 @@ function actDecay(user) {
 // =========================================================================
 
 // (UI/Appロジックは index.html に移譲済みのため、このセクションは空です)
+
