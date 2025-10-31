@@ -80,6 +80,16 @@
         #dialogue_input { flex-grow: 1; padding: 10px; margin-right: 10px; }
         #dialogue_button { padding: 10px 15px; background-color: #6c757d; color: white; border: none; border-radius: 4px; }
         
+        /* 💡 新規追加: AI Queryボタンのスタイル */
+        #query_button { 
+            padding: 10px 15px; 
+            background-color: #007bff; 
+            color: white; 
+            border: none; 
+            border-radius: 4px; 
+            margin-left: 10px; /* 実行ボタンとの間にスペース */
+        }
+
         #autonomy_status { color: #dc3545; } 
         
         /* 💡 新規追加: 沈黙調和係数 (CH) 表示 */
@@ -203,6 +213,8 @@
         <div id="input-area">
             <input type="text" id="dialogue_input" placeholder="哲学的な問い、または作為を記述してください... (例: query ゼロと無限について)" />
             <button id="dialogue_button">作為を実行</button>
+            
+            <button id="query_button">AI Query (ロゴス対話)</button>
         </div>
     </div>
 
@@ -233,7 +245,8 @@
                 'mint_amount_input', 'dialogue-output', 'dialogue_input', 'dialogue_button',
                 'exchange_amount_input', 'exchange_from_select', 'exchange_to_select', 
                 'exchange_button', 'mint_currency_select', 'mint_execute_button', 'css_reset_button',
-                'decay_execute_button', 'ch_display'
+                'decay_execute_button', 'ch_display', 
+                'query_button' // 💡 新規追加
             ];
             
             SUPPORTED_CURRENCIES.forEach(c => { ids.push(`balance_${c}`); });
@@ -404,26 +417,75 @@
             updateUI(getCurrentState());
         }
 
-        // 💡 新規追加: Dialogue Buttonのイベントハンドラ
-        async function handleDialogueAct() {
-            const input = UI_ELEMENTS['dialogue_input'].value.trim();
-            UI_ELEMENTS['dialogue_input'].value = '';
-
-            const prompt = input.startsWith('query') ? input.substring(6).trim() : input;
+        // 💡 修正: Dialogue Buttonのイベントハンドラを統一的に処理
+        async function handleDialogueAct(commandToExecute = null) {
             
-            if (prompt === "") {
+            // 💡 実行するコマンド（文字列）を決定
+            let input = commandToExecute || UI_ELEMENTS['dialogue_input'].value.trim();
+            
+            // 入力フィールドをクリア（Enterキーやボタンクリック後の即時フィードバックとして）
+            UI_ELEMENTS['dialogue_input'].value = ''; 
+            
+            let prompt = input;
+            
+            // コマンド実行（"作為を実行"ボタン）の場合
+            if (commandToExecute === null || !input.startsWith('query')) {
+                 // 既存のMINT/TRANSFERなどの作為として処理（ここではAI_QUERYのみを考慮）
+                 if (input.startsWith('query')) {
+                     // ユーザーが手動で 'query ' と入力した場合
+                     prompt = input.substring(6).trim();
+                 } else {
+                     // query以外のコマンド（MINT, TRANSFERなど）は、別途main.js内の処理に任せるか、
+                     // このハンドラで直接エラーとして扱う必要がありますが、
+                     // 今回はAI_QUERY機能のデバッグが主のため、簡略化し、AI_QUERY専用として扱います。
+                     logToConsole(`エラー: 不明な作為または作為の形式が無効です ('query' で開始してください)。`, 'user-message');
+                     return;
+                 }
+            } else {
+                 // AI Queryボタンからの呼び出しの場合、commandToExecute は既に 'query "..."' 形式で渡されていると想定
+                 // ここでは、ボタンからの呼び出しに合わせ、入力欄のプロンプトをそのまま使用します。
+                 // 💡 AI Queryボタンからの呼び出しは、queryコマンドを自動生成する新しい関数で行う
+            }
+            
+            if (prompt === "" || prompt.toLowerCase() === 'query') {
                  logToConsole("エラー: 対話作為の質問内容がありません。", 'user-message');
                  return;
             }
 
             const args = [{ type: 'STRING', value: prompt }];
 
-            logToConsole("作為: 対話生成 (AI Query) を要求します...");
+            logToConsole(`作為: 対話生成 (AI Query) を要求します... [プロンプト: "${prompt}"]`);
             const result = await CalcCore.MöbiusAct("AI_QUERY", args);
             logToConsole(`[ロゴス応答] ${result.data}`);
             
             updateUI(getCurrentState());
         }
+        
+        // 💡 新規追加: AI Queryボタン専用のハンドラ
+        async function handleQueryButtonAct() {
+            const inputField = UI_ELEMENTS['dialogue_input'];
+            const prompt = inputField.value.trim();
+
+            if (prompt === "") {
+                 logToConsole("エラー: 対話プロンプトが空です。", 'user-message');
+                 return;
+            }
+            
+            // ユーザー入力の内容をそのままプロンプトとして使用する
+            
+            const args = [{ type: 'STRING', value: prompt }];
+            
+            logToConsole(`作為: 対話生成 (AI Query) を要求します... [プロンプト: "${prompt}"]`);
+            
+            // 入力欄をクリア
+            inputField.value = '';
+            
+            const result = await CalcCore.MöbiusAct("AI_QUERY", args);
+            logToConsole(`[ロゴス応答] ${result.data}`);
+            
+            updateUI(getCurrentState());
+        }
+
 
         function handleUserSelect(event) {
             const newActiveUser = event.target.value;
@@ -517,9 +579,16 @@
                 
                 // 💡 新規追加のイベントハンドラ
                 UI_ELEMENTS['decay_execute_button'].addEventListener('click', handleDecayAct); 
-                UI_ELEMENTS['dialogue_button'].addEventListener('click', handleDialogueAct);
+                
+                // 💡 修正: dialogue_buttonは汎用として残し、query_buttonを追加
+                UI_ELEMENTS['dialogue_button'].addEventListener('click', () => handleDialogueAct(null)); // '作為を実行'ボタンは手動コマンド処理
+                
+                // 💡 新規追加: AI Queryボタン専用のハンドラ接続
+                UI_ELEMENTS['query_button'].addEventListener('click', handleQueryButtonAct); 
+
                 UI_ELEMENTS['dialogue_input'].addEventListener('keydown', (event) => {
-                     if(event.key === 'Enter') handleDialogueAct();
+                     // 💡 Enterキーは「作為を実行」と同じ動作に接続
+                     if(event.key === 'Enter') handleDialogueAct(null);
                 });
                 
                 updateUI(initialState);
