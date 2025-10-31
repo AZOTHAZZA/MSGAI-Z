@@ -1,5 +1,4 @@
-// /api/gemini-proxy.js - Vercel Edge Function (最終修正版)
-// request.json() の呼び出しエラーを修正済み
+// /api/gemini-proxy.js - Vercel Edge Function (最終・強固な修正版)
 
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=";
 
@@ -11,12 +10,11 @@ export default async function handler(request) {
     try {
         const apiKey = process.env.GEMINI_API_KEY;
         
-        // 💡 修正箇所: requestBody を介して正しい方法でJSONを解析
-        const requestBody = await request.json(); 
-        const { prompt } = requestBody;          
+        // 💡 修正箇所: request.json() を直接呼び出し、即座にプロンプトを抽出
+        // 従来の Node.js 記法に依存しない Web標準の処理
+        const { prompt } = await request.json(); 
         
         if (!apiKey) {
-            // 環境変数未設定エラー
             throw new Error("API_KEY is not configured in Vercel Environment Variables.");
         }
         if (!prompt) {
