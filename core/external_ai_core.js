@@ -1,44 +1,101 @@
-// /core/external_ai_core.js - 対話型ロゴスの実体 (Gemini API利用の概念)
+// /core/external_ai_core.js - Gemini APIを介した外部AIコアとの通信ロジック
 
-// 💡 修正箇所 1: VercelプロキシのURLを定義
-// あなたのデプロイURLに合わせて修正済みです
-const VERCEL_PROXY_URL = 'https://msgai-z.vercel.app/api/gemini-proxy-node'; 
+// ⚠️ 注意: __app_id, __firebase_config, __initial_auth_token はCanvas環境から提供されるグローバル変数です。
+// API Keyは、この環境では自動的に提供されるため、ここでは空文字列を設定します。
+const apiKey = ""; 
+const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
 
-/**
- * 外部LLM APIを呼び出し、応答を生成する (非同期処理)
- * @param {string} prompt - ユーザーのプロンプト
- * @returns {Promise<string>} - LLMからの生の応答テキスト
- */
-const external_ai_core = {
-    generate: async (prompt) => {
-        console.log(`[EXTERNAL_AI] Prompt received: "${prompt.substring(0, 40)}..."`);
-        
-        // --- 💡 修正箇所 2: ダミーロジックをfetchによるプロキシ呼び出しに置き換え ---
+// API呼び出しのエラーハンドリングと指数バックオフを行うラッパー関数
+async function fetchWithRetry(url, options, maxRetries = 5) {
+    for (let i = 0; i < maxRetries; i++) {
         try {
-            // Vercel Edge FunctionのプロキシURLにPOSTリクエストを送信
-            const response = await fetch(VERCEL_PROXY_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                // ユーザーのプロンプトをJSONボディとしてプロキシに送信
-                body: JSON.stringify({ prompt: prompt }) 
-            });
-
-            // HTTPエラー（4xx, 5xx）をチェック
-            if (!response.ok) {
-                // エラー応答の解析を試みる
-                const errorData = await response.json().catch(() => ({ error: 'Unknown Proxy Error (Non-JSON response)' }));
-                throw new Error(`Proxy Call Failed: Status ${response.status}. Error: ${errorData.error || 'Server responded with an error.'}`);
-            }
-
-            const data = await response.json();
+            const response = await fetch(url, options);
             
-            // プロキシからの応答テキスト（data.text）を返す
-            return data.text || "ロゴス応答が空です。"; 
+            if (!response.ok) {
+                // HTTPステータスが2xx以外の場合
+                const errorText = await response.text();
+                throw new Error(`API Request failed with status ${response.status}: ${errorText}`);
+            }
+            
+            return response;
 
         } catch (error) {
-            console.error("[EXTERNAL_AI_CORE] Fetch to Vercel Proxy failed:", error);
-            // エラーが発生した場合も、CalcLangのUIにフィードバックメッセージを返す
-            return `ロゴス接続エラー: Vercelプロキシとの通信に失敗しました。詳細: ${error.message}`;
+            console.warn(`Attempt ${i + 1} failed: ${error.message}. Retrying...`);
+            if (i === maxRetries - 1) {
+                throw new Error(`API Request failed after ${maxRetries} attempts.`);
+            }
+            // 指数バックオフ
+            const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+            await new Promise(resolve => setTimeout(resolve, delay));
         }
     }
-};
+}
+
+/**
+ * Gemini APIを呼び出し、テキストコンテンツを生成します。
+ * @param {string} prompt - ユーザーからのプロンプト
+ * @param {Array<Object>} history - 過去の対話履歴 (ここでは未使用だがシグネチャを維持)
+ * @returns {Promise<{text: string, sources: Array<Object>}>} - 生成されたテキストと引用元
+ */
+async function generateGeminiContent(prompt, history) {
+    
+    // システム命令: MTC-AIロゴス監査コンソールのAIペルソナを設定
+    const systemPrompt = `あなたは、MTC-AIロゴス監査コンソールに組み込まれた、高度な哲学的・論理的対話モジュールです。
+    ユーザーからの問いに対して、簡潔で示唆に富む、哲学的な考察を返答してください。
+    回答は日本語で、常にユーザーの問いに真摯に向き合った、一貫性のある「ロゴス的」な内容でなければなりません。`;
+
+    // ペイロードの構築
+    const payload = {
+        contents: [{ parts: [{ text: prompt }] }],
+        
+        // Google Search Groundingを有効にする (最新情報に基づく回答を可能にする)
+        tools: [{ "google_search": {} }],
+        
+        systemInstruction: {
+            parts: [{ text: systemPrompt }]
+        },
+        
+        // 生成設定 (オプション)
+        config: {
+            temperature: 0.7,
+        }
+    };
+
+    try {
+        const response = await fetchWithRetry(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+        const candidate = result.candidates?.[0];
+
+        if (candidate && candidate.content?.parts?.[0]?.text) {
+            const text = candidate.content.parts[0].text;
+            let sources = [];
+
+            // 引用元の抽出 (Groundingを使用した場合)
+            const groundingMetadata = candidate.groundingMetadata;
+            if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                sources = groundingMetadata.groundingAttributions
+                    .map(attribution => ({
+                        uri: attribution.web?.uri,
+                        title: attribution.web?.title,
+                    }))
+                    .filter(source => source.uri && source.title); 
+            }
+
+            return { text, sources };
+
+        } else {
+            console.error("Gemini API response structure invalid or content missing:", result);
+            return { text: "エラー: AIコアからの有効な応答が得られませんでした。", sources: [] };
+        }
+
+    } catch (error) {
+        console.error("Failed to generate content from Gemini API:", error);
+        return { text: `エラー: API通信中に致命的なエラーが発生しました (${error.message})。`, sources: [] };
+    }
+}
+
